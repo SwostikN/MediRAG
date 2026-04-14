@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -11,8 +12,11 @@ from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-from middleware import add_cors_middleware
-from fastapi.responses import FileResponse
+try:
+    from .middleware import add_cors_middleware
+except ImportError:
+    from middleware import add_cors_middleware
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 # --------------------------------------------------
@@ -20,10 +24,15 @@ from fastapi.staticfiles import StaticFiles
 # --------------------------------------------------
 load_dotenv()
 
-app = FastAPI(title="RAG PDF Service")
+app = FastAPI(title="MediRAG")
 add_cors_middleware(app)
-# Serve frontend static files
-app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
+
+if FRONTEND_DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST_DIR / "assets"), name="frontend-assets")
 
 
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
@@ -40,7 +49,22 @@ retriever = None
 
 @app.get("/")
 async def serve_frontend():
-    return FileResponse("frontend/index.html")
+    index_file = FRONTEND_DIST_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "MediRAG backend is running.",
+            "frontend": "Frontend build not found. Run the React app in dev mode or build frontend/dist first.",
+            "docs_url": "/docs",
+            "health_url": "/health",
+            "query_url": "/query",
+            "upload_pdf_url": "/upload_pdf",
+        },
+    )
+
+
 # --------------------------------------------------
 # Health check (REQUIRED for ECS / ALB)
 # --------------------------------------------------
@@ -119,6 +143,18 @@ async def query_document(query: QueryRequest):
         return {"answer": "The information is not mentioned in the provided context."}
 
     context_text = "\n\n".join(doc.page_content for doc in docs)
+    # sources = []
+    # for index, doc in enumerate(docs, start=1):
+    #     excerpt = doc.page_content[:280].strip()
+    #     if len(doc.page_content) > 280:
+    #         excerpt += "..."
+    #     sources.append(
+    #         {
+    #             "title": f"Retrieved chunk {index}",
+    #             "excerpt": excerpt,
+    #             "confidence": max(0.6, 0.95 - (index - 1) * 0.1),
+    #         }
+    #     )
 
     messages = [
         {
@@ -148,3 +184,23 @@ async def query_document(query: QueryRequest):
         )
 
     return {"answer": answer}
+
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    requested_path = FRONTEND_DIST_DIR / full_path
+    if requested_path.exists() and requested_path.is_file():
+        return FileResponse(requested_path)
+
+    index_file = FRONTEND_DIST_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": "Route not found.",
+            "frontend": "Frontend build not found. Start Vite in the frontend folder or build the app.",
+            "docs_url": "/docs",
+        },
+    )
