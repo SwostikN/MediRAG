@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 # --------------------------------------------------
 load_dotenv()
 
-app = FastAPI(title="MediRAG")
+app = FastAPI(title="DocuMed AI")
 add_cors_middleware(app)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -55,7 +55,7 @@ async def serve_frontend():
     return JSONResponse(
         status_code=200,
         content={
-            "message": "MediRAG backend is running.",
+            "message": "DocuMed AI backend is running.",
             "frontend": "Frontend build not found. Run the React app in dev mode or build frontend/dist first.",
             "docs_url": "/docs",
             "health_url": "/health",

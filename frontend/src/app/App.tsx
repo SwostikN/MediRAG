@@ -265,13 +265,15 @@ export default function App() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-                <Stethoscope className="w-5 h-5 text-accent-foreground" />
-              </div>
+              <img
+                src="/Documed_Logo.png"
+                alt="DocuMed AI Logo"
+                className="w-40 h-16 rounded-lg object-contain"
+              />
               <div>
-                <h1 className="text-lg font-medium">MedRAG AI</h1>
+                <h1 className="text-lg font-medium">DocuMed AI</h1>
                 <p className="text-xs text-muted-foreground font-mono">
-                  Clinical Research Assistant
+                  Medical Chat Interface
                 </p>
               </div>
             </div>
@@ -488,7 +490,7 @@ export default function App() {
                             />
                           </div>
                           <span className="text-sm text-muted-foreground">
-                            Contacting MediRAG backend...
+                            Contacting DocuMed AI backend...
                           </span>
                         </div>
                       </div>
