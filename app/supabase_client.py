@@ -11,9 +11,17 @@ except Exception:
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+HAS_REAL_SERVICE_KEY = bool(
+    SUPABASE_SERVICE_KEY and not SUPABASE_SERVICE_KEY.startswith("sb_publishable_")
+)
 
 if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
     print("[supabase_client] WARNING: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in env")
+elif not HAS_REAL_SERVICE_KEY:
+    print(
+        "[supabase_client] WARNING: SUPABASE_SERVICE_ROLE_KEY is using a publishable key. "
+        "Server-side Supabase inserts are disabled until you set the real service role key."
+    )
 
 HEADERS = {
     "apikey": SUPABASE_SERVICE_KEY or "",
@@ -29,6 +37,9 @@ def _post_table(table: str, payload: Any) -> Dict[str, Any]:
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return {"error": "supabase configuration missing"}
+
+    if not HAS_REAL_SERVICE_KEY:
+        return {"error": "supabase service role key is missing or invalid"}
 
     url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}"
     resp = requests.post(url, json=payload, headers=HEADERS)

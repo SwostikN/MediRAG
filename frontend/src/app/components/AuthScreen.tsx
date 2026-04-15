@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Lock, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Mail, ShieldCheck, UserRound } from "lucide-react";
+import type { KeyboardEvent } from "react";
 
 interface AuthScreenProps {
   onBack: () => void;
   onSignIn: (email: string, password: string) => Promise<void>;
   onSignUp: (email: string, password: string, fullName: string) => Promise<void>;
-  statusMessage?: string;
+  signupSuccessMessage?: string;
 }
 
 type AuthMode = "signin" | "signup";
@@ -15,7 +16,7 @@ export function AuthScreen({
   onBack,
   onSignIn,
   onSignUp,
-  statusMessage,
+  signupSuccessMessage,
 }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
@@ -23,6 +24,7 @@ export function AuthScreen({
   const [fullName, setFullName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const successMessage = !errorMessage ? signupSuccessMessage : "";
 
   const handleSubmit = async () => {
     setErrorMessage("");
@@ -41,6 +43,20 @@ export function AuthScreen({
     }
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    void handleSubmit();
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <div
@@ -50,6 +66,26 @@ export function AuthScreen({
             "radial-gradient(circle at 20% 20%, rgba(0, 191, 165, 0.16), transparent 28%), radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.12), transparent 22%), radial-gradient(circle at 50% 100%, rgba(0, 191, 165, 0.1), transparent 28%)",
         }}
       />
+
+      {successMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -18, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="fixed left-1/2 top-6 z-30 w-[min(92vw,32rem)] -translate-x-1/2"
+        >
+          <div className="rounded-[1.6rem] border border-emerald-400/25 bg-emerald-400/12 px-5 py-4 text-emerald-50 shadow-[0_20px_70px_rgba(16,185,129,0.18)] backdrop-blur-2xl">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 rounded-full bg-emerald-400/20 p-1.5 text-emerald-200">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-100">Account status</p>
+                <p className="mt-1 text-sm leading-6 text-emerald-50/90">{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-10">
         <div className="w-full max-w-6xl grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
@@ -154,6 +190,7 @@ export function AuthScreen({
                       type="text"
                       value={fullName}
                       onChange={(event) => setFullName(event.target.value)}
+                      onKeyDown={handleKeyDown}
                       placeholder="Dr. Jane Doe"
                       className="w-full rounded-2xl border border-border bg-background px-4 py-3 focus:border-accent focus:outline-none"
                     />
@@ -169,6 +206,7 @@ export function AuthScreen({
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="doctor@hospital.org"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 focus:border-accent focus:outline-none"
                   />
@@ -183,15 +221,16 @@ export function AuthScreen({
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Minimum 6 characters"
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 focus:border-accent focus:outline-none"
                   />
                 </label>
               </div>
 
-              {(errorMessage || statusMessage) && (
-                <div className="mt-5 rounded-2xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                  {errorMessage || statusMessage}
+              {errorMessage && (
+                <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-500/8 px-4 py-3 text-sm text-red-200 backdrop-blur">
+                  {errorMessage}
                 </div>
               )}
 

@@ -98,6 +98,7 @@ export default function App() {
   const [showAuthScreen, setShowAuthScreen] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ChatSessionRecord[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [historyAvailable, setHistoryAvailable] = useState(true);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -135,7 +136,7 @@ export default function App() {
     );
 
     if (error) {
-      console.warn("Supabase profile sync error:", error.message || error);
+      throw error;
     }
   };
 
@@ -175,7 +176,7 @@ export default function App() {
       return;
     }
 
-    await loadConversationMessages(history[0].id);
+    resetLocalConversation("Signed in successfully.");
   };
 
   useEffect(() => {
@@ -205,10 +206,13 @@ export default function App() {
 
       try {
         await syncUserProfile(activeSession);
+        setHistoryAvailable(true);
         await loadConversationHistory(activeSession.user.id);
       } catch (historyError) {
         console.warn("Failed to load chat history", historyError);
-        setStatusMessage("Signed in, but saved history could not be loaded.");
+        setHistoryAvailable(false);
+        setConversationHistory([]);
+        setStatusMessage("Signed in. Supabase history tables are unavailable, so chat is running without saved history.");
       }
     };
 
@@ -229,11 +233,14 @@ export default function App() {
       void (async () => {
         try {
           await syncUserProfile(nextSession);
+          setHistoryAvailable(true);
           await loadConversationHistory(nextSession.user.id);
           setShowAuthScreen(false);
         } catch (historyError) {
           console.warn("Failed to refresh chat history", historyError);
-          setStatusMessage("Signed in, but saved history could not be loaded.");
+          setHistoryAvailable(false);
+          setConversationHistory([]);
+          setStatusMessage("Signed in. Supabase history tables are unavailable, so chat is running without saved history.");
         }
       })();
     });
@@ -331,22 +338,25 @@ export default function App() {
       return currentSessionId;
     }
 
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !historyAvailable) {
       return null;
     }
 
-    return createConversation(seed);
+    try {
+      return await createConversation(seed);
+    } catch (error) {
+      console.warn("Unable to create chat session in Supabase", error);
+      setHistoryAvailable(false);
+      setStatusMessage("Supabase history tables are unavailable. Upload and chat still work, but this session will not be saved.");
+      return null;
+    }
   };
 
-  const buildAuthHeaders = (includeJson = false) => {
+  const buildRequestHeaders = (includeJson = false) => {
     const headers: Record<string, string> = {};
 
     if (includeJson) {
       headers["Content-Type"] = "application/json";
-    }
-
-    if (session?.user?.id) {
-      headers["x-user-id"] = session.user.id;
     }
 
     return headers;
@@ -368,7 +378,7 @@ export default function App() {
 
         const uploadResponse = await fetch(`${API_BASE_URL}/upload_pdf`, {
           method: "POST",
-          headers: buildAuthHeaders(false),
+          headers: buildRequestHeaders(false),
           body: formData,
         });
 
@@ -403,6 +413,8 @@ export default function App() {
 
       if (chatSessionId) {
         void persistConversationMessage(chatSessionId, assistantMessage);
+      } else if (session?.user?.id) {
+        setStatusMessage("Document uploaded. Supabase history tables are unavailable, so this session is running without saved history.");
       }
     } catch (error) {
       const message =
@@ -444,11 +456,11 @@ export default function App() {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // if (chatSessionId) {
-    //   void persistConversationMessage(chatSessionId, userMessage);
-    // } else {
-    //   setStatusMessage("Running in local mode. Sign in to keep per-user history.");
-    // }
+    if (chatSessionId) {
+      void persistConversationMessage(chatSessionId, userMessage);
+    } else if (!session?.user?.id) {
+      setStatusMessage("Running in local mode. Sign in to keep per-user history.");
+    }
 
     setIsLoading(true);
 
@@ -459,7 +471,7 @@ export default function App() {
 
       const queryResponse = await fetch(`${API_BASE_URL}/query`, {
         method: "POST",
-        headers: buildAuthHeaders(true),
+        headers: buildRequestHeaders(true),
         body: JSON.stringify({ question: trimmedContent }),
       });
 
@@ -817,9 +829,9 @@ export default function App() {
                           <div className="text-sm font-medium mb-1 line-clamp-1">
                             {conversation.title}
                           </div>
-                          <div className="text-xs text-muted-foreground line-clamp-2">
+                          {/* <div className="text-xs text-muted-foreground line-clamp-2">
                             {conversation.last_message_preview || "Session created"}
-                          </div>
+                          </div> */}
                           <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
                             {new Date(conversation.updated_at).toLocaleDateString("en-US", {
                               month: "short",
