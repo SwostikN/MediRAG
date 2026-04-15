@@ -10,33 +10,75 @@ import {
   Settings,
   FileText,
   Activity,
-  // Stethoscope,
   Plus,
   ChevronDown,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { ChatMessage } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
 import { MedicalContextPanel } from "./components/MedicalContextPanel";
 import { EmptyState } from "./components/EmptyState";
+import { AuthScreen } from "./components/AuthScreen";
 import { supabase } from "../lib/supabase";
 
 interface Message {
-  id: number;
+  id: number | string;
   role: "user" | "assistant";
   content: string;
   timestamp: string;
   renderMode?: "plain" | "query";
 }
 
+interface ChatSessionRecord {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  last_message_preview: string | null;
+}
+
+interface ChatMessageRecord {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+  render_mode: "plain" | "query" | null;
+}
+
 type DesignVariant = "classic" | "diagnostic" | "research";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
-function getTimestamp() {
-  return new Date().toLocaleTimeString("en-US", {
+function getTimestamp(date = new Date()) {
+  return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatStoredTimestamp(value: string) {
+  return getTimestamp(new Date(value));
+}
+
+function generateSessionTitle(seed: string) {
+  const trimmed = seed.trim().replace(/\s+/g, " ");
+  if (!trimmed) {
+    return "Untitled session";
+  }
+
+  return trimmed.length > 48 ? `${trimmed.slice(0, 45)}...` : trimmed;
+}
+
+function toUiMessages(rows: ChatMessageRecord[]): Message[] {
+  return rows.map((row) => ({
+    id: row.id,
+    role: row.role,
+    content: row.content,
+    timestamp: formatStoredTimestamp(row.created_at),
+    renderMode: row.render_mode ?? "plain",
+  }));
 }
 
 export default function App() {
@@ -53,6 +95,9 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState("No documents indexed yet");
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [showAuthScreen, setShowAuthScreen] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<ChatSessionRecord[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -62,6 +107,76 @@ export default function App() {
     }
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  const resetLocalConversation = (nextStatus = "No documents indexed yet") => {
+    setMessages([]);
+    setUploadedDocuments([]);
+    setCurrentSessionId(null);
+    setStatusMessage(nextStatus);
+  };
+
+  const syncUserProfile = async (activeSession: Session) => {
+    const metadata = activeSession.user.user_metadata ?? {};
+    const fullName =
+      typeof metadata.full_name === "string" && metadata.full_name.trim()
+        ? metadata.full_name.trim()
+        : null;
+
+    const { error } = await supabase.from("user_profiles").upsert(
+      [
+        {
+          id: activeSession.user.id,
+          email: activeSession.user.email,
+          full_name: fullName,
+          last_login_at: new Date().toISOString(),
+        },
+      ],
+      { onConflict: "id" },
+    );
+
+    if (error) {
+      console.warn("Supabase profile sync error:", error.message || error);
+    }
+  };
+
+  const loadConversationMessages = async (chatSessionId: string) => {
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("id, session_id, role, content, created_at, render_mode")
+      .eq("session_id", chatSessionId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    setMessages(toUiMessages((data ?? []) as ChatMessageRecord[]));
+    setCurrentSessionId(chatSessionId);
+    setUploadedDocuments([]);
+    setStatusMessage("Session restored. Re-upload the PDF if you want to continue querying.");
+  };
+
+  const loadConversationHistory = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("chat_sessions")
+      .select("id, title, created_at, updated_at, last_message_preview")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const history = (data ?? []) as ChatSessionRecord[];
+    setConversationHistory(history);
+
+    if (history.length === 0) {
+      resetLocalConversation("No saved sessions yet. Upload a PDF to begin.");
+      return;
+    }
+
+    await loadConversationMessages(history[0].id);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -75,11 +190,26 @@ export default function App() {
 
       if (error) {
         setStatusMessage(`Supabase auth error: ${error.message}`);
-      } else {
-        setSession(data.session);
+        setAuthReady(true);
+        return;
       }
 
+      const activeSession = data.session;
+      setSession(activeSession);
       setAuthReady(true);
+
+      if (!activeSession) {
+        setConversationHistory([]);
+        return;
+      }
+
+      try {
+        await syncUserProfile(activeSession);
+        await loadConversationHistory(activeSession.user.id);
+      } catch (historyError) {
+        console.warn("Failed to load chat history", historyError);
+        setStatusMessage("Signed in, but saved history could not be loaded.");
+      }
     };
 
     void loadSession();
@@ -89,6 +219,23 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setAuthReady(true);
+
+      if (!nextSession) {
+        setConversationHistory([]);
+        resetLocalConversation("Signed out. Local session cleared.");
+        return;
+      }
+
+      void (async () => {
+        try {
+          await syncUserProfile(nextSession);
+          await loadConversationHistory(nextSession.user.id);
+          setShowAuthScreen(false);
+        } catch (historyError) {
+          console.warn("Failed to refresh chat history", historyError);
+          setStatusMessage("Signed in, but saved history could not be loaded.");
+        }
+      })();
     });
 
     return () => {
@@ -101,11 +248,109 @@ export default function App() {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
-  const authLabel = !authReady
-    ? "Connecting to Supabase..."
-    : session?.user?.email
-      ? `Signed in as ${session.user.email}`
-      : "Supabase connected";
+  const upsertConversationHistory = (entry: ChatSessionRecord) => {
+    setConversationHistory((prev) =>
+      [entry, ...prev.filter((sessionItem) => sessionItem.id !== entry.id)].sort(
+        (left, right) =>
+          new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+      ),
+    );
+  };
+
+  const createConversation = async (seed: string) => {
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    const payload = {
+      user_id: session.user.id,
+      title: generateSessionTitle(seed),
+      last_message_preview: null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const { data, error } = await supabase
+      .from("chat_sessions")
+      .insert([payload])
+      .select("id, title, created_at, updated_at, last_message_preview")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const created = data as ChatSessionRecord;
+    upsertConversationHistory(created);
+    setCurrentSessionId(created.id);
+    return created.id;
+  };
+
+  const persistConversationMessage = async (
+    chatSessionId: string,
+    message: Pick<Message, "role" | "content" | "renderMode">,
+  ) => {
+    const now = new Date().toISOString();
+    const preview = message.content.slice(0, 140);
+
+    const { error: insertError } = await supabase.from("chat_messages").insert([
+      {
+        session_id: chatSessionId,
+        role: message.role,
+        content: message.content,
+        render_mode: message.renderMode ?? "plain",
+      },
+    ]);
+
+    if (insertError) {
+      console.warn("Supabase message insert error:", insertError.message || insertError);
+      return;
+    }
+
+    const { data: updatedSession, error: updateError } = await supabase
+      .from("chat_sessions")
+      .update({
+        updated_at: now,
+        last_message_preview: preview,
+      })
+      .eq("id", chatSessionId)
+      .select("id, title, created_at, updated_at, last_message_preview")
+      .single();
+
+    if (updateError) {
+      console.warn("Supabase session update error:", updateError.message || updateError);
+      return;
+    }
+
+    upsertConversationHistory(updatedSession as ChatSessionRecord);
+  };
+
+  const ensureConversationId = async (seed: string) => {
+    if (currentSessionId) {
+      return currentSessionId;
+    }
+
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    return createConversation(seed);
+  };
+
+  const buildAuthHeaders = (includeJson = false) => {
+    const headers: Record<string, string> = {};
+
+    if (includeJson) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    if (session?.user?.id) {
+      headers["x-user-id"] = session.user.id;
+    }
+
+    return headers;
+  };
 
   const handleUploadPdf = async (files: File[]) => {
     if (files.length === 0) {
@@ -115,6 +360,7 @@ export default function App() {
     setIsLoading(true);
     try {
       const uploadedPdfNames: string[] = [];
+      const chatSessionId = await ensureConversationId(files[0].name);
 
       for (const file of files) {
         const formData = new FormData();
@@ -122,6 +368,7 @@ export default function App() {
 
         const uploadResponse = await fetch(`${API_BASE_URL}/upload_pdf`, {
           method: "POST",
+          headers: buildAuthHeaders(false),
           body: formData,
         });
 
@@ -132,49 +379,31 @@ export default function App() {
         }
 
         uploadedPdfNames.push(file.name);
-
-        // Save metadata to Supabase `document` table (if exists)
-        try {
-          const { data: docData, error: docError } = await supabase
-            .from("document")
-            .insert([
-              {
-                user_id: session?.user?.id ?? null,
-                title: file.name,
-                upload_date: new Date().toISOString(),
-              },
-            ])
-            .select()
-            .single();
-
-          if (docError) {
-            console.warn("Supabase insert document error:", docError.message || docError);
-          } else {
-            console.debug("Inserted document row:", docData);
-          }
-        } catch (e) {
-          console.warn("Supabase document insert failed", e);
-        }
       }
 
-      setUploadedDocuments((prev) => {
-        const merged = new Set([...prev, ...uploadedPdfNames]);
-        return Array.from(merged);
-      });
-      setStatusMessage(`Indexed ${uploadedPdfNames.length} PDF file(s)`);
+      setUploadedDocuments((prev) => Array.from(new Set([...prev, ...uploadedPdfNames])));
+      setStatusMessage(
+        session?.user?.id
+          ? `Indexed ${uploadedPdfNames.length} PDF file(s) and linked them to your account.`
+          : `Indexed ${uploadedPdfNames.length} PDF file(s) in local mode.`,
+      );
+
       const uploadedLabel =
         uploadedPdfNames.length === 1 ? uploadedPdfNames[0] : `${uploadedPdfNames.length} documents`;
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          role: "assistant",
-          content: `${uploadedLabel} uploaded successfully. Your document is ready, and you can now ask questions about its contents.`,
-          timestamp: getTimestamp(),
-          renderMode: "plain",
-        },
-      ]);
+      const assistantMessage: Message = {
+        id: Date.now(),
+        role: "assistant",
+        content: `${uploadedLabel} uploaded successfully. Your document is ready, and you can now ask questions about its contents.`,
+        timestamp: getTimestamp(),
+        renderMode: "plain",
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      if (chatSessionId) {
+        void persistConversationMessage(chatSessionId, assistantMessage);
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong while uploading the PDF";
@@ -199,59 +428,38 @@ export default function App() {
     const trimmedContent = content.trim();
     const timestamp = getTimestamp();
 
-    if (trimmedContent) {
-      const userMessage: Message = {
-        id: Date.now(),
-        role: "user",
-        content: trimmedContent,
-        timestamp,
-        renderMode: "plain",
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
+    if (!trimmedContent) {
+      return;
     }
+
+    const chatSessionId = await ensureConversationId(trimmedContent);
+
+    const userMessage: Message = {
+      id: Date.now(),
+      role: "user",
+      content: trimmedContent,
+      timestamp,
+      renderMode: "plain",
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    // if (chatSessionId) {
+    //   void persistConversationMessage(chatSessionId, userMessage);
+    // } else {
+    //   setStatusMessage("Running in local mode. Sign in to keep per-user history.");
+    // }
 
     setIsLoading(true);
 
-    // Persist the query to Supabase `query` table (non-blocking) and capture its id
-    let insertedQueryId: number | null = null;
     try {
-      const { data: insertedQuery, error: insertQueryError } = await supabase
-        .from("query")
-        .insert([
-          {
-            user_id: session?.user?.id ?? null,
-            query_text: trimmedContent,
-            timestamp: new Date().toISOString(),
-          },
-        ])
-        .select()
-        .single();
-
-      if (insertQueryError) {
-        console.warn("Supabase insert query error:", insertQueryError.message || insertQueryError);
-      } else if (insertedQuery) {
-        insertedQueryId = (insertedQuery.query_id as number) ?? (insertedQuery.id as number) ?? null;
-        console.debug("Inserted query row id:", insertedQueryId);
-      }
-    } catch (e) {
-      console.warn("Supabase query insert failed", e);
-    }
-
-    try {
-      if (!trimmedContent) {
-        return;
-      }
-
       if (uploadedDocuments.length === 0) {
         throw new Error("Upload a PDF first so the backend can index it before querying.");
       }
 
       const queryResponse = await fetch(`${API_BASE_URL}/query`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: buildAuthHeaders(true),
         body: JSON.stringify({ question: trimmedContent }),
       });
 
@@ -261,49 +469,38 @@ export default function App() {
         throw new Error(queryPayload.detail || "Failed to query document");
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 2,
-          role: "assistant",
-          content: queryPayload.answer,
-          timestamp: getTimestamp(),
-          renderMode: "query",
-        },
-      ]);
-      setStatusMessage("Backend response received");
-      // Persist response to Supabase `response` table (non-blocking)
-      try {
-        const { error: respError } = await supabase.from("response").insert([
-          {
-            query_id: insertedQueryId,
-            answer: queryPayload.answer,
-            confidence_score: queryPayload.confidence ?? null,
-            freshness_score: queryPayload.freshness ?? null,
-          },
-        ]);
+      const assistantMessage: Message = {
+        id: Date.now() + 2,
+        role: "assistant",
+        content: queryPayload.answer,
+        timestamp: getTimestamp(),
+        renderMode: "query",
+      };
 
-        if (respError) {
-          console.warn("Supabase insert response error:", respError.message || respError);
-        }
-      } catch (e) {
-        console.warn("Supabase response insert failed", e);
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStatusMessage("Backend response received");
+
+      if (chatSessionId) {
+        void persistConversationMessage(chatSessionId, assistantMessage);
       }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong while contacting the backend";
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 3,
-          role: "assistant",
-          content: `Error: ${message}`,
-          timestamp: getTimestamp(),
-          renderMode: "plain",
-        },
-      ]);
+      const errorAssistantMessage: Message = {
+        id: Date.now() + 3,
+        role: "assistant",
+        content: `Error: ${message}`,
+        timestamp: getTimestamp(),
+        renderMode: "plain",
+      };
+
+      setMessages((prev) => [...prev, errorAssistantMessage]);
       setStatusMessage("Request failed");
+
+      if (chatSessionId) {
+        void persistConversationMessage(chatSessionId, errorAssistantMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -313,7 +510,76 @@ export default function App() {
     void handleSendMessage(prompt);
   };
 
-  const contextMetrics: Array<{ label: string; value: string | number; change: string; status: "good" | "warning" }> = [
+  const handleOpenConversation = (chatSessionId: string) => {
+    void loadConversationMessages(chatSessionId);
+  };
+
+  const handleStartNewSession = () => {
+    resetLocalConversation(
+      session?.user?.id
+        ? "Ready for a new saved session."
+        : "New local session ready. Sign in to save future history.",
+    );
+  };
+
+  const handleSignIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      throw error;
+    }
+
+    setStatusMessage("Signed in successfully.");
+    setShowAuthScreen(false);
+  };
+
+  const handleSignUp = async (email: string, password: string, fullName: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.session) {
+      setStatusMessage("Account created and signed in.");
+      setShowAuthScreen(false);
+      return;
+    }
+
+    setStatusMessage("Account created. Check your email to confirm, then sign in.");
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.warn("Supabase sign out error:", error.message || error);
+      return;
+    }
+
+    setShowAuthScreen(false);
+  };
+
+  const authLabel = !authReady
+    ? "Connecting to Supabase..."
+    : session?.user?.email
+      ? `Signed in as ${session.user.email}`
+      : "";
+
+  const contextMetrics: Array<{
+    label: string;
+    value: string | number;
+    change: string;
+    status: "good" | "warning";
+  }> = [
     {
       label: "Query Status",
       value: isLoading ? "Running" : "Ready",
@@ -340,6 +606,19 @@ export default function App() {
     quality: uploadedDocuments.length > 0 ? 0.96 : 0.0,
   };
 
+  const isDesktop = typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+
+  if (showAuthScreen) {
+    return (
+      <AuthScreen
+        onBack={() => setShowAuthScreen(false)}
+        onSignIn={handleSignIn}
+        onSignUp={handleSignUp}
+        statusMessage={statusMessage}
+      />
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
       <div
@@ -361,7 +640,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             {messages.length > 0 && (
               <button
-                onClick={() => setMessages([])}
+                onClick={handleStartNewSession}
                 className="p-2 hover:bg-muted rounded-lg transition-colors"
                 aria-label="Back to home"
               >
@@ -381,16 +660,12 @@ export default function App() {
                 src="/Documed_Logo.png"
                 alt="DocuMed AI Logo"
                 className="w-40 h-16 rounded-lg object-contain"
-                style={{ transform: 'scale(1.8)', transformOrigin: 'left center' }}
+                style={{ transform: "scale(1.8)", transformOrigin: "left center" }}
               />
               <div>
                 <h1 className="text-lg font-medium">DocuMed AI</h1>
-                <p className="text-xs text-muted-foreground font-mono">
-                  Medical Chat Interface
-                </p>
-                <p className="text-xs text-muted-foreground/80">
-                  {authLabel}
-                </p>
+                <p className="text-xs text-muted-foreground font-mono">Medical Chat Interface</p>
+                <p className="text-xs text-muted-foreground/80">{authLabel}</p>
               </div>
             </div>
           </div>
@@ -429,6 +704,26 @@ export default function App() {
               </button>
             </div>
 
+            {!session ? (
+              <button
+                onClick={() => setShowAuthScreen(true)}
+                className="hidden md:inline-flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/10 px-3 py-2 text-sm text-accent transition-colors hover:bg-accent/15"
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  void handleSignOut();
+                }}
+                className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            )}
+
             <button className="p-2 hover:bg-muted rounded-lg transition-colors">
               <Search className="w-5 h-5" />
             </button>
@@ -460,27 +755,21 @@ export default function App() {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-accent" />
-                <span className="text-xs font-mono text-muted-foreground">
-                  System Status:
-                </span>
+                <span className="text-xs font-mono text-muted-foreground">System Status:</span>
                 <span className="text-xs font-mono font-medium text-accent">
                   {isLoading ? "Processing" : "Optimal"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs font-mono text-muted-foreground">
-                  Active Sources:
-                </span>
+                <span className="text-xs font-mono text-muted-foreground">Active Sources:</span>
                 <span className="text-xs font-mono font-medium">
                   {uploadedDocuments.length} indexed PDF(s)
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                <span className="text-xs font-mono text-muted-foreground">
-                  {statusMessage}
-                </span>
+                <span className="text-xs font-mono text-muted-foreground">{statusMessage}</span>
               </div>
             </div>
           </motion.div>
@@ -489,7 +778,7 @@ export default function App() {
 
       <div className="flex-1 flex overflow-hidden relative">
         <AnimatePresence>
-          {(showSidebar || window.innerWidth >= 1024) && (
+          {(showSidebar || isDesktop) && (
             <motion.aside
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -499,10 +788,7 @@ export default function App() {
             >
               <div className="p-4 border-b border-border">
                 <button
-                  onClick={() => {
-                    setMessages([]);
-                    setStatusMessage("Session reset");
-                  }}
+                  onClick={handleStartNewSession}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity"
                 >
                   <Plus className="w-4 h-4" />
@@ -511,7 +797,48 @@ export default function App() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.length > 0 ? (
+                {session?.user?.id ? (
+                  conversationHistory.length > 0 ? (
+                    <>
+                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                        Saved Sessions
+                      </div>
+
+                      {conversationHistory.map((conversation) => (
+                        <button
+                          key={conversation.id}
+                          onClick={() => handleOpenConversation(conversation.id)}
+                          className={`w-full text-left px-3 py-3 rounded-lg transition-colors ${
+                            currentSessionId === conversation.id
+                              ? "bg-accent/10 border border-accent/20"
+                              : "hover:bg-muted/50 border border-transparent"
+                          }`}
+                        >
+                          <div className="text-sm font-medium mb-1 line-clamp-1">
+                            {conversation.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground line-clamp-2">
+                            {conversation.last_message_preview || "Session created"}
+                          </div>
+                          <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
+                            {new Date(conversation.updated_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                      <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                      <p className="text-sm text-muted-foreground">No sessions yet</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        Upload a PDF and start a conversation
+                      </p>
+                    </div>
+                  )
+                ) : messages.length > 0 ? (
                   <>
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
                       Recent Activity
@@ -542,6 +869,13 @@ export default function App() {
                     <p className="text-xs text-muted-foreground/70 mt-1">
                       Upload a PDF and start a conversation
                     </p>
+                    <button
+                      onClick={() => setShowAuthScreen(true)}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm text-accent transition-colors hover:bg-accent/15"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      Login
+                    </button>
                   </div>
                 )}
               </div>
@@ -588,44 +922,44 @@ export default function App() {
                   }}
                 />
                 <div className="relative z-10 h-full overflow-y-auto px-6 pt-6 pb-44 space-y-6">
-                <AnimatePresence mode="popLayout">
-                  {messages.map((message) => (
-                    <ChatMessage key={message.id} {...message} />
-                  ))}
-                </AnimatePresence>
+                  <AnimatePresence mode="popLayout">
+                    {messages.map((message) => (
+                      <ChatMessage key={message.id} {...message} />
+                    ))}
+                  </AnimatePresence>
 
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-4"
-                  >
-                    <div className="max-w-[80%]">
-                      <div className="bg-card border border-border rounded-xl p-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <div
-                              className="w-2 h-2 rounded-full bg-accent animate-pulse"
-                              style={{ animationDelay: "0ms" }}
-                            />
-                            <div
-                              className="w-2 h-2 rounded-full bg-accent animate-pulse"
-                              style={{ animationDelay: "150ms" }}
-                            />
-                            <div
-                              className="w-2 h-2 rounded-full bg-accent animate-pulse"
-                              style={{ animationDelay: "300ms" }}
-                            />
+                  {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex gap-4"
+                    >
+                      <div className="max-w-[80%]">
+                        <div className="bg-card border border-border rounded-xl p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              <div
+                                className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                                style={{ animationDelay: "0ms" }}
+                              />
+                              <div
+                                className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                                style={{ animationDelay: "150ms" }}
+                              />
+                              <div
+                                className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                                style={{ animationDelay: "300ms" }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              Contacting DocuMed AI backend...
+                            </span>
                           </div>
-                          <span className="text-sm text-muted-foreground">
-                            Contacting DocuMed AI backend...
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+                    </motion.div>
+                  )}
+                </div>
               </div>
 
               <div className="sticky bottom-0 z-20 px-3 pb-3 sm:px-6 sm:pb-5 bg-background">

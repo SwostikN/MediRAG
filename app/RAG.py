@@ -107,7 +107,7 @@ def extract_text_from_pdf(file: UploadFile) -> str:
 # Upload PDF
 # --------------------------------------------------
 @app.post("/upload_pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(request: Request, file: UploadFile = File(...)):
     global retriever
 
     if not file.filename.lower().endswith(".pdf"):
@@ -136,9 +136,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     # Persist document and chunks to Supabase if configured
     try:
         # Try to read optional user id passed in header `x-user-id` (client may supply)
-        user_id = None
-        # Note: we don't have access to Request object here; callers can later call our
-        # helper API or we can expand this endpoint to accept a user_id param.
+        user_id = request.headers.get("x-user-id")
         doc_res = insert_document(file.filename, user_id)
         if isinstance(doc_res, dict) and doc_res.get("error"):
             print("supabase: document insert error", doc_res.get("error"))

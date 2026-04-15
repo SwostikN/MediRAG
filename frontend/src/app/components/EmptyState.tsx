@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Sparkles,
   ChevronRight,
+  LogIn,
 } from "lucide-react";
 
 interface ExamplePrompt {
@@ -26,9 +27,16 @@ interface ExamplePrompt {
 interface EmptyStateProps {
   onPromptClick: (prompt: string) => void;
   inputElement?: ReactNode;
+  onLoginClick?: () => void;
+  showLoginButton?: boolean;
 }
 
-export function EmptyState({ onPromptClick, inputElement }: EmptyStateProps) {
+export function EmptyState({
+  onPromptClick,
+  inputElement,
+  onLoginClick,
+  showLoginButton = false,
+}: EmptyStateProps) {
   const examplePrompts: ExamplePrompt[] = [
     {
       icon: <Heart className="w-5 h-5" />,
@@ -179,6 +187,18 @@ export function EmptyState({ onPromptClick, inputElement }: EmptyStateProps) {
             insights from millions of peer-reviewed sources. Ask anything, get precise
             clinical answers.
           </p>
+
+          {showLoginButton && onLoginClick && (
+            <div className="mb-8 flex justify-center">
+              <button
+                onClick={onLoginClick}
+                className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-5 py-2.5 text-sm text-accent transition-all hover:-translate-y-0.5 hover:bg-accent/15"
+              >
+                <LogIn className="h-4 w-4" />
+                Login to sync your chats
+              </button>
+            </div>
+          )}
 
           {/* Stats bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-12">
