@@ -9,7 +9,7 @@ import {
   Settings,
   FileText,
   Activity,
-  Stethoscope,
+  // Stethoscope,
   Plus,
   ChevronDown,
 } from "lucide-react";
@@ -38,7 +38,10 @@ function getTimestamp() {
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const saved = localStorage.getItem("theme");
+    return (saved as "light" | "dark") || "light";
+  });
   const [variant, setVariant] = useState<DesignVariant>("classic");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +56,7 @@ export default function App() {
     } else {
       document.documentElement.classList.remove("dark");
     }
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -245,7 +249,7 @@ export default function App() {
         animate={{ y: 0, opacity: 1 }}
         className="relative z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       >
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between pl-3 pr-6 py-4">
           <div className="flex items-center gap-4">
             {messages.length > 0 && (
               <button
@@ -264,11 +268,12 @@ export default function App() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-20">
               <img
                 src="/Documed_Logo.png"
                 alt="DocuMed AI Logo"
                 className="w-40 h-16 rounded-lg object-contain"
+                style={{ transform: 'scale(1.8)', transformOrigin: 'left center' }}
               />
               <div>
                 <h1 className="text-lg font-medium">DocuMed AI</h1>
@@ -446,7 +451,9 @@ export default function App() {
                     void handleUploadPdf(files);
                   }}
                   isLoading={isLoading}
-                  centered={true}
+                  centered={false}
+                  docked={true}
+                  opaque={true}
                   placeholder={
                     variant === "research"
                       ? "Upload PDFs or query your indexed medical research..."
@@ -459,7 +466,17 @@ export default function App() {
             />
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              <div className="relative flex-1 overflow-hidden">
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-40 z-0"
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? "radial-gradient(circle at top, rgba(0, 191, 165, 0.14), transparent 70%)"
+                        : "radial-gradient(circle at top, rgba(0, 191, 165, 0.12), transparent 72%)",
+                  }}
+                />
+                <div className="relative z-10 h-full overflow-y-auto px-6 pt-6 pb-44 space-y-6">
                 <AnimatePresence mode="popLayout">
                   {messages.map((message) => (
                     <ChatMessage key={message.id} {...message} />
@@ -498,24 +515,32 @@ export default function App() {
                   </motion.div>
                 )}
               </div>
+              </div>
 
-              <ChatInput
-                onSend={(message) => {
-                  void handleSendMessage(message);
-                }}
-                onUpload={(files) => {
-                  void handleUploadPdf(files);
-                }}
-                isLoading={isLoading}
-                centered={false}
-                placeholder={
-                  variant === "research"
-                    ? "Query your indexed medical literature..."
-                    : variant === "diagnostic"
-                      ? "Ask a question grounded in the uploaded PDF..."
-                      : "Ask about the uploaded document..."
-                }
-              />
+              <div className="sticky bottom-0 z-20 px-3 pb-3 sm:px-6 sm:pb-5 bg-background">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-background" />
+                <div className="relative">
+                  <ChatInput
+                    onSend={(message) => {
+                      void handleSendMessage(message);
+                    }}
+                    onUpload={(files) => {
+                      void handleUploadPdf(files);
+                    }}
+                    isLoading={isLoading}
+                    centered={false}
+                    docked={true}
+                    opaque={true}
+                    placeholder={
+                      variant === "research"
+                        ? "Query your indexed medical literature..."
+                        : variant === "diagnostic"
+                          ? "Ask a question grounded in the uploaded PDF..."
+                          : "Ask about the uploaded document..."
+                    }
+                  />
+                </div>
+              </div>
             </>
           )}
         </div>

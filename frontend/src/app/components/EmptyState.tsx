@@ -96,7 +96,7 @@ export function EmptyState({ onPromptClick, inputElement }: EmptyStateProps) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-12" style={{ marginTop: "-30px" }}>
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -199,11 +199,29 @@ export function EmptyState({ onPromptClick, inputElement }: EmptyStateProps) {
           </div>
         </motion.div>
 
+        {inputElement && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="sticky top-4 z-20 mb-12"
+          >
+            <div className="py-1">
+              {inputElement}
+              <div className="text-center mt-3">
+                <p className="text-xs text-muted-foreground font-mono">
+                  Press <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Enter</kbd> to send • <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Shift+Enter</kbd> for new line
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Example Prompts */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.25, duration: 0.5 }}
           className="mb-16"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -284,22 +302,6 @@ export function EmptyState({ onPromptClick, inputElement }: EmptyStateProps) {
           </div>
         </motion.div>
 
-        {/* Centered Input */}
-        {inputElement && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            className="mt-12"
-          >
-            {inputElement}
-            <div className="text-center mt-4">
-              <p className="text-xs text-muted-foreground font-mono">
-                Press <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Enter</kbd> to send • <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Shift+Enter</kbd> for new line
-              </p>
-            </div>
-          </motion.div>
-        )}
       </div>
     </div>
   );

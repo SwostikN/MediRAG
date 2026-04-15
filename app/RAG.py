@@ -160,7 +160,7 @@ async def query_document(query: QueryRequest):
         {
             "role": "system",
             "content": (
-                "You are an AI assistant that answers strictly using the given context. "
+                "You are an AI assistant for healthcare data that answers strictly using the given context. "
                 "If the answer is not present, say so clearly."
             ),
         },
