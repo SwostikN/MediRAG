@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import type { Session } from "@supabase/supabase-js";
 import {
   ArrowLeft,
   Sun,
@@ -17,6 +18,7 @@ import { ChatMessage } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
 import { MedicalContextPanel } from "./components/MedicalContextPanel";
 import { EmptyState } from "./components/EmptyState";
+import { supabase } from "../lib/supabase";
 
 interface Message {
   id: number;
@@ -49,6 +51,8 @@ export default function App() {
   const [showContextPanel, setShowContextPanel] = useState(true);
   const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState("No documents indexed yet");
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -59,9 +63,49 @@ export default function App() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (error) {
+        setStatusMessage(`Supabase auth error: ${error.message}`);
+      } else {
+        setSession(data.session);
+      }
+
+      setAuthReady(true);
+    };
+
+    void loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");
   };
+
+  const authLabel = !authReady
+    ? "Connecting to Supabase..."
+    : session?.user?.email
+      ? `Signed in as ${session.user.email}`
+      : "Supabase connected";
 
   const handleUploadPdf = async (files: File[]) => {
     if (files.length === 0) {
@@ -69,7 +113,6 @@ export default function App() {
     }
 
     setIsLoading(true);
-
     try {
       const uploadedPdfNames: string[] = [];
 
@@ -89,6 +132,29 @@ export default function App() {
         }
 
         uploadedPdfNames.push(file.name);
+
+        // Save metadata to Supabase `document` table (if exists)
+        try {
+          const { data: docData, error: docError } = await supabase
+            .from("document")
+            .insert([
+              {
+                user_id: session?.user?.id ?? null,
+                title: file.name,
+                upload_date: new Date().toISOString(),
+              },
+            ])
+            .select()
+            .single();
+
+          if (docError) {
+            console.warn("Supabase insert document error:", docError.message || docError);
+          } else {
+            console.debug("Inserted document row:", docData);
+          }
+        } catch (e) {
+          console.warn("Supabase document insert failed", e);
+        }
       }
 
       setUploadedDocuments((prev) => {
@@ -147,6 +213,31 @@ export default function App() {
 
     setIsLoading(true);
 
+    // Persist the query to Supabase `query` table (non-blocking) and capture its id
+    let insertedQueryId: number | null = null;
+    try {
+      const { data: insertedQuery, error: insertQueryError } = await supabase
+        .from("query")
+        .insert([
+          {
+            user_id: session?.user?.id ?? null,
+            query_text: trimmedContent,
+            timestamp: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertQueryError) {
+        console.warn("Supabase insert query error:", insertQueryError.message || insertQueryError);
+      } else if (insertedQuery) {
+        insertedQueryId = (insertedQuery.query_id as number) ?? (insertedQuery.id as number) ?? null;
+        console.debug("Inserted query row id:", insertedQueryId);
+      }
+    } catch (e) {
+      console.warn("Supabase query insert failed", e);
+    }
+
     try {
       if (!trimmedContent) {
         return;
@@ -181,6 +272,23 @@ export default function App() {
         },
       ]);
       setStatusMessage("Backend response received");
+      // Persist response to Supabase `response` table (non-blocking)
+      try {
+        const { error: respError } = await supabase.from("response").insert([
+          {
+            query_id: insertedQueryId,
+            answer: queryPayload.answer,
+            confidence_score: queryPayload.confidence ?? null,
+            freshness_score: queryPayload.freshness ?? null,
+          },
+        ]);
+
+        if (respError) {
+          console.warn("Supabase insert response error:", respError.message || respError);
+        }
+      } catch (e) {
+        console.warn("Supabase response insert failed", e);
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong while contacting the backend";
@@ -279,6 +387,9 @@ export default function App() {
                 <h1 className="text-lg font-medium">DocuMed AI</h1>
                 <p className="text-xs text-muted-foreground font-mono">
                   Medical Chat Interface
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  {authLabel}
                 </p>
               </div>
             </div>

@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from PyPDF2 import PdfReader
@@ -14,10 +16,20 @@ from langchain_core.documents import Document
 
 try:
     from .middleware import add_cors_middleware
+    from .supabase_client import (
+        insert_chunk,
+        insert_document,
+        insert_query,
+        insert_response,
+    )
 except ImportError:
     from middleware import add_cors_middleware
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+    from supabase_client import (
+        insert_chunk,
+        insert_document,
+        insert_query,
+        insert_response,
+    )
 
 # --------------------------------------------------
 # App setup
@@ -121,6 +133,32 @@ async def upload_pdf(file: UploadFile = File(...)):
     vectorstore = FAISS.from_documents(chunks, embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 
+    # Persist document and chunks to Supabase if configured
+    try:
+        # Try to read optional user id passed in header `x-user-id` (client may supply)
+        user_id = None
+        # Note: we don't have access to Request object here; callers can later call our
+        # helper API or we can expand this endpoint to accept a user_id param.
+        doc_res = insert_document(file.filename, user_id)
+        if isinstance(doc_res, dict) and doc_res.get("error"):
+            print("supabase: document insert error", doc_res.get("error"))
+        else:
+            # doc_res should be a list with the inserted row representation
+            try:
+                inserted = doc_res[0]
+                doc_id = inserted.get("doc_id") or inserted.get("id")
+            except Exception:
+                doc_id = None
+
+            if doc_id is not None:
+                for chunk in chunks:
+                    try:
+                        insert_chunk(doc_id, chunk.page_content)
+                    except Exception as e:
+                        print("supabase: insert_chunk failed", e)
+    except Exception as e:
+        print("supabase: failed to persist document/chunks", e)
+
     return {"message": "PDF uploaded and indexed successfully"}
 
 
@@ -132,7 +170,7 @@ class QueryRequest(BaseModel):
 
 
 @app.post("/query")
-async def query_document(query: QueryRequest):
+async def query_document(query: QueryRequest, request: Request):
     if retriever is None:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet")
 
@@ -183,6 +221,32 @@ async def query_document(query: QueryRequest):
             detail="Failed to parse Cohere response"
         )
 
+    # Persist query + response to Supabase (server-side)
+    try:
+        user_id = None
+        # try to read authenticated user id from request headers if client sends it
+        if "x-user-id" in request.headers:
+            user_id = request.headers.get("x-user-id")
+
+        qres = insert_query(query.question, user_id)
+        inserted_query_id = None
+        if isinstance(qres, dict) and qres.get("error"):
+            print("supabase: query insert error", qres.get("error"))
+        else:
+            try:
+                inserted = qres[0]
+                inserted_query_id = inserted.get("query_id") or inserted.get("id")
+            except Exception:
+                inserted_query_id = None
+
+        # insert response row
+        try:
+            insert_response(inserted_query_id, answer, None, None)
+        except Exception as e:
+            print("supabase: insert_response failed", e)
+    except Exception as e:
+        print("supabase: failed to persist query/response", e)
+
     return {"answer": answer}
 
 
@@ -204,3 +268,9 @@ async def serve_spa(full_path: str):
             "docs_url": "/docs",
         },
     )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
