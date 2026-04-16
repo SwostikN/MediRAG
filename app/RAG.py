@@ -1,8 +1,9 @@
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Optional, Tuple
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -11,27 +12,26 @@ import pymupdf
 
 import cohere  # Official Cohere SDK
 
-from langchain_cohere import CohereEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 try:
     from .middleware import add_cors_middleware
     from .supabase_client import (
         insert_chunk,
         insert_document,
-        insert_query,
-        insert_response,
+        match_chunks,
     )
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
         insert_chunk,
         insert_document,
-        insert_query,
-        insert_response,
+        match_chunks,
     )
+
+from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
 # --------------------------------------------------
 # App setup
@@ -58,8 +58,32 @@ if not COHERE_API_KEY:
 # Cohere Chat Client (NEW API)
 co = cohere.ClientV2(api_key=COHERE_API_KEY)
 
-# In-memory vector store (Fargate-safe)
-retriever = None
+_article_encoder: Optional[ArticleEncoder] = None
+_query_encoder: Optional[QueryEncoder] = None
+
+
+def get_article_encoder() -> ArticleEncoder:
+    global _article_encoder
+    if _article_encoder is None:
+        _article_encoder = ArticleEncoder()
+    return _article_encoder
+
+
+def get_query_encoder() -> QueryEncoder:
+    global _query_encoder
+    if _query_encoder is None:
+        _query_encoder = QueryEncoder()
+    return _query_encoder
+
+
+MEDIRAG_SYSTEM_PROMPT = (
+    "You are MediRAG, a Nepal-focused health navigator. "
+    "Answer strictly using the provided sources. "
+    "Do not give a diagnosis for the user. "
+    "Do not recommend medications, doses, or treatments. "
+    "Always frame answers as information to discuss with a doctor. "
+    "If a claim is not supported by the sources, say you don't have a source for it."
+)
 
 @app.get("/")
 async def serve_frontend():
@@ -137,8 +161,6 @@ def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
 # --------------------------------------------------
 @app.post("/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):
-    global retriever
-
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -146,58 +168,48 @@ async def upload_pdf(file: UploadFile = File(...)):
     if not text:
         raise HTTPException(status_code=400, detail="No text found in PDF")
 
-    documents = [Document(page_content=text)]
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
+    chunks = [c for c in splitter.split_text(text) if c.strip()]
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100
+    title = pdf_metadata.get("title") or file.filename
+    doc_res = insert_document(
+        title=title,
+        source="user-upload",
+        authority_tier=5,
+        doc_type="reference",
+        publication_date=pdf_metadata.get("creation_date"),
     )
-    chunks = splitter.split_documents(documents)
-
-    embeddings = CohereEmbeddings(
-        model="embed-english-v3.0",
-        cohere_api_key=COHERE_API_KEY
-    )
-
-    vectorstore = FAISS.from_documents(chunks, embeddings)
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-
-    # Persist document and chunks to Supabase if configured.
-    # NOTE: this still treats user uploads as corpus documents. Stage 4
-    # (Week 9) will route patient lab PDFs into `user_reports` instead.
+    if isinstance(doc_res, dict) and doc_res.get("error"):
+        raise HTTPException(status_code=502, detail=f"supabase: document insert failed: {doc_res['error']}")
     try:
-        title = pdf_metadata.get("title") or file.filename
-        doc_res = insert_document(
-            title=title,
-            source="user-upload",
-            authority_tier=5,
-            doc_type="reference",
-            publication_date=pdf_metadata.get("creation_date"),
+        doc_id = doc_res[0].get("doc_id") or doc_res[0].get("id")
+    except Exception:
+        raise HTTPException(status_code=502, detail="supabase: could not parse document insert response")
+
+    try:
+        pairs = [(title, c) for c in chunks]
+        vectors = get_article_encoder().encode(pairs)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MedCPT embedding failed: {exc}")
+
+    chunk_errors = 0
+    for ord_index, (chunk_text, vec) in enumerate(zip(chunks, vectors)):
+        res = insert_chunk(
+            doc_id,
+            ord_index,
+            chunk_text,
+            token_count=len(chunk_text.split()),
+            embedding=to_pgvector_literal(vec),
         )
-        if isinstance(doc_res, dict) and doc_res.get("error"):
-            print("supabase: document insert error", doc_res.get("error"))
-        else:
-            try:
-                inserted = doc_res[0]
-                doc_id = inserted.get("doc_id") or inserted.get("id")
-            except Exception:
-                doc_id = None
+        if isinstance(res, dict) and res.get("error"):
+            chunk_errors += 1
 
-            if doc_id is not None:
-                for ord_index, chunk in enumerate(chunks):
-                    try:
-                        insert_chunk(
-                            doc_id,
-                            ord_index,
-                            chunk.page_content,
-                            token_count=len(chunk.page_content.split()),
-                        )
-                    except Exception as e:
-                        print("supabase: insert_chunk failed", e)
-    except Exception as e:
-        print("supabase: failed to persist document/chunks", e)
-
-    return {"message": "PDF uploaded and indexed successfully"}
+    return {
+        "message": "PDF uploaded and indexed",
+        "doc_id": doc_id,
+        "chunks": len(chunks),
+        "chunk_errors": chunk_errors,
+    }
 
 
 # --------------------------------------------------
@@ -207,85 +219,60 @@ class QueryRequest(BaseModel):
     question: str
 
 
+TOP_K = 10
+CONTEXT_CHUNKS = 6
+
+
 @app.post("/query")
-async def query_document(query: QueryRequest, request: Request):
-    if retriever is None:
-        raise HTTPException(status_code=400, detail="No PDF uploaded yet")
+async def query_document(query: QueryRequest):
+    q_vec = get_query_encoder().encode_one(query.question)
+    rows = match_chunks(to_pgvector_literal(q_vec), match_count=TOP_K)
 
-    # ✅ Correct modern LangChain retriever usage
-    docs = retriever.invoke(query.question)
+    if not rows:
+        return {
+            "answer": (
+                "I don't have enough reliable information to answer this safely yet. "
+                "The corpus may not be populated. Please ingest sources first or ask your doctor."
+            ),
+            "sources": [],
+        }
 
-    if not docs:
-        return {"answer": "The information is not mentioned in the provided context."}
+    top_rows = rows[:CONTEXT_CHUNKS]
+    context_blocks = []
+    for i, r in enumerate(top_rows, start=1):
+        heading = r.get("section_heading") or ""
+        title = r.get("doc_title") or r.get("doc_source") or "source"
+        context_blocks.append(f"[src:{i}] {title} — {heading}\n{r.get('content', '')}".strip())
+    context_text = "\n\n".join(context_blocks)
 
-    context_text = "\n\n".join(doc.page_content for doc in docs)
-    # sources = []
-    # for index, doc in enumerate(docs, start=1):
-    #     excerpt = doc.page_content[:280].strip()
-    #     if len(doc.page_content) > 280:
-    #         excerpt += "..."
-    #     sources.append(
-    #         {
-    #             "title": f"Retrieved chunk {index}",
-    #             "excerpt": excerpt,
-    #             "confidence": max(0.6, 0.95 - (index - 1) * 0.1),
-    #         }
-    #     )
+    sources = [
+        {
+            "rank": i,
+            "title": r.get("doc_title"),
+            "source": r.get("doc_source"),
+            "source_url": r.get("doc_source_url"),
+            "similarity": r.get("similarity"),
+            "authority_tier": r.get("doc_authority_tier"),
+            "publication_date": r.get("doc_publication_date"),
+        }
+        for i, r in enumerate(top_rows, start=1)
+    ]
 
     messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are an AI assistant for healthcare data that answers strictly using the given context. "
-                "If the answer is not present, say so clearly."
-            ),
-        },
+        {"role": "system", "content": MEDIRAG_SYSTEM_PROMPT},
         {
             "role": "user",
-            "content": f"Context:\n{context_text}\n\nQuestion: {query.question}",
+            "content": f"Sources:\n{context_text}\n\nQuestion: {query.question}",
         },
     ]
 
-    response = co.chat(
-        model="command-a-03-2025",
-        messages=messages
-    )
-
+    response = co.chat(model="command-a-03-2025", messages=messages)
     try:
         answer = response.message.content[0].text
     except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to parse Cohere response"
-        )
+        raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
-    # Persist query + response to Supabase (server-side)
-    try:
-        user_id = None
-        # try to read authenticated user id from request headers if client sends it
-        if "x-user-id" in request.headers:
-            user_id = request.headers.get("x-user-id")
-
-        qres = insert_query(query.question, user_id)
-        inserted_query_id = None
-        if isinstance(qres, dict) and qres.get("error"):
-            print("supabase: query insert error", qres.get("error"))
-        else:
-            try:
-                inserted = qres[0]
-                inserted_query_id = inserted.get("query_id") or inserted.get("id")
-            except Exception:
-                inserted_query_id = None
-
-        # insert response row
-        try:
-            insert_response(inserted_query_id, answer, None, None)
-        except Exception as e:
-            print("supabase: insert_response failed", e)
-    except Exception as e:
-        print("supabase: failed to persist query/response", e)
-
-    return {"answer": answer}
+    return {"answer": answer, "sources": sources}
 
 
 @app.get("/{full_path:path}")
