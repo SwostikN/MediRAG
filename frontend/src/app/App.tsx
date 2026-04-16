@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Session } from "@supabase/supabase-js";
 import {
-  ArrowLeft,
   Sun,
   Moon,
   Menu,
@@ -650,16 +649,6 @@ export default function App() {
       >
         <div className="flex items-center justify-between pl-3 pr-6 py-4">
           <div className="flex items-center gap-4">
-            {messages.length > 0 && (
-              <button
-                onClick={handleStartNewSession}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-                aria-label="Back to home"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-
             <button
               onClick={() => setShowSidebar(!showSidebar)}
               className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
@@ -667,19 +656,23 @@ export default function App() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-20">
+            <button
+              onClick={handleStartNewSession}
+              className="flex items-center gap-20 rounded-lg transition-colors hover:bg-muted/40"
+              aria-label="Go to home screen"
+            >
               <img
-                src="/Documed_Logo.png"
+                src="../Documed_Logo.png"
                 alt="DocuMed AI Logo"
                 className="w-40 h-16 rounded-lg object-contain"
                 style={{ transform: "scale(1.8)", transformOrigin: "left center" }}
               />
-              <div>
+              <div className="text-left">
                 <h1 className="text-lg font-medium">DocuMed AI</h1>
                 <p className="text-xs text-muted-foreground font-mono">Medical Chat Interface</p>
                 <p className="text-xs text-muted-foreground/80">{authLabel}</p>
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-3">

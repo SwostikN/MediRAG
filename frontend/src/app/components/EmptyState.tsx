@@ -96,10 +96,14 @@ export function EmptyState({
   ];
 
   const stats = [
-    { value: "2.8M+", label: "Research Papers" },
-    { value: "98.7%", label: "Accuracy Rate" },
-    { value: "1.2s", label: "Avg Response" },
-    { value: "150K+", label: "Clinical Queries" },
+    { value: "---", label: "Research Papers" },
+    { value: "---", label: "Accuracy Rate" },
+    { value: "---", label: "Avg Response" },
+   { value: "---", label: "Clinical Queries" },
+    // { value: "2.8M+", label: "Research Papers" },
+    // { value: "98.7%", label: "Accuracy Rate" },
+    // { value: "1.2s", label: "Avg Response" },
+    // { value: "150K+", label: "Clinical Queries" },
   ];
 
   return (
