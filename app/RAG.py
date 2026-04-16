@@ -266,7 +266,11 @@ async def query_document(query: QueryRequest):
         },
     ]
 
-    response = co.chat(model="command-a-03-2025", messages=messages)
+    response = co.chat(
+        model="command-r-08-2024",
+        messages=messages,
+        max_tokens=400,
+    )
     try:
         answer = response.message.content[0].text
     except Exception:
