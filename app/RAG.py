@@ -1,11 +1,13 @@
 import os
+import re
 from pathlib import Path
+from typing import Optional, Tuple
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from PyPDF2 import PdfReader
+import pymupdf
 
 import cohere  # Official Cohere SDK
 
@@ -88,18 +90,45 @@ def health():
 # --------------------------------------------------
 # Helpers
 # --------------------------------------------------
-def extract_text_from_pdf(file: UploadFile) -> str:
+_PDF_DATE_RE = re.compile(r"D:(\d{4})(\d{2})(\d{2})")
+
+
+def _parse_pdf_date(raw: Optional[str]) -> Optional[str]:
+    if not raw:
+        return None
+    m = _PDF_DATE_RE.match(raw)
+    if not m:
+        return None
+    year, month, day = m.groups()
+    return f"{year}-{month}-{day}"
+
+
+def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
     try:
-        reader = PdfReader(file.file)
-        text = ""
-        for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
-        return text.strip()
+        data = file.file.read()
+        doc = pymupdf.open(stream=data, filetype="pdf")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"PDF read error: {e}")
+
+    try:
+        text_parts = []
+        for page in doc:
+            page_text = page.get_text("text")
+            if page_text:
+                text_parts.append(page_text)
+        text = "\n".join(text_parts).strip()
+
+        raw_meta = doc.metadata or {}
+        metadata = {
+            "title": (raw_meta.get("title") or "").strip() or None,
+            "author": (raw_meta.get("author") or "").strip() or None,
+            "creation_date": _parse_pdf_date(raw_meta.get("creationDate")),
+            "modification_date": _parse_pdf_date(raw_meta.get("modDate")),
+            "page_count": doc.page_count,
+        }
+        return text, metadata
     finally:
+        doc.close()
         file.file.close()
 
 
@@ -107,13 +136,13 @@ def extract_text_from_pdf(file: UploadFile) -> str:
 # Upload PDF
 # --------------------------------------------------
 @app.post("/upload_pdf")
-async def upload_pdf(request: Request, file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...)):
     global retriever
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    text = extract_text_from_pdf(file)
+    text, pdf_metadata = extract_text_from_pdf(file)
     if not text:
         raise HTTPException(status_code=400, detail="No text found in PDF")
 
@@ -133,15 +162,21 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
     vectorstore = FAISS.from_documents(chunks, embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 
-    # Persist document and chunks to Supabase if configured
+    # Persist document and chunks to Supabase if configured.
+    # NOTE: this still treats user uploads as corpus documents. Stage 4
+    # (Week 9) will route patient lab PDFs into `user_reports` instead.
     try:
-        # Try to read optional user id passed in header `x-user-id` (client may supply)
-        user_id = request.headers.get("x-user-id")
-        doc_res = insert_document(file.filename, user_id)
+        title = pdf_metadata.get("title") or file.filename
+        doc_res = insert_document(
+            title=title,
+            source="user-upload",
+            authority_tier=5,
+            doc_type="reference",
+            publication_date=pdf_metadata.get("creation_date"),
+        )
         if isinstance(doc_res, dict) and doc_res.get("error"):
             print("supabase: document insert error", doc_res.get("error"))
         else:
-            # doc_res should be a list with the inserted row representation
             try:
                 inserted = doc_res[0]
                 doc_id = inserted.get("doc_id") or inserted.get("id")
@@ -149,9 +184,14 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
                 doc_id = None
 
             if doc_id is not None:
-                for chunk in chunks:
+                for ord_index, chunk in enumerate(chunks):
                     try:
-                        insert_chunk(doc_id, chunk.page_content)
+                        insert_chunk(
+                            doc_id,
+                            ord_index,
+                            chunk.page_content,
+                            token_count=len(chunk.page_content.split()),
+                        )
                     except Exception as e:
                         print("supabase: insert_chunk failed", e)
     except Exception as e:

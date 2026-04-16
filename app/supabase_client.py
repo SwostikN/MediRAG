@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 # requests is optional at import time; if missing, we fallback and warn
 try:
@@ -54,14 +54,65 @@ def _post_table(table: str, payload: Any) -> Dict[str, Any]:
         return {"data": None}
 
 
-def insert_document(title: str, user_id: Optional[str] = None) -> Optional[dict]:
-    payload = {"title": title, "user_id": user_id, "upload_date": None}
-    return _post_table("document", [payload])
+def insert_document(
+    title: str,
+    source: str,
+    *,
+    source_url: Optional[str] = None,
+    authority_tier: int = 5,
+    doc_type: str = "patient-ed",
+    publication_date: Optional[str] = None,
+    last_revised_date: Optional[str] = None,
+    language: str = "en",
+    domains: Optional[List[str]] = None,
+    population: Optional[List[str]] = None,
+    country_scope: Optional[List[str]] = None,
+) -> Optional[dict]:
+    payload = {
+        "title": title,
+        "source": source,
+        "source_url": source_url,
+        "authority_tier": authority_tier,
+        "doc_type": doc_type,
+        "publication_date": publication_date,
+        "last_revised_date": last_revised_date,
+        "language": language,
+        "domains": domains,
+        "population": population,
+        "country_scope": country_scope,
+    }
+    return _post_table("documents", [payload])
 
 
-def insert_chunk(doc_id: Any, content: str) -> Optional[dict]:
-    payload = {"doc_id": doc_id, "content": content}
-    return _post_table("chunk", [payload])
+def insert_chunk(
+    doc_id: Any,
+    ord: int,
+    content: str,
+    *,
+    section_heading: Optional[str] = None,
+    token_count: Optional[int] = None,
+) -> Optional[dict]:
+    payload = {
+        "doc_id": doc_id,
+        "ord": ord,
+        "content": content,
+        "section_heading": section_heading,
+        "token_count": token_count,
+    }
+    return _post_table("chunks", [payload])
+
+
+def insert_user_report(
+    user_id: Any,
+    filename: str,
+    extracted_values: Optional[List[dict]] = None,
+) -> Optional[dict]:
+    payload = {
+        "user_id": user_id,
+        "filename": filename,
+        "extracted_values": extracted_values,
+    }
+    return _post_table("user_reports", [payload])
 
 
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:
