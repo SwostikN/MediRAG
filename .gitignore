@@ -86,3 +86,20 @@ Thumbs.db
 *.faiss
 vectors/
 *.pdf_temp
+docs/
+
+# Supabase CLI scratch
+supabase/.temp/
+supabase/.branches/
+.supabase/
+
+# Secrets / credentials (defensive — never commit keys or certs)
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# Scratch / local-only
+scratch/
+tmp/
+*.tmp
