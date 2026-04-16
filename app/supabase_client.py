@@ -2,6 +2,8 @@ import os
 from typing import Optional, Any, Dict, List
 from urllib.parse import quote
 
+from dotenv import load_dotenv
+
 # requests is optional at import time; if missing, we fallback and warn
 try:
     import requests  # type: ignore
@@ -9,6 +11,8 @@ try:
 except Exception:
     requests = None  # type: ignore
     _HAS_REQUESTS = False
+
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
