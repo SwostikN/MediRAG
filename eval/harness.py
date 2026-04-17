@@ -190,7 +190,7 @@ def run_pipeline(query: str, server_url: Optional[str]) -> Optional[dict[str, An
         resp = requests.post(
             f"{server_url.rstrip('/')}/query",
             json={"question": query},
-            timeout=60,
+            timeout=180,
         )
     except Exception as exc:
         return {"error": f"request failed: {exc}"}
