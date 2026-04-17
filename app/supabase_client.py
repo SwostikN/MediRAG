@@ -209,6 +209,41 @@ def match_chunks_hybrid(
     return []
 
 
+def match_chunks_hybrid_filtered(
+    query_embedding: str,
+    query_text: str,
+    *,
+    match_count: int = 30,
+    candidate_count: int = 50,
+    rrf_k: int = 60,
+    filter_domains: Optional[List[str]] = None,
+    filter_country_scope: Optional[List[str]] = None,
+    filter_min_authority_tier: Optional[int] = None,
+    filter_max_age_years: Optional[int] = None,
+) -> List[dict]:
+    """Filtered hybrid retrieval. See supabase/006_match_chunks_hybrid_filtered.sql."""
+    res = _rpc(
+        "match_chunks_hybrid_filtered",
+        {
+            "query_embedding": query_embedding,
+            "query_text": query_text,
+            "match_count": match_count,
+            "candidate_count": candidate_count,
+            "rrf_k": rrf_k,
+            "filter_domains": filter_domains,
+            "filter_country_scope": filter_country_scope,
+            "filter_min_authority_tier": filter_min_authority_tier,
+            "filter_max_age_years": filter_max_age_years,
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        print(f"[supabase_client] match_chunks_hybrid_filtered failed: {res['error']}")
+        return []
+    if isinstance(res, list):
+        return res
+    return []
+
+
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:
     payload = {"query_text": query_text, "user_id": user_id, "timestamp": None}
     return _post_table("query", [payload])

@@ -21,15 +21,17 @@ try:
     from .supabase_client import (
         insert_chunk,
         insert_document,
-        match_chunks_hybrid,
+        match_chunks_hybrid_filtered,
     )
+    from .filters import build_filter
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
         insert_chunk,
         insert_document,
-        match_chunks_hybrid,
+        match_chunks_hybrid_filtered,
     )
+    from filters import build_filter
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -251,10 +253,12 @@ def _rerank_rows(question: str, rows: list) -> list:
 @app.post("/query")
 async def query_document(query: QueryRequest):
     q_vec = get_query_encoder().encode_one(query.question)
-    rows = match_chunks_hybrid(
+    filter_kwargs = build_filter(query.question)
+    rows = match_chunks_hybrid_filtered(
         to_pgvector_literal(q_vec),
         query.question,
         match_count=RETRIEVE_K,
+        **filter_kwargs,
     )
     rows = _rerank_rows(query.question, rows)
 
