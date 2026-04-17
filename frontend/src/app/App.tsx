@@ -27,6 +27,11 @@ interface Message {
   content: string;
   timestamp: string;
   renderMode?: "plain" | "query";
+  redFlag?: {
+    ruleId: string;
+    category: string;
+    urgency: string;
+  };
 }
 
 interface ChatSessionRecord {
@@ -464,10 +469,6 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      if (uploadedDocuments.length === 0) {
-        throw new Error("Upload a PDF first so the backend can index it before querying.");
-      }
-
       const queryResponse = await fetch(`${API_BASE_URL}/query`, {
         method: "POST",
         headers: buildRequestHeaders(true),
@@ -486,6 +487,13 @@ export default function App() {
         content: queryPayload.answer,
         timestamp: getTimestamp(),
         renderMode: "query",
+        redFlag: queryPayload.red_flag
+          ? {
+              ruleId: queryPayload.red_flag.rule_id,
+              category: queryPayload.red_flag.category,
+              urgency: queryPayload.red_flag.urgency,
+            }
+          : undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

@@ -5,6 +5,7 @@ pydantic
 pymupdf
 cohere
 requests
+PyYAML
 
 langchain
 langchain-core

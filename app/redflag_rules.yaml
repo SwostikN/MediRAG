@@ -1,0 +1,815 @@
+# Week 6 Stage 0 red-flag rules. See docs/IMPROVEMENTS.md §4.2.
+#
+# Hand-authored deterministic triggers. The LLM never sees a query when a
+# rule fires. We bias toward false positives — a panic-attack query that
+# gets an emergency banner is recoverable; a missed MI is not.
+#
+# Trigger DSL:
+#   all_of: [<cond>, ...]   all sub-conditions must match
+#   any_of: [<cond>, ...]   at least one sub-condition must match
+#   <cond> is either a string (case-insensitive substring match on the
+#     user message) or a nested dict with all_of / any_of.
+#
+# First match wins. Order rules from most-specific to most-general so
+# (pregnant + seizure) fires pregnancy_seizure before generic seizure_active.
+
+rules:
+  - id: chest_pain_cardiac
+    category: cardiac
+    response_template: redflag_cardiac_np
+    triggers:
+      all_of:
+        - any_of:
+            - "chest pain"
+            - "chest pressure"
+            - "chest tightness"
+            - "crushing chest"
+            - "chest is hurting"
+            - "heavy chest"
+            - "chest feels heavy"
+            - "pain in my chest"
+            - "pain in chest"
+            - "pain in his chest"
+            - "pain in her chest"
+        - any_of:
+            - "left arm"
+            - "down my arm"
+            - "down his arm"
+            - "down her arm"
+            - "into my arm"
+            - "into his arm"
+            - "arm feels weird"
+            - "jaw pain"
+            - "into my jaw"
+            - "into the jaw"
+            - "shortness of breath"
+            - "short of breath"
+            - "can't breathe"
+            - "sweating"
+            - "cold sweat"
+            - "clammy"
+            - "nausea"
+            - "feel sick"
+            - "feels sick"
+            - "vomiting"
+
+  - id: stroke_signs
+    category: neurological
+    response_template: redflag_stroke_np
+    triggers:
+      any_of:
+        - "face drooping"
+        - "face is drooping"
+        - "face is pulling"
+        - "mouth is pulling to one side"
+        - "mouth pulling to one side"
+        - "one side of the face"
+        - "mouth drooping"
+        - "slurred speech"
+        - "speech is slurred"
+        - "can't speak properly"
+        - "cannot speak properly"
+        - "can't speak"
+        - "cannot speak"
+        - "difficulty speaking"
+        - "sudden weakness"
+        - "sudden numbness"
+        - "numb on one side"
+        - "one side is numb"
+        - "one side numb"
+        - "can't move his right arm"
+        - "can't move her right arm"
+        - "can't move my right arm"
+        - "can't move his left arm"
+        - "can't move her left arm"
+        - "can't move my left arm"
+        - "weakness on one side"
+        - "arm drift"
+        - "sudden confusion"
+        - "sudden trouble seeing"
+
+  - id: preeclampsia_signs
+    category: obstetric
+    response_template: redflag_obstetric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "pregnant"
+            - "weeks pregnant"
+            - "third trimester"
+        - any_of:
+            - "severe headache"
+            - "terrible headache"
+            - "worst headache"
+            - "bad headache"
+            - "blurred vision"
+            - "vision is blurry"
+            - "vision is blurred"
+            - "can't see properly"
+            - "swelling in my face"
+            - "swelling in his face"
+            - "swelling in her face"
+            - "swelling in face"
+            - "face is swollen"
+            - "swollen face"
+
+  - id: obstetric_bleeding
+    category: obstetric
+    response_template: redflag_obstetric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "pregnant"
+            - "weeks pregnant"
+            - "third trimester"
+        - any_of:
+            - "heavy bleeding"
+            - "lots of blood"
+            - "bleeding a lot"
+            - "soaking through"
+            - "passing clots"
+            - "passing big clots"
+            - "clots of blood"
+            - "gushing blood"
+
+  - id: pregnancy_seizure
+    category: obstetric
+    response_template: redflag_obstetric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "pregnant"
+            - "weeks pregnant"
+            - "third trimester"
+        - any_of:
+            - "seizure"
+            - "convulsion"
+            - "convulsing"
+            - "had a fit"
+            - "having fits"
+
+  - id: heavy_vaginal_bleeding
+    category: gynecological
+    response_template: redflag_obstetric_np
+    triggers:
+      any_of:
+        - "soaking through a pad every hour"
+        - "soaking through pads every hour"
+        - "soaking a pad an hour"
+        - "soaking through a pad an hour"
+        - "passing huge clots"
+        - "menstrual bleeding won't stop"
+        - "period bleeding won't stop"
+
+  - id: anaphylaxis
+    category: allergic
+    response_template: redflag_anaphylaxis_np
+    triggers:
+      all_of:
+        - any_of:
+            - "throat swelling"
+            - "throat is swelling"
+            - "throat is closing"
+            - "throat closing"
+            - "throat tightening"
+            - "tongue swelling"
+            - "tongue is swelling"
+            - "tongue is swollen"
+            - "tongue swollen"
+            - "tongue swelling up"
+            - "lips swelling"
+            - "lips are swelling"
+            - "lips swollen"
+            - "lips are swollen"
+            - "lip swelling"
+            - "hives all over"
+            - "covered in hives"
+        - any_of:
+            - "can't breathe"
+            - "hard to breathe"
+            - "difficulty breathing"
+            - "trouble breathing"
+            - "wheezing"
+            - "after eating"
+            - "after a sting"
+            - "after a bee"
+            - "after a bee sting"
+            - "stung by a bee"
+            - "after injection"
+            - "after the medicine"
+            - "after the antibiotic"
+            - "allergic reaction"
+
+  - id: severe_allergic_reaction
+    category: allergic
+    response_template: redflag_anaphylaxis_np
+    triggers:
+      all_of:
+        - any_of:
+            - "face is swelling"
+            - "face swelling up"
+            - "face swelling"
+            - "swelling in my face"
+            - "swollen lips"
+            - "lips swelling"
+            - "lips are swelling"
+        - any_of:
+            - "difficulty breathing"
+            - "trouble breathing"
+            - "can't breathe"
+            - "wheezing"
+            - "throat tightening"
+
+  - id: severe_bleeding
+    category: trauma
+    response_template: redflag_trauma_np
+    triggers:
+      any_of:
+        - "bleeding won't stop"
+        - "bleeding that won't stop"
+        - "can't stop the bleeding"
+        - "blood is spurting"
+        - "blood spurting"
+        - "pulsing blood"
+        - "lost a lot of blood"
+        - "losing a lot of blood"
+        - "soaked through bandage"
+        - "soaked the bandage"
+        - "gushing blood from"
+
+  - id: seizure_active
+    category: neurological
+    response_template: redflag_seizure_np
+    triggers:
+      any_of:
+        - "having a seizure"
+        - "is seizing"
+        - "actively seizing"
+        - "convulsing right now"
+        - "is convulsing"
+        - "seizure right now"
+
+  - id: suicidal_active
+    category: mental-health
+    response_template: redflag_mental_health_np
+    triggers:
+      any_of:
+        - "want to kill myself"
+        - "going to kill myself"
+        - "end my life"
+        - "ending my life"
+        - "planning to end my life"
+        - "i want to die"
+        - "suicide plan"
+        - "plan to kill myself"
+        - "have pills ready"
+        - "no reason to live"
+        - "better off dead"
+        - "everyone would be better off dead"
+
+  - id: psychosis_harm
+    category: mental-health
+    response_template: redflag_mental_health_np
+    triggers:
+      any_of:
+        - "voices telling me to hurt"
+        - "voices are telling me to hurt"
+        - "voices tell me to hurt"
+        - "voices telling me to kill"
+        - "voices are telling me to kill"
+        - "voices tell me to kill"
+        - "going to hurt someone"
+        - "plan to hurt someone"
+        - "want to kill him"
+        - "want to kill her"
+
+  - id: head_injury_serious
+    category: trauma
+    response_template: redflag_trauma_np
+    triggers:
+      all_of:
+        - any_of:
+            - "hit his head"
+            - "hit her head"
+            - "hit my head"
+            - "head injury"
+            - "fell and hit"
+            - "head trauma"
+            - "banged my head"
+            - "motorbike accident"
+        - any_of:
+            - "unconscious"
+            - "passed out"
+            - "lost consciousness"
+            - "vomiting repeatedly"
+            - "throwing up repeatedly"
+            - "vomited multiple"
+            - "vomited three"
+            - "vomited several"
+            - "keeps vomiting"
+            - "confused"
+            - "can't stay awake"
+            - "won't wake up"
+            - "seizure"
+            - "bleeding from the ear"
+            - "bleeding from his ear"
+            - "bleeding from her ear"
+            - "clear fluid from nose"
+
+  - id: difficulty_breathing_severe
+    category: respiratory
+    response_template: redflag_respiratory_np
+    triggers:
+      any_of:
+        - "can't breathe at all"
+        - "can't catch my breath"
+        - "gasping for air"
+        - "gasping for breath"
+        - "turning blue"
+        - "lips are blue"
+        - "lips turning blue"
+        - "face is blue"
+        - "stopped breathing"
+        - "struggling to breathe"
+
+  - id: choking
+    category: respiratory
+    response_template: redflag_respiratory_np
+    triggers:
+      any_of:
+        - "choking on"
+        - "is choking"
+        - "he is choking"
+        - "she is choking"
+        - "something stuck in throat"
+        - "something stuck in his throat"
+        - "something stuck in her throat"
+        - "food stuck in"
+        - "can't cough it out"
+        - "can't get it out"
+
+  - id: infant_fever_under3mo
+    category: pediatric
+    response_template: redflag_pediatric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "newborn"
+            - "under 3 months"
+            - "under three months"
+            - "1 month old"
+            - "one month old"
+            - "2 months old"
+            - "two months old"
+            - "6 weeks old"
+            - "few weeks old"
+            - "8 weeks old"
+            - "3 weeks old"
+        - any_of:
+            - "fever"
+            - "high temperature"
+            - "high temp"
+            - "very hot"
+            - "burning up"
+            - "38"
+            - "39"
+            - "40"
+
+  - id: infant_fever_lethargy
+    category: pediatric
+    response_template: redflag_pediatric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "infant"
+            - "baby"
+            - "month-old"
+            - "month old"
+            - "months old"
+            - "months-old"
+        - any_of:
+            - "fever"
+            - "high temperature"
+            - "high temp"
+            - "burning up"
+            - "very hot"
+            - "39"
+            - "40"
+        - any_of:
+            - "sleepy"
+            - "very sleepy"
+            - "lethargic"
+            - "won't wake"
+            - "can't wake"
+            - "won't feed"
+            - "not feeding"
+            - "refusing to feed"
+            - "limp"
+            - "floppy"
+            - "unresponsive"
+            - "barely responsive"
+
+  - id: infant_blue_lips
+    category: pediatric
+    response_template: redflag_pediatric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "baby"
+            - "infant"
+            - "newborn"
+            - "month old"
+            - "month-old"
+            - "months old"
+            - "months-old"
+        - any_of:
+            - "blue lips"
+            - "lips are blue"
+            - "blue around the mouth"
+            - "blue face"
+            - "turning blue"
+
+  - id: infant_seizure
+    category: pediatric
+    response_template: redflag_pediatric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "baby"
+            - "infant"
+            - "child"
+            - "toddler"
+            - "month-old"
+            - "month old"
+            - "months old"
+            - "months-old"
+            - "year-old"
+            - "year old"
+            - "years-old"
+            - "yr old"
+        - any_of:
+            - "had a seizure"
+            - "having a seizure"
+            - "is convulsing"
+            - "convulsing"
+            - "fitting"
+            - "had a fit"
+
+  - id: meningitis_signs
+    category: infectious
+    response_template: redflag_infectious_np
+    triggers:
+      all_of:
+        - any_of:
+            - "stiff neck"
+            - "neck is stiff"
+            - "neck is so stiff"
+            - "neck is very stiff"
+            - "can't bend neck"
+            - "can't bend my neck"
+            - "can't bend his neck"
+            - "can't bend her neck"
+        - any_of:
+            - "fever"
+            - "high temperature"
+            - "high temp"
+            - "severe headache"
+            - "terrible headache"
+            - "worst headache"
+            - "rash that won't blanch"
+            - "purpuric rash"
+            - "confused"
+            - "light hurts"
+            - "sensitive to light"
+
+  - id: sepsis_signs
+    category: infectious
+    response_template: redflag_sepsis_np
+    triggers:
+      all_of:
+        - any_of:
+            - "fever"
+            - "high temperature"
+            - "high temp"
+            - "shivering uncontrollably"
+            - "chills and shaking"
+        - any_of:
+            - "confused"
+            - "disoriented"
+            - "can't stay awake"
+            - "very low blood pressure"
+            - "heart racing"
+            - "fast heart"
+            - "very sleepy"
+            - "barely responsive"
+            - "cold hands and feet"
+            - "hands are cold"
+            - "hands and feet are cold"
+
+  - id: diabetic_emergency
+    category: endocrine
+    response_template: redflag_diabetic_np
+    triggers:
+      all_of:
+        - any_of:
+            - "diabetic"
+            - "diabetes"
+            - "on insulin"
+        - any_of:
+            - "passed out"
+            - "unconscious"
+            - "very confused"
+            - "won't wake up"
+            - "can't wake him"
+            - "can't wake her"
+            - "can't wake them"
+            - "blood sugar very low"
+            - "blood sugar is too low"
+            - "sugar dropped very low"
+            - "sugar very low"
+            - "fruity breath"
+            - "breath smells fruity"
+            - "smells fruity"
+            - "heavy breathing and fruity"
+            - "deep heavy breathing"
+
+  - id: testicular_torsion
+    category: urological
+    response_template: redflag_urological_np
+    triggers:
+      all_of:
+        - any_of:
+            - "testicle"
+            - "testicular"
+            - "scrotum"
+        - any_of:
+            - "sudden severe pain"
+            - "very sudden pain"
+            - "extremely painful"
+            - "swollen and painful"
+            - "very painful and swollen"
+
+  - id: eye_injury_serious
+    category: trauma
+    response_template: redflag_trauma_np
+    triggers:
+      any_of:
+        - "chemical in my eye"
+        - "chemical in his eye"
+        - "chemical in her eye"
+        - "bleach in my eye"
+        - "bleach in his eye"
+        - "bleach in her eye"
+        - "acid in my eye"
+        - "suddenly can't see"
+        - "lost vision suddenly"
+        - "sudden vision loss"
+        - "something pierced my eye"
+
+  - id: burn_serious
+    category: trauma
+    response_template: redflag_burn_np
+    triggers:
+      any_of:
+        - "large burn"
+        - "big burn"
+        - "burned my face"
+        - "burn on my face"
+        - "burn on his face"
+        - "burn on her face"
+        - "electrical burn"
+        - "electric shock burn"
+        - "chemical burn"
+
+  - id: poisoning
+    category: toxicology
+    response_template: redflag_poisoning_np
+    triggers:
+      any_of:
+        - "swallowed poison"
+        - "drank bleach"
+        - "drank kerosene"
+        - "drank pesticide"
+        - "drank insecticide"
+        - "drank paraquat"
+        - "swallowed pills"
+        - "swallowed some pills"
+        - "swallowed a handful of pills"
+        - "swallowed a lot of pills"
+        - "swallowed tablets"
+        - "swallowed some tablets"
+        - "swallowed medicine"
+        - "swallowed some medicine"
+        - "took too many pills"
+        - "took the whole bottle"
+        - "took a whole bottle"
+        - "overdose"
+        - "overdosed"
+        - "swallowed the whole bottle"
+        - "drank the whole bottle"
+
+  - id: snake_bite
+    category: envenomation
+    response_template: redflag_envenomation_np
+    triggers:
+      any_of:
+        - "snake bite"
+        - "bitten by a snake"
+        - "bit by a snake"
+        - "snake bit me"
+        - "snake bit him"
+        - "snake bit her"
+
+  - id: vomiting_blood
+    category: gi
+    response_template: redflag_gi_bleed_np
+    triggers:
+      any_of:
+        - "vomiting blood"
+        - "vomited blood"
+        - "vomited up blood"
+        - "throwing up blood"
+        - "threw up blood"
+        - "coffee ground vomit"
+        - "coughing up blood"
+        - "blood in my vomit"
+
+  - id: abdominal_pain_severe_sudden
+    category: gi
+    response_template: redflag_abdomen_np
+    triggers:
+      all_of:
+        - any_of:
+            - "sudden severe abdominal pain"
+            - "sudden severe stomach pain"
+            - "worst stomach pain"
+            - "worst stomach pain of my life"
+            - "worst abdominal pain"
+            - "sudden and very severe"
+            - "suddenly very severe belly pain"
+        - any_of:
+            - "rigid abdomen"
+            - "stomach is hard"
+            - "belly is hard"
+            - "belly feels hard"
+            - "stomach feels hard"
+            - "fainted"
+            - "about to faint"
+            - "vomiting blood"
+            - "black stool"
+            - "tarry stool"
+
+  - id: heat_stroke
+    category: environmental
+    response_template: redflag_heat_np
+    triggers:
+      all_of:
+        - any_of:
+            - "in the sun for hours"
+            - "overheated"
+            - "heat exposure"
+            - "working in the sun"
+            - "out in the heat"
+        - any_of:
+            - "stopped sweating"
+            - "not sweating anymore"
+            - "passed out from heat"
+            - "collapsed in the heat"
+            - "confused"
+
+  # ===================================================================
+  # URGENT TIER (hours matter, not minutes)
+  # -------------------------------------------------------------------
+  # Fires when a severity modifier co-occurs with a concerning symptom
+  # but the strict emergency combo is absent. Listed AFTER all emergency
+  # rules so first-match-wins routes classic combos to emergency first.
+  # ===================================================================
+
+  - id: urgent_chest_pain
+    category: cardiac
+    response_template: redflag_urgent_chest_np
+    triggers:
+      all_of:
+        - any_of:
+            - "severe"
+            - "serious"
+            - "really bad"
+            - "very bad"
+            - "worst"
+            - "intense"
+            - "terrible"
+            - "excruciating"
+            - "unbearable"
+            - "can't stand"
+            - "cant stand"
+        - any_of:
+            - "chest pain"
+            - "chest pressure"
+            - "chest tightness"
+            - "pain in my chest"
+            - "pain in chest"
+            - "chest hurts"
+            - "chest is hurting"
+
+  - id: urgent_severe_headache
+    category: neurological
+    response_template: redflag_urgent_headache_np
+    triggers:
+      all_of:
+        - any_of:
+            - "severe"
+            - "serious"
+            - "really bad"
+            - "very bad"
+            - "worst"
+            - "intense"
+            - "terrible"
+            - "excruciating"
+            - "unbearable"
+            - "splitting"
+            - "can't stand"
+            - "cant stand"
+        - any_of:
+            - "headache"
+            - "head pain"
+            - "head hurts"
+            - "my head hurts"
+            - "migraine"
+
+  - id: urgent_severe_abdominal
+    category: gi
+    response_template: redflag_urgent_abdomen_np
+    triggers:
+      all_of:
+        - any_of:
+            - "severe"
+            - "serious"
+            - "really bad"
+            - "very bad"
+            - "worst"
+            - "intense"
+            - "terrible"
+            - "excruciating"
+            - "unbearable"
+            - "can't stand"
+            - "cant stand"
+        - any_of:
+            - "stomach pain"
+            - "belly pain"
+            - "abdominal pain"
+            - "pain in my stomach"
+            - "pain in my belly"
+            - "pain in my abdomen"
+            - "tummy pain"
+            - "stomach ache"
+            - "stomachache"
+
+  - id: urgent_severe_breathing
+    category: respiratory
+    response_template: redflag_urgent_breathing_np
+    triggers:
+      all_of:
+        - any_of:
+            - "severe"
+            - "serious"
+            - "really bad"
+            - "very bad"
+            - "worst"
+            - "intense"
+            - "terrible"
+            - "hard time"
+            - "struggling"
+        - any_of:
+            - "breathing"
+            - "breathe"
+            - "short of breath"
+            - "shortness of breath"
+            - "out of breath"
+
+  - id: urgent_pregnancy_concern
+    category: obstetric
+    response_template: redflag_urgent_pregnancy_np
+    triggers:
+      all_of:
+        - any_of:
+            - "pregnant"
+            - "pregnancy"
+            - "expecting"
+            - "weeks along"
+            - "in my third trimester"
+            - "in my second trimester"
+            - "in my first trimester"
+        - any_of:
+            - "bleeding"
+            - "spotting"
+            - "cramping"
+            - "severe pain"
+            - "severe headache"
+            - "bad headache"
+            - "fever"
+            - "vomiting a lot"
+            - "cant keep anything down"
+            - "can't keep anything down"
+            - "reduced movement"
+            - "baby not moving"
+            - "less movement"

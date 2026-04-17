@@ -1,11 +1,17 @@
 import { Fragment, type ReactNode } from "react";
 import { motion } from "motion/react";
+import { AlertTriangle } from "lucide-react";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
   renderMode?: "plain" | "query";
+  redFlag?: {
+    ruleId: string;
+    category: string;
+    urgency: string;
+  };
 }
 
 function renderInlineFormatting(text: string): ReactNode[] {
@@ -94,9 +100,61 @@ function renderFormattedContent(content: string): ReactNode {
   return <div className="space-y-4">{blocks}</div>;
 }
 
-export function ChatMessage({ role, content, timestamp, renderMode = "plain" }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, renderMode = "plain", redFlag }: ChatMessageProps) {
   const isUser = role === "user";
   const shouldFormatQueryAnswer = !isUser && renderMode === "query";
+  const isRedFlag = !isUser && redFlag !== undefined;
+
+  if (isRedFlag) {
+    const isEmergency = redFlag?.urgency === "emergency";
+    const banner = isEmergency
+      ? {
+          container: "rounded-2xl border-2 border-red-500 bg-red-50 p-5 shadow-md dark:bg-red-950/40 dark:border-red-400",
+          icon: "text-red-600 dark:text-red-300",
+          label: "text-red-700 dark:text-red-200",
+          meta: "text-red-700/70 dark:text-red-300/70",
+          body: "text-red-950 dark:text-red-50",
+          text: "Emergency",
+        }
+      : {
+          container: "rounded-2xl border-2 border-amber-500 bg-amber-50 p-5 shadow-md dark:bg-amber-950/40 dark:border-amber-400",
+          icon: "text-amber-600 dark:text-amber-300",
+          label: "text-amber-700 dark:text-amber-200",
+          meta: "text-amber-700/70 dark:text-amber-300/70",
+          body: "text-amber-950 dark:text-amber-50",
+          text: "Urgent care",
+        };
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex gap-4 justify-start"
+      >
+        <div className="max-w-[82%] w-full">
+          <div className={banner.container}>
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle className={`h-5 w-5 ${banner.icon}`} aria-hidden="true" />
+              <span className={`text-sm font-bold uppercase tracking-wide ${banner.label}`}>
+                {banner.text}
+              </span>
+              <span className={`ml-auto font-mono text-[11px] ${banner.meta}`}>
+                {redFlag?.category} · {redFlag?.ruleId}
+              </span>
+            </div>
+            <div className={`text-[15px] leading-7 whitespace-pre-wrap ${banner.body}`}>
+              {content}
+            </div>
+          </div>
+          {timestamp && (
+            <div className="mt-2 px-1 text-left">
+              <span className="text-xs text-muted-foreground font-mono">{timestamp}</span>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

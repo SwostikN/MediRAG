@@ -1,0 +1,258 @@
+# Nepal-contextual emergency response templates. See docs/IMPROVEMENTS.md §4.2.
+#
+# Each template has:
+#   urgency: the severity class returned in the API response
+#   message: the user-facing text (what replaces the LLM answer when a rule fires)
+#
+# Nepal emergency numbers used:
+#   102 — ambulance (nationwide primary)
+#   1166 — Mental Health Helpline Nepal
+#   9840021600 — TUTH (Tribhuvan University Teaching Hospital) suicide hotline
+
+templates:
+  redflag_cardiac_np:
+    urgency: emergency
+    message: |
+      This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.
+      Do not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.
+      This is not a diagnosis — only an emergency team can rule out a heart attack.
+
+  redflag_stroke_np:
+    urgency: emergency
+    message: |
+      These symptoms could be a stroke. Every minute matters. Go to the nearest hospital emergency department now, or call 102 for an ambulance.
+      Note the exact time the symptoms started — the emergency team will need it to decide on treatment.
+      Do not eat, drink, or take any medicine while waiting. This is not a diagnosis; urgent in-person evaluation is essential.
+
+  redflag_obstetric_np:
+    urgency: emergency
+    message: |
+      In pregnancy, this combination of symptoms is a medical emergency. Go to the nearest hospital with an obstetric or maternity ward immediately, or call 102.
+      Do not wait until morning or a regular appointment. Take any antenatal records with you if possible.
+      This is not a diagnosis — only in-person evaluation can determine what is happening.
+
+  redflag_anaphylaxis_np:
+    urgency: emergency
+    message: |
+      This sounds like a severe allergic reaction. Call 102 immediately or go to the nearest hospital emergency department.
+      If you have an adrenaline auto-injector (EpiPen) prescribed for you, use it now and then still go to hospital.
+      Do not stay alone. This is not a diagnosis — get emergency help now.
+
+  redflag_trauma_np:
+    urgency: emergency
+    message: |
+      This injury needs emergency care. Go to the nearest hospital emergency department now, or call 102 for an ambulance.
+      Keep the person still, apply firm direct pressure to bleeding wounds with a clean cloth, and do not remove anything stuck in a wound.
+      This is not a diagnosis — in-person assessment is required urgently.
+
+  redflag_seizure_np:
+    urgency: emergency
+    message: |
+      If someone is actively having a seizure, call 102 for an ambulance now.
+      Move hard objects away, turn them on their side once the convulsions stop, and do not put anything in their mouth. Time the seizure if you can.
+      This is not a diagnosis — a prolonged or unexplained seizure is a medical emergency.
+
+  redflag_mental_health_np:
+    urgency: emergency
+    message: |
+      You matter, and what you're describing is a mental health emergency. Please reach out now — in Nepal, the TUTH Suicide Hotline is 9840021600, and the Mental Health Helpline Nepal is 1166. You can also go to the nearest hospital emergency department.
+      If you can, tell someone you trust right now and stay with them. Move any medicines, weapons, or other means of harm out of reach.
+      This is not a substitute for care — please contact one of these services now.
+
+  redflag_respiratory_np:
+    urgency: emergency
+    message: |
+      Serious breathing trouble is a medical emergency. Call 102 for an ambulance now, or go to the nearest hospital emergency department.
+      Sit the person upright; do not try to give food, water, or medicine if they are struggling to breathe.
+      This is not a diagnosis — get emergency help immediately.
+
+  redflag_pediatric_np:
+    urgency: emergency
+    message: |
+      This combination of symptoms in an infant or young child is a medical emergency. Go to the nearest hospital emergency department now, or call 102 for an ambulance.
+      Young babies can deteriorate very quickly. Do not wait to see if it improves.
+      This is not a diagnosis — urgent in-person evaluation is essential.
+
+  redflag_infectious_np:
+    urgency: emergency
+    message: |
+      These signs can indicate a serious infection of the brain or its lining (meningitis) and must be evaluated urgently. Go to the nearest hospital emergency department now, or call 102.
+      Do not wait until morning. This is not a diagnosis — early treatment makes a large difference.
+
+  redflag_sepsis_np:
+    urgency: emergency
+    message: |
+      This pattern can be sepsis — a life-threatening response to infection. Go to the nearest hospital emergency department now, or call 102 for an ambulance.
+      Sepsis gets worse quickly. This is not a diagnosis — urgent in-person assessment is critical.
+
+  redflag_diabetic_np:
+    urgency: emergency
+    message: |
+      This is a diabetic emergency. Call 102 for an ambulance or go to the nearest hospital emergency department now.
+      If the person is conscious and can swallow and you suspect very low blood sugar, give sugar or juice. If they are unconscious, do not give anything by mouth.
+      This is not a diagnosis — urgent medical care is needed.
+
+  redflag_urological_np:
+    urgency: emergency
+    message: |
+      Sudden severe testicular pain can be testicular torsion, which is a time-critical emergency — the testicle can be lost within hours. Go to the nearest hospital emergency department now.
+      This is not a diagnosis; only an in-person exam can rule it out.
+
+  redflag_burn_np:
+    urgency: emergency
+    message: |
+      Large, facial, electrical, or chemical burns are medical emergencies. Go to the nearest hospital emergency department now or call 102.
+      Cool the burn with clean, cool (not ice-cold) running water for 20 minutes if possible. Do not apply toothpaste, butter, or home remedies.
+      This is not a diagnosis — urgent assessment is required.
+
+  redflag_poisoning_np:
+    urgency: emergency
+    message: |
+      A suspected poisoning or overdose is a medical emergency. Call 102 now and go to the nearest hospital emergency department.
+      Bring the bottle or packet of whatever was swallowed so the doctors can identify it. Do not try to make the person vomit.
+      This is not a diagnosis — immediate medical care is needed.
+
+  redflag_envenomation_np:
+    urgency: emergency
+    message: |
+      A suspected snake bite is a medical emergency in Nepal. Go to the nearest hospital with antivenom immediately, or call 102.
+      Keep the bitten limb still and below heart level. Do not cut the wound, suck out venom, apply a tight tourniquet, or use home remedies.
+      This is not a diagnosis — antivenom decisions require a hospital.
+
+  redflag_gi_bleed_np:
+    urgency: emergency
+    message: |
+      Vomiting blood or coughing up blood is a medical emergency. Go to the nearest hospital emergency department now, or call 102.
+      Do not eat or drink anything. This is not a diagnosis — urgent evaluation is required.
+
+  redflag_abdomen_np:
+    urgency: emergency
+    message: |
+      A sudden, severe abdominal pain — especially with a rigid belly, fainting, or blood — can be a surgical emergency. Go to the nearest hospital emergency department now or call 102.
+      Do not eat, drink, or take painkillers. This is not a diagnosis — urgent in-person evaluation is essential.
+
+  redflag_heat_np:
+    urgency: emergency
+    message: |
+      This can be heat stroke, which is life-threatening. Move the person to a cool, shaded place, remove excess clothing, and cool the skin with cool water or wet cloths. Call 102 or go to the nearest hospital emergency department immediately.
+      This is not a diagnosis — urgent medical care is needed.
+
+  # ----- Urgent tier (hours matter, not minutes) -----
+  # Fires when a severity modifier ("severe", "serious", "worst", "unbearable", ...)
+  # co-occurs with a concerning symptom but the classic emergency combo is absent.
+  # Route: same-day care, not ambulance. Still skips retrieval + LLM.
+
+  redflag_urgent_chest_np:
+    urgency: urgent
+    message: |
+      Severe chest pain needs to be seen today — don't try to wait it out. You're doing the right thing by taking this seriously.
+
+      While you arrange care, do this now:
+      - Stop any activity and sit or lie down in whatever position feels easiest
+      - Loosen anything tight around your chest, neck, or waist
+      - Don't eat, drink, or smoke — if you need an ECG or treatment, your stomach must be empty
+      - Note when the pain started, what it feels like (pressure, squeezing, burning, stabbing), and what makes it better or worse — the doctor will ask
+      - Have someone stay with you if possible; tell a family member or neighbor where you are going
+
+      Go by the fastest route to the nearest hospital or clinic with an ECG. In Nepal, a district hospital or a well-equipped private clinic is best.
+
+      Call 102 for an ambulance right away (skip the clinic trip) if any of these happen:
+      - Pain spreads to your arm, jaw, neck, or back
+      - You become short of breath, sweaty, or nauseous
+      - You feel faint or lightheaded
+      - The pain gets rapidly worse
+
+      This is not a diagnosis — chest pain has many causes, and only an in-person exam can rule out the dangerous ones.
+
+  redflag_urgent_headache_np:
+    urgency: urgent
+    message: |
+      A severe headache should be checked today — don't try to push through it. It is okay to be worried; most severe headaches are not dangerous, but a few are, and the only way to know is to be seen.
+
+      While you arrange care:
+      - Lie down in a dark, quiet room; turn off screens and bright lights
+      - Sip water slowly — dehydration makes headaches worse
+      - Don't take high doses of painkillers on your own before being seen; they can mask symptoms the doctor needs to see
+      - Note when it started, how it started (gradual or sudden), what it feels like, and anything that made it better or worse
+      - Ask someone to check on you every hour — if you become hard to rouse, that's a warning sign
+
+      Go to the nearest hospital or clinic today, or call your doctor and ask to be seen urgently.
+
+      Call 102 for an ambulance right away if any of these appear:
+      - The headache came on suddenly, as if switched on (a "thunderclap")
+      - Weakness, numbness, or drooping on one side of your body
+      - Trouble speaking or understanding speech
+      - A stiff neck with fever, or a rash that does not fade when pressed
+      - Confusion, vision loss, or a seizure
+
+      This is not a diagnosis — only an in-person exam can tell a dangerous headache from a benign one.
+
+  redflag_urgent_abdomen_np:
+    urgency: urgent
+    message: |
+      Severe stomach pain should be seen today — it has many possible causes, and some need surgery.
+
+      While you arrange care, do this now:
+      - Do not eat, drink, or take painkillers until you are seen — if surgery is needed, your stomach must be empty
+      - Rest in whichever position hurts least; often that is lying on your side with your knees pulled up toward your chest
+      - Note when the pain started, where it is, whether it moves, and what makes it worse (eating, movement, pressing on it)
+      - Note any vomiting, fever, bleeding, or changes in stool — the doctor will ask
+      - Don't use a hot water bottle or heat pad; it can mask the pain pattern
+
+      Go now to the nearest hospital or clinic. If you can, choose one with a surgical team.
+
+      Call 102 for an ambulance right away if any of these happen:
+      - Your belly becomes hard or board-like when you press it
+      - You vomit blood, or your stool is black or bloody
+      - You feel faint, or your skin goes pale and cold
+      - You are pregnant (or could be) and the pain is on one side
+      - The pain is rapidly getting worse
+
+      This is not a diagnosis — only an in-person exam can rule out the dangerous causes.
+
+  redflag_urgent_breathing_np:
+    urgency: urgent
+    message: |
+      Trouble breathing should be evaluated today. Try not to panic — panic makes breathlessness worse, and there are things you can do right now that help.
+
+      While you arrange care:
+      - Sit upright, leaning slightly forward with your hands resting on your knees or a table — this is easier than lying down
+      - Loosen tight clothing around your chest, neck, or waist
+      - Try slow breathing: in gently through your nose, out slowly through pursed lips (as if blowing out a candle)
+      - If you have a prescribed inhaler (salbutamol / Ventolin), use it as directed
+      - Move away from smoke, dust, cooking fumes, or strong smells
+      - Have someone sit with you; tell them you may need help to get to a clinic
+
+      Go now to the nearest hospital or clinic that has oxygen. Most district hospitals and private clinics in Nepal do.
+
+      Call 102 for an ambulance right away if any of these happen:
+      - You cannot speak in full sentences
+      - Your lips, fingertips, or skin around your mouth turn blue or grey
+      - You develop chest pain with the breathing trouble
+      - You are rapidly getting worse
+
+      This is not a diagnosis — breathing difficulty has many causes, and only an in-person exam can tell which one this is.
+
+  redflag_urgent_pregnancy_np:
+    urgency: urgent
+    message: |
+      In pregnancy, new or severe symptoms should be checked today. Pregnancy changes how symptoms should be read, so please don't wait to see if it settles on its own.
+
+      While you arrange care:
+      - Lie down on your left side — this improves blood flow to you and the baby
+      - Bring your antenatal record (blue book) so the team knows your history
+      - Do not take any medicines, including painkillers, until you have been seen
+      - If you are past 28 weeks, count baby movements: 10 movements in 2 hours is reassuring; fewer is a reason to be seen sooner
+      - Note any bleeding (spotting vs. soaking a pad), fluid, pain location, and when it started
+      - Ask someone to come with you if possible — you may need help or quicker transport
+
+      Go now to the nearest hospital with a maternity ward, or call your antenatal provider or nursing midwife and ask to be seen urgently.
+
+      Call 102 for an ambulance right away if any of these happen:
+      - Heavy bleeding (soaking a pad in under an hour)
+      - Severe headache with vision changes, or swelling in your face or hands
+      - A seizure, or severe pain on one side of your belly
+      - Your baby stops moving (after 28 weeks)
+      - A sudden gush of fluid from the vagina with fever
+
+      This is not a diagnosis — an in-person assessment is the only safe way to know what is happening.

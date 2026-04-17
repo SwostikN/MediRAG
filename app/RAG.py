@@ -25,6 +25,7 @@ try:
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
+    from .redflag import check as redflag_check
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -34,6 +35,7 @@ except ImportError:
     )
     from filters import build_filter
     from intent import classify as classify_intent
+    from redflag import check as redflag_check
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -88,6 +90,15 @@ MEDIRAG_SYSTEM_PROMPT = (
     "Always frame answers as information to discuss with a doctor. "
     "If a claim is not supported by the sources, say you don't have a source for it."
 )
+
+@app.on_event("startup")
+async def warm_query_encoder():
+    try:
+        get_query_encoder().encode_one("warmup")
+        print("[startup] MedCPT query encoder warmed")
+    except Exception as exc:
+        print(f"[startup] MedCPT warmup failed (non-fatal): {exc}")
+
 
 @app.get("/")
 async def serve_frontend():
@@ -223,11 +234,11 @@ class QueryRequest(BaseModel):
     question: str
 
 
-RETRIEVE_K = 30
+RETRIEVE_K = 15
 CONTEXT_CHUNKS = 6
 RERANK_MODEL = "rerank-v3.5"
 
-FILTER_FALLBACK_MIN_ROWS = 5
+FILTER_FALLBACK_MIN_ROWS = 1  # only re-query Supabase if the filtered path yielded zero rows
 
 FRESHNESS_DECAY_PER_YEAR = 0.1
 
@@ -308,6 +319,21 @@ def _weighted_final_score(row: dict, weights: Tuple[float, float, float]) -> flo
 
 @app.post("/query")
 async def query_document(query: QueryRequest):
+    # Week 6 Stage 0: deterministic red-flag screen runs first.
+    # If any rule fires, the LLM is never invoked and retrieval is skipped.
+    rf = redflag_check(query.question)
+    if rf is not None:
+        print(f"[redflag] fired rule={rf.rule_id} category={rf.category}")
+        return {
+            "answer": rf.message,
+            "sources": [],
+            "red_flag": {
+                "rule_id": rf.rule_id,
+                "category": rf.category,
+                "urgency": rf.urgency,
+            },
+        }
+
     q_vec = get_query_encoder().encode_one(query.question)
     intent = classify_intent(query.question)
     print(f"[intent] {intent} q={query.question[:60]!r}")
@@ -330,7 +356,11 @@ async def query_document(query: QueryRequest):
             match_count=RETRIEVE_K,
             **filter_kwargs,
         )
-    rows = _rerank_rows(query.question, rows)
+    # Skip Cohere rerank when we already have ≤CONTEXT_CHUNKS candidates:
+    # rerank's job is to narrow a wide pool down to the final context window,
+    # so running it on a pool that already fits in the window is pure latency.
+    if len(rows) > CONTEXT_CHUNKS:
+        rows = _rerank_rows(query.question, rows)
     weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
     for r in rows:
         r["final_score"] = _weighted_final_score(r, weights)
@@ -381,7 +411,7 @@ async def query_document(query: QueryRequest):
     response = co.chat(
         model="command-r-08-2024",
         messages=messages,
-        max_tokens=400,
+        max_tokens=250,
     )
     try:
         answer = response.message.content[0].text
