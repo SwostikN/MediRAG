@@ -221,6 +221,31 @@ class QueryRequest(BaseModel):
 
 RETRIEVE_K = 30
 CONTEXT_CHUNKS = 6
+RERANK_MODEL = "rerank-v3.5"
+
+
+def _rerank_rows(question: str, rows: list) -> list:
+    """Rerank retrieved chunks with Cohere Rerank. Attaches rerank_score
+    and reorders. Falls back to original order if the API call fails."""
+    if not rows:
+        return rows
+    docs = [r.get("content") or "" for r in rows]
+    try:
+        resp = co.rerank(
+            model=RERANK_MODEL,
+            query=question,
+            documents=docs,
+            top_n=min(len(docs), CONTEXT_CHUNKS),
+        )
+    except Exception as exc:
+        print(f"[rerank] failed, falling back to RRF order: {exc}")
+        return rows
+    reordered = []
+    for result in resp.results:
+        row = dict(rows[result.index])
+        row["rerank_score"] = float(result.relevance_score)
+        reordered.append(row)
+    return reordered
 
 
 @app.post("/query")
@@ -231,6 +256,7 @@ async def query_document(query: QueryRequest):
         query.question,
         match_count=RETRIEVE_K,
     )
+    rows = _rerank_rows(query.question, rows)
 
     if not rows:
         return {
@@ -258,6 +284,7 @@ async def query_document(query: QueryRequest):
             "similarity": r.get("similarity"),
             "rrf_score": r.get("rrf_score"),
             "bm25_rank": r.get("bm25_rank"),
+            "rerank_score": r.get("rerank_score"),
             "authority_tier": r.get("doc_authority_tier"),
             "publication_date": r.get("doc_publication_date"),
         }
