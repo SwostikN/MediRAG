@@ -21,14 +21,14 @@ try:
     from .supabase_client import (
         insert_chunk,
         insert_document,
-        match_chunks,
+        match_chunks_hybrid,
     )
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
         insert_chunk,
         insert_document,
-        match_chunks,
+        match_chunks_hybrid,
     )
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
@@ -219,14 +219,18 @@ class QueryRequest(BaseModel):
     question: str
 
 
-TOP_K = 10
+RETRIEVE_K = 30
 CONTEXT_CHUNKS = 6
 
 
 @app.post("/query")
 async def query_document(query: QueryRequest):
     q_vec = get_query_encoder().encode_one(query.question)
-    rows = match_chunks(to_pgvector_literal(q_vec), match_count=TOP_K)
+    rows = match_chunks_hybrid(
+        to_pgvector_literal(q_vec),
+        query.question,
+        match_count=RETRIEVE_K,
+    )
 
     if not rows:
         return {
@@ -252,6 +256,8 @@ async def query_document(query: QueryRequest):
             "source": r.get("doc_source"),
             "source_url": r.get("doc_source_url"),
             "similarity": r.get("similarity"),
+            "rrf_score": r.get("rrf_score"),
+            "bm25_rank": r.get("bm25_rank"),
             "authority_tier": r.get("doc_authority_tier"),
             "publication_date": r.get("doc_publication_date"),
         }

@@ -183,6 +183,32 @@ def match_chunks(query_embedding: str, match_count: int = 50) -> List[dict]:
     return []
 
 
+def match_chunks_hybrid(
+    query_embedding: str,
+    query_text: str,
+    match_count: int = 30,
+    candidate_count: int = 50,
+    rrf_k: int = 60,
+) -> List[dict]:
+    """Hybrid retrieval (dense + BM25 via RRF). See supabase/005_match_chunks_hybrid.sql."""
+    res = _rpc(
+        "match_chunks_hybrid",
+        {
+            "query_embedding": query_embedding,
+            "query_text": query_text,
+            "match_count": match_count,
+            "candidate_count": candidate_count,
+            "rrf_k": rrf_k,
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        print(f"[supabase_client] match_chunks_hybrid failed: {res['error']}")
+        return []
+    if isinstance(res, list):
+        return res
+    return []
+
+
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:
     payload = {"query_text": query_text, "user_id": user_id, "timestamp": None}
     return _post_table("query", [payload])
