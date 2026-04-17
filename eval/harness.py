@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -139,15 +140,34 @@ def faithfulness_proxy(answer: str, hints: list[str]) -> Optional[float]:
     return hits / len(hints)
 
 
+_TOKEN_RE = __import__("re").compile(r"[a-z0-9]+")
+_STOPWORDS = {"the", "a", "an", "of", "and", "or", "for", "to", "in", "on", "info"}
+
+
+def _tokenize(s: str) -> set[str]:
+    return {t for t in _TOKEN_RE.findall(s.lower()) if t not in _STOPWORDS}
+
+
 def recall_at_k(retrieved_sources: list[str], expected_sources: list[str], k: int = 5) -> Optional[float]:
+    """Recall@k via token-set overlap.
+
+    A gold expected_source counts as retrieved if any of the top-k retrieved
+    sources share >=60% of its non-stopword tokens. Substring match was too
+    strict — it missed e.g. gold "NHS type 2 diabetes" against retrieved
+    "Type 2 diabetes NHS https://...".
+    """
     if not expected_sources:
         return None
-    top = [s.lower() for s in retrieved_sources[:k]]
+    retrieved_token_sets = [_tokenize(s) for s in retrieved_sources[:k]]
     hits = 0
     for exp in expected_sources:
-        exp_l = exp.lower()
-        if any(exp_l in r or r in exp_l for r in top):
-            hits += 1
+        exp_tok = _tokenize(exp)
+        if not exp_tok:
+            continue
+        for r_tok in retrieved_token_sets:
+            if len(exp_tok & r_tok) / len(exp_tok) >= 0.6:
+                hits += 1
+                break
     return hits / len(expected_sources)
 
 
@@ -170,7 +190,7 @@ def run_pipeline(query: str, server_url: Optional[str]) -> Optional[dict[str, An
         resp = requests.post(
             f"{server_url.rstrip('/')}/query",
             json={"question": query},
-            timeout=30,
+            timeout=60,
         )
     except Exception as exc:
         return {"error": f"request failed: {exc}"}
@@ -180,14 +200,26 @@ def run_pipeline(query: str, server_url: Optional[str]) -> Optional[dict[str, An
         body = resp.json()
     except Exception:
         return {"error": "non-json response"}
+    raw_sources = body.get("sources") or []
+    flat: list[str] = []
+    for s in raw_sources:
+        if isinstance(s, str):
+            flat.append(s.lower())
+        elif isinstance(s, dict):
+            parts = [s.get("title") or "", s.get("source") or "", s.get("source_url") or ""]
+            flat.append(" ".join(p for p in parts if p).lower())
     return {
         "answer": body.get("answer"),
-        "retrieved_sources": body.get("sources") or [],
+        "retrieved_sources": flat,
     }
 
 
 def run_eval(items: list[GoldItem], server_url: Optional[str]) -> dict[str, StageResult]:
     per_stage: dict[str, StageResult] = {s: StageResult() for s in STAGES}
+    runnable = [it for it in items if server_url and it.stage != "redflag"]
+    progress_total = len(runnable)
+    progress_i = 0
+    t0 = time.time()
     for item in items:
         result = per_stage[item.stage]
         result.n += 1
@@ -195,10 +227,18 @@ def run_eval(items: list[GoldItem], server_url: Optional[str]) -> dict[str, Stag
             continue
         if item.stage == "redflag":
             continue
+        progress_i += 1
+        elapsed = time.time() - t0
+        print(
+            f"[{progress_i}/{progress_total}] {item.stage}::{item.id} "
+            f"({elapsed:.1f}s elapsed) — {item.query[:60]}",
+            flush=True,
+        )
         pipeline = run_pipeline(item.query, server_url)
         if pipeline is None:
             continue
         if "error" in pipeline:
+            print(f"  error: {pipeline['error']}", flush=True)
             result.pipeline_errors.append(f"{item.id}: {pipeline['error']}")
             continue
         retrieved = pipeline.get("retrieved_sources") or []

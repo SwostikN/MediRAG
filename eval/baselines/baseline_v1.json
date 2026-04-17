@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-16T19:08:05.395275+00:00",
+  "timestamp": "2026-04-17T10:45:20.927092+00:00",
   "total_pairs": 30,
   "gold_file_counts": {
     "redflag": 5,
@@ -11,8 +11,8 @@
   },
   "validation_errors": [],
   "pipeline": {
-    "server_url": null,
-    "available": false
+    "server_url": "http://127.0.0.1:8000",
+    "available": true
   },
   "per_stage": {
     "redflag": {
@@ -25,42 +25,42 @@
     },
     "intake": {
       "n": 5,
-      "recall_at_5": null,
-      "faithfulness_proxy": null,
-      "retrieval_attempted": 0,
-      "generation_attempted": 0,
+      "recall_at_5": 0.0,
+      "faithfulness_proxy": 0.05833333333333333,
+      "retrieval_attempted": 5,
+      "generation_attempted": 5,
       "pipeline_errors": []
     },
     "navigation": {
       "n": 5,
-      "recall_at_5": null,
-      "faithfulness_proxy": null,
-      "retrieval_attempted": 0,
-      "generation_attempted": 0,
+      "recall_at_5": 0.1,
+      "faithfulness_proxy": 0.08,
+      "retrieval_attempted": 5,
+      "generation_attempted": 5,
       "pipeline_errors": []
     },
     "visit_prep": {
       "n": 5,
-      "recall_at_5": null,
-      "faithfulness_proxy": null,
-      "retrieval_attempted": 0,
-      "generation_attempted": 0,
+      "recall_at_5": 0.13333333333333333,
+      "faithfulness_proxy": 0.1583333333333333,
+      "retrieval_attempted": 5,
+      "generation_attempted": 5,
       "pipeline_errors": []
     },
     "results": {
       "n": 5,
-      "recall_at_5": null,
-      "faithfulness_proxy": null,
-      "retrieval_attempted": 0,
-      "generation_attempted": 0,
+      "recall_at_5": 0.1,
+      "faithfulness_proxy": 0.03333333333333333,
+      "retrieval_attempted": 5,
+      "generation_attempted": 5,
       "pipeline_errors": []
     },
     "condition": {
       "n": 5,
-      "recall_at_5": null,
-      "faithfulness_proxy": null,
-      "retrieval_attempted": 0,
-      "generation_attempted": 0,
+      "recall_at_5": 0.4333333333333333,
+      "faithfulness_proxy": 0.11333333333333333,
+      "retrieval_attempted": 5,
+      "generation_attempted": 5,
       "pipeline_errors": []
     }
   },
