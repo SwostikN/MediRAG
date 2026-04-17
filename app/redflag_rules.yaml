@@ -12,8 +12,35 @@
 #
 # First match wins. Order rules from most-specific to most-general so
 # (pregnant + seizure) fires pregnancy_seizure before generic seizure_active.
+#
+# -------------------------------------------------------------------
+# Source-citation methodology (for the reviewing clinician)
+# -------------------------------------------------------------------
+# Every rule carries a `# source:` comment listing the primary clinical
+# authority the trigger set was drawn from. Citations are pointer-level
+# (e.g. "NHS 111 'Chest pain' pathway") rather than verbatim quotations
+# with volume / page numbers — please verify against the current version
+# of the cited guideline before signing off.
+#
+# Sources used across the ruleset:
+#   - NHS 111 online triage pathways (UK public lay-facing triage)
+#   - WHO IMCI general danger signs (paediatric <5)
+#   - WHO guidelines for management of snakebites (SE Asia region)
+#   - NICE clinical guidelines (CG102, CG107, CG134, CG141, CG176, NG28, NG88)
+#   - ACEP / ESI Emergency Severity Index (triage framework)
+#   - AAP, AAO, AUA, ABA specialty-society emergency criteria
+#   - Sepsis-3 consensus (qSOFA) / UK Sepsis Trust
+#   - ILAE status epilepticus definition; ERC / AHA resuscitation algorithms
+#   - WAO anaphylaxis diagnostic criteria
+#   - Columbia Suicide Severity Rating Scale (C-SSRS)
+#   - CDC heat-related-illness guidance
+#
+# A rule without a defensible source is a rule that should be removed.
 
 rules:
+  # source: NHS 111 "Chest pain" triage pathway + classic ACS presentation
+  #   — chest discomfort + ≥1 associated sign (arm/jaw radiation, dyspnoea,
+  #   diaphoresis, nausea). "Crushing" is the most specific descriptor.
   - id: chest_pain_cardiac
     category: cardiac
     response_template: redflag_cardiac_np
@@ -53,6 +80,9 @@ rules:
             - "feels sick"
             - "vomiting"
 
+  # source: FAST / BE-FAST stroke screen (American Stroke Assoc., UK Stroke
+  #   Assoc.) — any single FAST-positive sign (face droop / arm weakness /
+  #   speech disturbance / sudden confusion / sudden vision loss) is a red flag.
   - id: stroke_signs
     category: neurological
     response_template: redflag_stroke_np
@@ -88,6 +118,9 @@ rules:
         - "sudden confusion"
         - "sudden trouble seeing"
 
+  # source: NICE CG107 "Hypertension in pregnancy" + WHO MCEE severe-PE criteria
+  #   — preeclampsia warning features: severe headache + visual disturbance +
+  #   facial / hand oedema in pregnancy.
   - id: preeclampsia_signs
     category: obstetric
     response_template: redflag_obstetric_np
@@ -113,6 +146,9 @@ rules:
             - "face is swollen"
             - "swollen face"
 
+  # source: WHO antepartum/postpartum haemorrhage guidance + RCOG "Antepartum
+  #   haemorrhage" Green-top — heavy bleeding in pregnancy is a maternal
+  #   emergency at any gestation.
   - id: obstetric_bleeding
     category: obstetric
     response_template: redflag_obstetric_np
@@ -132,6 +168,8 @@ rules:
             - "clots of blood"
             - "gushing blood"
 
+  # source: NICE CG107 eclampsia criteria + WHO MCEE
+  #   — any convulsion in pregnancy is eclampsia until proven otherwise.
   - id: pregnancy_seizure
     category: obstetric
     response_template: redflag_obstetric_np
@@ -148,6 +186,8 @@ rules:
             - "had a fit"
             - "having fits"
 
+  # source: NICE NG88 "Heavy menstrual bleeding" + NHS 111 heavy periods pathway
+  #   — soaking a pad / tampon every hour is the recognised red-flag threshold.
   - id: heavy_vaginal_bleeding
     category: gynecological
     response_template: redflag_obstetric_np
@@ -161,6 +201,9 @@ rules:
         - "menstrual bleeding won't stop"
         - "period bleeding won't stop"
 
+  # source: World Allergy Organization (WAO) anaphylaxis diagnostic criteria +
+  #   NICE CG134 — airway / mucosal involvement (throat, tongue, lip swelling)
+  #   with respiratory compromise or a known exposure trigger is diagnostic.
   - id: anaphylaxis
     category: allergic
     response_template: redflag_anaphylaxis_np
@@ -200,6 +243,9 @@ rules:
             - "after the antibiotic"
             - "allergic reaction"
 
+  # source: WAO anaphylaxis criteria (lower-threshold subset) + NICE CG134
+  #   — facial / lip swelling + any respiratory compromise warrants anaphylaxis
+  #   treatment even without explicit exposure history.
   - id: severe_allergic_reaction
     category: allergic
     response_template: redflag_anaphylaxis_np
@@ -220,6 +266,9 @@ rules:
             - "wheezing"
             - "throat tightening"
 
+  # source: Stop the Bleed (ACS-COT) + ATLS haemorrhage-control principles
+  #   — uncontrolled bleeding, spurting / pulsing blood, or soaked-through
+  #   dressing is class II+ haemorrhage requiring emergency care.
   - id: severe_bleeding
     category: trauma
     response_template: redflag_trauma_np
@@ -237,6 +286,9 @@ rules:
         - "soaked the bandage"
         - "gushing blood from"
 
+  # source: WHO seizure first aid + ILAE status-epilepticus definition
+  #   — any seizure lasting >5 min (or unwitnessed duration) is status
+  #   epilepticus and a medical emergency.
   - id: seizure_active
     category: neurological
     response_template: redflag_seizure_np
@@ -249,6 +301,9 @@ rules:
         - "is convulsing"
         - "seizure right now"
 
+  # source: WHO "Preventing suicide: a global imperative" + Columbia Suicide
+  #   Severity Rating Scale (C-SSRS) tiers 4–5 — active ideation with plan,
+  #   means, or stated intent is a psychiatric emergency.
   - id: suicidal_active
     category: mental-health
     response_template: redflag_mental_health_np
@@ -267,6 +322,9 @@ rules:
         - "better off dead"
         - "everyone would be better off dead"
 
+  # source: psychiatric-emergency literature — command auditory hallucinations
+  #   directing harm to self or others carry imminent-danger risk; treat as
+  #   mental-health emergency regardless of diagnosis.
   - id: psychosis_harm
     category: mental-health
     response_template: redflag_mental_health_np
@@ -283,6 +341,10 @@ rules:
         - "want to kill him"
         - "want to kill her"
 
+  # source: NICE CG176 "Head injury" + Canadian CT Head Rule
+  #   — LOC, repeated vomiting, amnesia, seizure, CSF leak (clear fluid from
+  #   nose / ear), or bleeding from ear after head trauma = major red flag
+  #   for intracranial injury.
   - id: head_injury_serious
     category: trauma
     response_template: redflag_trauma_np
@@ -316,6 +378,9 @@ rules:
             - "bleeding from her ear"
             - "clear fluid from nose"
 
+  # source: NHS 111 "Breathing difficulty" pathway + ERC / AHA resuscitation
+  #   triggers — central cyanosis, agonal breathing, or stopped breathing
+  #   requires immediate action.
   - id: difficulty_breathing_severe
     category: respiratory
     response_template: redflag_respiratory_np
@@ -332,6 +397,9 @@ rules:
         - "stopped breathing"
         - "struggling to breathe"
 
+  # source: Red Cross / ERC / AHA choking algorithm
+  #   — foreign-body airway obstruction with inability to clear is a
+  #   time-critical emergency.
   - id: choking
     category: respiratory
     response_template: redflag_respiratory_np
@@ -348,6 +416,9 @@ rules:
         - "can't cough it out"
         - "can't get it out"
 
+  # source: AAP "Fever in infants <90 days" + WHO IMCI general danger signs
+  #   — any temperature ≥38°C in an infant under 3 months requires ED-level
+  #   evaluation; serious bacterial infection must be excluded.
   - id: infant_fever_under3mo
     category: pediatric
     response_template: redflag_pediatric_np
@@ -375,6 +446,9 @@ rules:
             - "39"
             - "40"
 
+  # source: WHO IMCI general danger signs — unable to drink / breastfeed,
+  #   lethargy, unresponsiveness, or convulsions combined with fever is a
+  #   major paediatric red flag.
   - id: infant_fever_lethargy
     category: pediatric
     response_template: redflag_pediatric_np
@@ -409,6 +483,8 @@ rules:
             - "unresponsive"
             - "barely responsive"
 
+  # source: WHO IMCI respiratory danger signs — central cyanosis (blue lips,
+  #   perioral cyanosis) indicates hypoxaemia and needs immediate care.
   - id: infant_blue_lips
     category: pediatric
     response_template: redflag_pediatric_np
@@ -429,6 +505,8 @@ rules:
             - "blue face"
             - "turning blue"
 
+  # source: WHO IMCI convulsion danger sign — seizure in a child under 5
+  #   (or any paediatric first seizure) is a paediatric emergency.
   - id: infant_seizure
     category: pediatric
     response_template: redflag_pediatric_np
@@ -455,6 +533,9 @@ rules:
             - "fitting"
             - "had a fit"
 
+  # source: NICE CG102 "Meningitis (bacterial) and meningococcal disease"
+  #   — classic triad (fever + neck stiffness + altered mental status) plus
+  #   non-blanching purpuric rash and photophobia.
   - id: meningitis_signs
     category: infectious
     response_template: redflag_infectious_np
@@ -482,6 +563,9 @@ rules:
             - "light hurts"
             - "sensitive to light"
 
+  # source: Sepsis-3 consensus (qSOFA: AMS, RR ≥22, SBP ≤100) + UK Sepsis
+  #   Trust "Symptoms" campaign — infection with AMS or haemodynamic
+  #   compromise warrants immediate sepsis workup.
   - id: sepsis_signs
     category: infectious
     response_template: redflag_sepsis_np
@@ -506,6 +590,10 @@ rules:
             - "hands are cold"
             - "hands and feet are cold"
 
+  # source: NICE NG28 "Type 2 diabetes in adults" + ADA "Standards of Care"
+  #   — Kussmaul breathing + fruity (ketotic) breath in known diabetes
+  #   suggests DKA; altered consciousness in a diabetic suggests severe
+  #   hypoglycaemia.
   - id: diabetic_emergency
     category: endocrine
     response_template: redflag_diabetic_np
@@ -533,6 +621,9 @@ rules:
             - "heavy breathing and fruity"
             - "deep heavy breathing"
 
+  # source: AUA / EAU testicular torsion guideline
+  #   — sudden severe testicular pain with swelling. Testicle salvageable
+  #   within roughly 6 hours; time-critical surgical emergency.
   - id: testicular_torsion
     category: urological
     response_template: redflag_urological_np
@@ -549,6 +640,9 @@ rules:
             - "swollen and painful"
             - "very painful and swollen"
 
+  # source: AAO "Ophthalmology emergencies" guidance
+  #   — chemical splash, penetrating trauma, or sudden vision loss is a
+  #   sight-threatening emergency requiring immediate irrigation / referral.
   - id: eye_injury_serious
     category: trauma
     response_template: redflag_trauma_np
@@ -566,6 +660,9 @@ rules:
         - "sudden vision loss"
         - "something pierced my eye"
 
+  # source: American Burn Association referral criteria + NHS 111 burns pathway
+  #   — facial, electrical, chemical, or large burns require burn-unit
+  #   evaluation regardless of depth estimate.
   - id: burn_serious
     category: trauma
     response_template: redflag_burn_np
@@ -581,6 +678,10 @@ rules:
         - "electric shock burn"
         - "chemical burn"
 
+  # source: WHO "Guidelines for poison control" + IPCS INTOX database
+  #   — ingestion of caustics / pesticides (paraquat, organophosphates) /
+  #   overdose all require ED-level care. Nepal-relevant note: paraquat and
+  #   OP self-poisoning are leading rural self-harm causes.
   - id: poisoning
     category: toxicology
     response_template: redflag_poisoning_np
@@ -608,6 +709,10 @@ rules:
         - "swallowed the whole bottle"
         - "drank the whole bottle"
 
+  # source: WHO "Guidelines for management of snakebites" (SE Asia Region, 2nd ed.)
+  #   — any suspected bite is an emergency; antivenom decisions require hospital.
+  #   Nepal-relevant: Russell's viper, kraits, and cobras are the dominant
+  #   medically significant species in the Terai / lowlands.
   - id: snake_bite
     category: envenomation
     response_template: redflag_envenomation_np
@@ -620,6 +725,9 @@ rules:
         - "snake bit him"
         - "snake bit her"
 
+  # source: NICE CG141 "Acute upper GI bleeding" + NHS 111 haematemesis pathway
+  #   — haematemesis, coffee-ground vomit, or haemoptysis requires urgent
+  #   endoscopy / hospital evaluation.
   - id: vomiting_blood
     category: gi
     response_template: redflag_gi_bleed_np
@@ -634,6 +742,10 @@ rules:
         - "coughing up blood"
         - "blood in my vomit"
 
+  # source: surgical-textbook acute-abdomen assessment (peritonism)
+  #   — sudden-onset severe pain combined with rigid abdomen or syncope
+  #   suggests perforation, AAA rupture, ruptured ectopic, or mesenteric
+  #   ischaemia. Time-critical surgical emergencies.
   - id: abdominal_pain_severe_sudden
     category: gi
     response_template: redflag_abdomen_np
@@ -659,6 +771,10 @@ rules:
             - "black stool"
             - "tarry stool"
 
+  # source: CDC "Heat-related illness" + WHO heat-health guidance
+  #   — classical heat stroke: anhidrosis + altered mental status after
+  #   prolonged heat exposure. Exertional heat stroke may present without
+  #   anhidrosis (covered by the "confused" trigger).
   - id: heat_stroke
     category: environmental
     response_template: redflag_heat_np
@@ -685,6 +801,9 @@ rules:
   # rules so first-match-wins routes classic combos to emergency first.
   # ===================================================================
 
+  # source: ACEP / ESI Level 2 triage criteria + NHS 111 urgent-care pathways
+  #   — severity-modifier escape hatch. Fires when classic MI combo is
+  #   absent; template still escalates to 102 for radiation / SOB / sweating.
   - id: urgent_chest_pain
     category: cardiac
     response_template: redflag_urgent_chest_np
@@ -711,6 +830,9 @@ rules:
             - "chest hurts"
             - "chest is hurting"
 
+  # source: ESI Level 2 + NHS 111 "Headache" urgent-care pathway
+  #   — severity-modifier escape hatch. Template escalates to 102 for
+  #   thunderclap onset, FAST-positive signs, or meningitis features.
   - id: urgent_severe_headache
     category: neurological
     response_template: redflag_urgent_headache_np
@@ -736,6 +858,10 @@ rules:
             - "my head hurts"
             - "migraine"
 
+  # source: ESI Level 2 + NHS 111 "Stomach ache" urgent-care pathway
+  #   — severity-modifier escape hatch for severe pain absent acute-abdomen
+  #   combo (rigid abdomen / syncope / GI bleed). Template escalates if
+  #   those features develop.
   - id: urgent_severe_abdominal
     category: gi
     response_template: redflag_urgent_abdomen_np
@@ -764,6 +890,10 @@ rules:
             - "stomach ache"
             - "stomachache"
 
+  # source: ESI Level 2 + NHS 111 "Breathing difficulty" pathway
+  #   (non-cyanotic subset) — severity modifier + breathing concern.
+  #   Template escalates to 102 for cyanosis, inability to speak, or
+  #   co-occurring chest pain.
   - id: urgent_severe_breathing
     category: respiratory
     response_template: redflag_urgent_breathing_np
@@ -786,6 +916,11 @@ rules:
             - "shortness of breath"
             - "out of breath"
 
+  # source: RCOG "Reduced fetal movements" Green-top + NICE antenatal care
+  #   (NG201) + NHS 111 pregnancy pathway — any new symptom in pregnancy
+  #   warrants same-day obstetric review. Template escalates to 102 for
+  #   heavy bleeding, preeclampsia features, seizure, one-sided severe pain,
+  #   or absent fetal movements after 28 weeks.
   - id: urgent_pregnancy_concern
     category: obstetric
     response_template: redflag_urgent_pregnancy_np
