@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,6 +24,7 @@ try:
         match_chunks_hybrid_filtered,
     )
     from .filters import build_filter
+    from .intent import classify as classify_intent
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -32,6 +33,7 @@ except ImportError:
         match_chunks_hybrid_filtered,
     )
     from filters import build_filter
+    from intent import classify as classify_intent
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -225,10 +227,32 @@ RETRIEVE_K = 30
 CONTEXT_CHUNKS = 6
 RERANK_MODEL = "rerank-v3.5"
 
+FILTER_FALLBACK_MIN_ROWS = 5
+
+FRESHNESS_DECAY_PER_YEAR = 0.1
+
+# Stage-aware weighted-scoring weights, tuned from v5 ablation.
+# intake and results regressed hard when authority/freshness were mixed in;
+# their answers depend on the reranker's semantic match (symptom pathways,
+# lab-specific reference ranges) more than on doc authority.
+# condition, navigation, visit_prep benefit from the authority/freshness
+# nudge — WHO disease pages and recent Nepal care protocols are the right
+# sources to prefer when rerank ranks are close.
+#   (w_rerank, w_authority, w_freshness)
+STAGE_WEIGHTS = {
+    "intake":     (1.0, 0.0, 0.0),
+    "navigation": (0.7, 0.2, 0.1),
+    "visit_prep": (0.7, 0.2, 0.1),
+    "results":    (1.0, 0.0, 0.0),
+    "condition":  (0.7, 0.2, 0.1),
+}
+DEFAULT_WEIGHTS = (0.7, 0.2, 0.1)
+
 
 def _rerank_rows(question: str, rows: list) -> list:
-    """Rerank retrieved chunks with Cohere Rerank. Attaches rerank_score
-    and reorders. Falls back to original order if the API call fails."""
+    """Rerank retrieved chunks with Cohere Rerank. Returns every candidate
+    with rerank_score attached so downstream weighted scoring can reorder
+    the full set. Falls back to original order if the API call fails."""
     if not rows:
         return rows
     docs = [r.get("content") or "" for r in rows]
@@ -237,7 +261,7 @@ def _rerank_rows(question: str, rows: list) -> list:
             model=RERANK_MODEL,
             query=question,
             documents=docs,
-            top_n=min(len(docs), CONTEXT_CHUNKS),
+            top_n=len(docs),
         )
     except Exception as exc:
         print(f"[rerank] failed, falling back to RRF order: {exc}")
@@ -250,17 +274,67 @@ def _rerank_rows(question: str, rows: list) -> list:
     return reordered
 
 
+def _authority_score(tier: Any) -> float:
+    if tier is None:
+        return 0.5
+    try:
+        t = int(tier)
+    except (ValueError, TypeError):
+        return 0.5
+    return max(0.0, 1.0 - 0.2 * (t - 1))
+
+
+def _freshness_score(pub_date_str: Any) -> float:
+    if not pub_date_str:
+        return 0.5
+    try:
+        from datetime import date
+        parts = str(pub_date_str).split("-")
+        y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+        years = (date.today() - date(y, m, d)).days / 365.0
+    except Exception:
+        return 0.5
+    return max(0.0, min(1.0, 1.0 - FRESHNESS_DECAY_PER_YEAR * years))
+
+
+def _weighted_final_score(row: dict, weights: Tuple[float, float, float]) -> float:
+    w_r, w_a, w_f = weights
+    return (
+        w_r * (row.get("rerank_score") or 0.0)
+        + w_a * _authority_score(row.get("doc_authority_tier"))
+        + w_f * _freshness_score(row.get("doc_publication_date"))
+    )
+
+
 @app.post("/query")
 async def query_document(query: QueryRequest):
     q_vec = get_query_encoder().encode_one(query.question)
-    filter_kwargs = build_filter(query.question)
+    intent = classify_intent(query.question)
+    print(f"[intent] {intent} q={query.question[:60]!r}")
+    filter_kwargs = build_filter(query.question, intent=intent)
     rows = match_chunks_hybrid_filtered(
         to_pgvector_literal(q_vec),
         query.question,
         match_count=RETRIEVE_K,
         **filter_kwargs,
     )
+    if len(rows) < FILTER_FALLBACK_MIN_ROWS and intent is not None:
+        print(
+            f"[filter] intent={intent} yielded {len(rows)} rows (<{FILTER_FALLBACK_MIN_ROWS});"
+            f" falling back to Phase 2 default filter"
+        )
+        filter_kwargs = build_filter(query.question, intent=None)
+        rows = match_chunks_hybrid_filtered(
+            to_pgvector_literal(q_vec),
+            query.question,
+            match_count=RETRIEVE_K,
+            **filter_kwargs,
+        )
     rows = _rerank_rows(query.question, rows)
+    weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
+    for r in rows:
+        r["final_score"] = _weighted_final_score(r, weights)
+    rows.sort(key=lambda r: r.get("final_score", 0.0), reverse=True)
 
     if not rows:
         return {
@@ -289,6 +363,7 @@ async def query_document(query: QueryRequest):
             "rrf_score": r.get("rrf_score"),
             "bm25_rank": r.get("bm25_rank"),
             "rerank_score": r.get("rerank_score"),
+            "final_score": r.get("final_score"),
             "authority_tier": r.get("doc_authority_tier"),
             "publication_date": r.get("doc_publication_date"),
         }
