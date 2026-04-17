@@ -12,6 +12,11 @@ import pymupdf
 
 import cohere  # Official Cohere SDK
 
+try:
+    from groq import Groq
+except ImportError:  # pragma: no cover — groq is optional at import time
+    Groq = None  # type: ignore
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -61,8 +66,18 @@ print("Cohere API key loaded:", bool(COHERE_API_KEY))
 if not COHERE_API_KEY:
     raise RuntimeError("COHERE_API_KEY not found in environment")
 
-# Cohere Chat Client (NEW API)
+# Cohere Chat Client (NEW API). Always initialised — we still use Cohere
+# Rerank regardless of which provider generates the final answer.
 co = cohere.ClientV2(api_key=COHERE_API_KEY)
+
+# Optional Groq client for the generate step. When GROQ_API_KEY is set
+# and the SDK is installed, /query uses Groq's Llama 3.3 70B (300–600ms
+# generate) instead of Cohere Chat (1800–4500ms). Falls back to Cohere
+# automatically if either is missing. Cohere Rerank is untouched.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+groq_client = Groq(api_key=GROQ_API_KEY) if (Groq and GROQ_API_KEY) else None
+print(f"Groq generate enabled: {groq_client is not None} (model={GROQ_MODEL if groq_client else 'n/a'})")
 
 _article_encoder: Optional[ArticleEncoder] = None
 _query_encoder: Optional[QueryEncoder] = None
@@ -408,15 +423,35 @@ async def query_document(query: QueryRequest):
         },
     ]
 
-    response = co.chat(
-        model="command-r-08-2024",
-        messages=messages,
-        max_tokens=250,
-    )
-    try:
-        answer = response.message.content[0].text
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
+    if groq_client is not None:
+        try:
+            groq_resp = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=messages,
+                max_tokens=250,
+            )
+            answer = groq_resp.choices[0].message.content
+        except Exception as exc:
+            print(f"[groq] generate failed, falling back to Cohere: {exc}")
+            response = co.chat(
+                model="command-r-08-2024",
+                messages=messages,
+                max_tokens=250,
+            )
+            try:
+                answer = response.message.content[0].text
+            except Exception:
+                raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
+    else:
+        response = co.chat(
+            model="command-r-08-2024",
+            messages=messages,
+            max_tokens=250,
+        )
+        try:
+            answer = response.message.content[0].text
+        except Exception:
+            raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
     return {"answer": answer, "sources": sources}
 

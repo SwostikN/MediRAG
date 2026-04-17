@@ -4,6 +4,7 @@ python-dotenv
 pydantic
 pymupdf
 cohere
+groq
 requests
 PyYAML
 
