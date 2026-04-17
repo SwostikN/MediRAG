@@ -1,0 +1,306 @@
+# Week 7A — Stage 1 (intake) history-taking templates
+#
+# Purpose: turn a vague complaint into a structured clinical summary the
+# user can show a doctor. Descriptive only — no diagnosis, no "sounds like",
+# no differential.
+#
+# Each template names the clinical framework it's based on so a reviewing
+# clinician can audit the slot structure. Citations are pointer-level;
+# full references belong in the paper bibliography.
+#
+# Frameworks used across the ruleset:
+#   - SOCRATES pain history (Hegedus, 2016; widely taught in UK/commonwealth
+#     medical curricula; see Oxford Handbook of Clinical Medicine)
+#   - OPQRST symptom history (American College of Surgeons, ATLS / common
+#     EMS training; generic acronym for any symptom)
+#   - WHO IMAI (Integrated Management of Adolescent and Adult Illness)
+#     structured history modules for fever, respiratory, chronic disease
+#   - PHQ-2 + GAD-2 (brief depression + anxiety screens, Kroenke et al.)
+#     — screening prompts only; no scoring output exposed to user
+#
+# Selection order:
+#   1. Keyword match (deterministic, zero latency) — first-match-wins over
+#      the template list below.
+#   2. If no keyword matches, fall back to an LLM classifier call (impl
+#      lives in app/stages/intake.py, not this file).
+#   3. If classifier also fails / returns an unknown bucket, use `other`.
+
+templates:
+
+  # source: SOCRATES (Hegedus 2016) — Site, Onset, Character, Radiation,
+  #   Associations, Timing, Exacerbating/relieving, Severity. Five questions
+  #   below cover all eight slots (Site+Radiation merged; Character+Severity
+  #   merged; Timing+Exacerbating/relieving merged).
+  - id: pain
+    label: "Pain — structured history"
+    framework: SOCRATES
+    keywords:
+      - pain
+      - hurts
+      - hurting
+      - ache
+      - aching
+      - sore
+      - soreness
+      - stiff
+      - stiffness
+      - cramp
+      - cramping
+      - throbbing
+      - burning sensation
+    slot_questions:
+      - "Where exactly is the pain? Does it spread to anywhere else — arm, leg, jaw, back?"
+      - "When did it start, and did it come on gradually or suddenly?"
+      - "How does it feel — aching, sharp, burning, throbbing, something else? On a scale of 1–10, how bad is it at its worst?"
+      - "Is it constant or does it come and go? What makes it worse, and what helps?"
+      - "Does anything else happen along with it — fever, nausea, numbness, weakness, sweating, shortness of breath?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Use SOCRATES order: Site · Onset · Character · Radiation · Associations
+      · Timing · Exacerbating/relieving · Severity.
+      Descriptive only. Keep it under 80 words.
+
+  # source: WHO IMAI chronic-disease history module + clinical experience
+  #   of common fatigue workup (thyroid / anemia / diabetes / mood / sleep).
+  #   No standard acronym fits fatigue well; slots chosen to cover the
+  #   differential a GP would work through.
+  - id: fatigue
+    label: "Fatigue / low energy — structured history"
+    framework: "WHO IMAI chronic-disease history"
+    keywords:
+      - tired
+      - tiredness
+      - fatigue
+      - fatigued
+      - exhausted
+      - exhaustion
+      - no energy
+      - low energy
+      - weakness all over
+      - feel weak
+      - drained
+      - worn out
+    slot_questions:
+      - "How long have you been feeling this way, and did it come on gradually or suddenly?"
+      - "Is it affecting your daily activities — work, household tasks, exercise, concentration?"
+      - "How is your sleep — enough hours, and do you feel rested when you wake up?"
+      - "Any other changes alongside it — weight, appetite, mood, hair, skin, bowel habits, menstrual cycle?"
+      - "Any family history of thyroid disease, diabetes, anemia, or heart conditions?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Structure: Duration & onset · Functional impact · Sleep · Associated
+      changes (weight/appetite/mood/hair/skin/bowel/menses) · Family history.
+      Descriptive only. Keep it under 80 words.
+
+  # source: WHO IMAI fever module (adult + pediatric) — duration, pattern,
+  #   associated symptoms, exposure history, hydration status. Nepal-
+  #   specific additions: dengue/typhoid/malaria exposure questions are
+  #   folded into the exposure slot.
+  - id: fever
+    label: "Fever — structured history"
+    framework: "WHO IMAI fever module"
+    keywords:
+      - fever
+      - feverish
+      - temperature
+      - temp is
+      - running a temp
+      - chills
+      - shivering
+    slot_questions:
+      - "What's your highest temperature been, and for how many days now?"
+      - "Is the fever constant, or does it spike and come back down? Any pattern to the timing?"
+      - "What else are you feeling — chills, sweats, body aches, cough, sore throat, burning urine, diarrhea, rash, stiff neck, headache?"
+      - "Recent travel, sick contacts, or mosquito/tick bites? (dengue, typhoid, malaria exposure)"
+      - "Are you able to drink fluids and keep food down? How is your urine output?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Structure: Max temp & duration · Pattern · Associated symptoms ·
+      Exposure history (travel / contacts / vectors) · Hydration & oral
+      intake. Descriptive only. Keep it under 80 words.
+
+  # source: OPQRST adapted for abdominal complaints + WHO IMAI GI module.
+  #   "Red-flag" features (GI bleeding, inability to tolerate fluids) are
+  #   flagged in slot 5 so the navigation stage can tier appropriately.
+  - id: gi
+    label: "Stomach / digestive — structured history"
+    framework: "OPQRST + WHO IMAI GI module"
+    keywords:
+      - stomach
+      - belly
+      - abdomen
+      - abdominal
+      - tummy
+      - vomit
+      - vomiting
+      - nausea
+      - diarrhea
+      - diarrhoea
+      - loose motion
+      - loose stool
+      - constipation
+      - can't poop
+      - cannot poop
+      - indigestion
+      - acidity
+      - heartburn
+      - bloating
+    slot_questions:
+      - "Is it mainly pain, vomiting, diarrhea, constipation, bloating, or a combination?"
+      - "When did it start, and is it getting worse, better, or staying the same?"
+      - "Can you describe it in more detail — if pain, where and what type; if vomiting, any blood; if stool changes, what color and consistency?"
+      - "What did you eat in the 24–48 hours before it started? Any new medications, supplements, or water source changes?"
+      - "Any fever, weight loss, blood (in vomit or stool), or inability to keep fluids down?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Structure: Predominant symptom · Onset & trajectory · Character
+      (location, appearance, blood) · Dietary/exposure history · Red-flag
+      features (fever / weight loss / bleeding / dehydration). Descriptive
+      only. Keep it under 80 words.
+
+  # source: OPQRST adapted for respiratory + WHO IMAI respiratory module.
+  #   TB is endemic in Nepal — weight loss / night sweats / hemoptysis
+  #   questions are included in slot 5 by design.
+  - id: respiratory
+    label: "Cough / breathing — structured history"
+    framework: "OPQRST + WHO IMAI respiratory module"
+    keywords:
+      - cough
+      - coughing
+      - breathing
+      - breath
+      - breathless
+      - breathlessness
+      - short of breath
+      - shortness of breath
+      - wheeze
+      - wheezing
+      - chest tightness
+      - phlegm
+      - sputum
+    slot_questions:
+      - "Is it mainly cough, shortness of breath, wheezing, chest tightness, or a mix?"
+      - "When did it start, and is it constant or does it come and go?"
+      - "If you're coughing — is it dry or producing phlegm? If phlegm, what color? Any blood?"
+      - "What makes it worse — activity, lying flat, cold air, dust, smoke, a specific time of day?"
+      - "Any fever, weight loss, night sweats, chest pain, or leg swelling? Any smoking history or TB contacts?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Structure: Predominant symptom · Onset & pattern · Sputum character
+      (if present) · Triggers · Red-flag features (fever / weight loss /
+      night sweats / hemoptysis / TB contact / smoking). Descriptive only.
+      Keep it under 80 words.
+
+  # source: Clinical morphology-based history (standard dermatology teaching;
+  #   e.g. Bolognia Dermatology chapter on history-taking). Slots chosen for
+  #   what a GP needs to triage to dermatology vs. treat primarily.
+  - id: derm
+    label: "Skin problem — structured history"
+    framework: "Morphology-based skin history"
+    keywords:
+      - rash
+      - skin
+      - itchy
+      - itch
+      - itching
+      - spots
+      - pimple
+      - pimples
+      - bumps on skin
+      - hives
+      - eczema
+      - psoriasis
+      - dry skin
+      - peeling
+      - blister
+      - blisters
+      - mole
+      - patch on skin
+      - red patch
+    slot_questions:
+      - "Where on your body is it, and how much area does it cover?"
+      - "When did you first notice it, and has it been spreading, shrinking, or staying the same?"
+      - "How does it look — flat red patch, raised bumps, blisters, scaly patches, open sores? Any color change over time?"
+      - "Is it itchy, painful, burning, or painless? Anything make it worse or better?"
+      - "Any new soaps, detergents, medications, foods, plants, or insect contact before it started? Any fever or joint pains alongside?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Structure: Location & extent · Onset & evolution · Morphology
+      (flat / raised / scaly / blistered) · Symptoms (itch / pain) ·
+      Exposure history + systemic features. Descriptive only. Keep it
+      under 80 words.
+
+  # source: PHQ-2 (Kroenke et al., 2003) + GAD-2 (Kroenke et al., 2007)
+  #   screening prompts + standard psychiatric history (duration, function,
+  #   triggers, coping, social support). This template is for NON-CRISIS
+  #   mental health queries only — suicidality / active self-harm is
+  #   intercepted by the red-flag engine before intake runs.
+  #   Template does NOT compute PHQ-2/GAD-2 scores or produce any diagnosis;
+  #   slots are descriptive prompts, not scored items.
+  - id: mental-health
+    label: "Mood / anxiety / emotional — structured history"
+    framework: "PHQ-2 + GAD-2 screening prompts (non-scored) + history"
+    keywords:
+      - sad
+      - depressed
+      - depression
+      - anxious
+      - anxiety
+      - panic
+      - stressed
+      - stress
+      - overwhelmed
+      - low mood
+      - feeling down
+      - hopeless
+      - worthless
+      - cant sleep
+      - can't sleep
+      - insomnia
+      - mental health
+    slot_questions:
+      - "What have you been feeling — low mood, anxious, disconnected, panicky, overwhelmed? When did it start?"
+      - "How is it affecting your daily life — sleep, appetite, work, relationships, things you normally enjoy?"
+      - "Any specific triggers you've noticed — stress at work, family issues, a loss, a change in environment, finances?"
+      - "Have you tried anything that helps — talking to someone, exercise, time off, rest?"
+      - "Is there anyone in your life you can talk to about this, or are you navigating it alone right now?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP or mental
+      health professional in Nepal. Structure: Predominant feeling &
+      duration · Functional impact (sleep/appetite/work/relationships) ·
+      Triggers · Coping strategies tried · Social support. Descriptive
+      only — NO diagnostic labels ("depression", "anxiety disorder").
+      Keep it under 80 words.
+
+  # source: OPQRST (generic) — Onset, Provocation, Quality, Region, Severity,
+  #   Time. Catch-all when no specific framework fits. Intentionally
+  #   broader slot prompts so the LLM can adapt to whatever the user
+  #   described.
+  - id: other
+    label: "General symptom — structured history"
+    framework: OPQRST
+    keywords: []
+    slot_questions:
+      - "Can you describe what's happening in a bit more detail? Where in the body, and how does it feel?"
+      - "When did it start, and has it changed since — getting better, worse, or staying the same?"
+      - "Is there a pattern — certain times of day, after eating, when you're stressed, after activity?"
+      - "Does anything make it worse, and does anything help?"
+      - "Anything else you've noticed alongside it — even things that seem unrelated?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP in Nepal.
+      Use OPQRST order: Onset · Provocation · Quality · Region · Severity
+      · Time, plus any associated symptoms the user mentioned. Descriptive
+      only. Keep it under 80 words.
+
+# Global generation constraints (applied on top of every template's
+# summary_prompt by app/stages/intake.py):
+#
+# 1. NEVER produce a differential diagnosis or guess what the condition is.
+# 2. NEVER use the phrases: "sounds like", "might be", "probably",
+#    "you have", "you are diagnosed with", "it could be". A regex guard in
+#    intake.py redacts these and retries.
+# 3. NEVER recommend a specific medication, dose, or test by name as
+#    "what you need". Tests can be mentioned as "a doctor may consider"
+#    in navigation (Stage 2), not intake.
+# 4. ALWAYS frame the summary as something the user reads to a doctor, not
+#    as the system's assessment.

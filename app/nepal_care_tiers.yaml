@@ -1,0 +1,88 @@
+# Nepal care-tier ladder. Reference data used by app/stages/navigation.py
+# to ground the LLM's tier recommendation. Tiers are ordered from lowest
+# (closest to home, fewest diagnostics) to highest (full emergency care).
+#
+# Sources: Nepal MoHP Public Health Service Standards; WHO IMAI Nepal
+# adaptation; general referral-pathway norms used across South Asia.
+#
+# Emergency ambulance in Nepal: 102. Police/general emergency: 100.
+#
+# This file is static reference data, not retrieved corpus. The navigation
+# stage passes it into the LLM prompt so the model can reason about WHICH
+# tier fits a complaint, rather than naming facility types it invented.
+
+tiers:
+  - id: self_care
+    label: Self-care at home
+    typical_urgency: Monitor for 24–48 hours
+    handles: >
+      Mild self-limiting symptoms that have been present < 48h with no red
+      flags, no high-risk features, no worsening trend. Hydration, rest,
+      over-the-counter symptom relief bought from a licensed pharmacy.
+    do_not_use_when: >
+      User has any red flag, is pregnant, is an infant / elderly / chronic
+      disease patient, or symptoms have already lasted several days.
+
+  - id: health_post
+    label: Health Post or Urban Health Centre
+    typical_urgency: Same-day or next-day walk-in
+    handles: >
+      Common acute illness assessment by a Health Assistant or Auxiliary
+      Health Worker. Basic examination, BP/temperature, simple wound care,
+      ORS, first-line antibiotics for common infections, referral upward
+      when needed. First point of contact in rural Nepal.
+    do_not_use_when: >
+      Symptoms suggest a condition needing lab tests, imaging, IV fluids,
+      or a medical officer review — those belong at PHCC or District.
+
+  - id: phcc
+    label: Primary Health Care Centre (PHCC)
+    typical_urgency: Same-day walk-in or routine appointment within 1–3 days
+    handles: >
+      Medical Officer consultation. Basic laboratory (CBC, urine dipstick,
+      malaria RDT, blood glucose), 24-hour emergency cover at many sites,
+      normal deliveries, initial management of non-severe pneumonia,
+      diarrhoea with some dehydration, uncomplicated chronic disease.
+
+  - id: district_hospital
+    label: District Hospital — general medicine OPD
+    typical_urgency: Routine appointment in the next 1–2 weeks, or same-day if worsening
+    handles: >
+      Medical officer and specialist-led OPD, full basic lab, X-ray,
+      ultrasound, inpatient beds, emergency department, paediatrics,
+      obstetrics, minor surgery. The correct tier for most persistent
+      non-red-flag complaints that a Health Post cannot resolve.
+
+  - id: zonal_central
+    label: Zonal / Central / Tertiary Hospital
+    typical_urgency: By referral from District Hospital, or direct if severe
+    handles: >
+      Specialist and sub-specialist care, CT / MRI, ICU, full surgical
+      suites, dialysis, oncology, cardiology. Appropriate when a District
+      Hospital has referred the patient, or when the presenting problem
+      clearly exceeds district-level capability.
+
+  - id: private_opd
+    label: Private hospital or specialist OPD
+    typical_urgency: Appointment within days, often same-week
+    handles: >
+      Faster access to specialist consultation and imaging where the user
+      can afford it. Clinically equivalent to a District / Zonal OPD for
+      most non-emergency complaints. A reasonable alternative tier to
+      suggest alongside the public option, never as a replacement for ED
+      when red flags are present.
+
+  - id: emergency_department
+    label: Nearest Emergency Department — call 102 for ambulance
+    typical_urgency: Go NOW. Do not wait.
+    handles: >
+      Life-threatening or limb-threatening presentations. This tier is
+      owned by the Stage 0 red-flag engine. The navigation stage must
+      only suggest ED as the PRIMARY tier when red flags are evident; it
+      should always list the specific ED-escalation triggers relevant to
+      the complaint under "Go to 102 right away if".
+
+# Default anchor when the LLM is uncertain which mid-tier to suggest.
+# Keeps the system conservative: never drops below District Hospital for
+# symptoms that have persisted beyond a few days.
+default_tier_for_persistent_symptoms: district_hospital

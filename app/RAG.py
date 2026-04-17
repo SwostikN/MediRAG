@@ -27,20 +27,28 @@ try:
         insert_chunk,
         insert_document,
         match_chunks_hybrid_filtered,
+        get_chat_session,
+        update_chat_session,
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
     from .redflag import check as redflag_check
+    from .stages import intake as intake_stage
+    from .stages import navigation as navigation_stage
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
         insert_chunk,
         insert_document,
         match_chunks_hybrid_filtered,
+        get_chat_session,
+        update_chat_session,
     )
     from filters import build_filter
     from intent import classify as classify_intent
     from redflag import check as redflag_check
+    from stages import intake as intake_stage
+    from stages import navigation as navigation_stage
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -103,7 +111,15 @@ MEDIRAG_SYSTEM_PROMPT = (
     "Do not give a diagnosis for the user. "
     "Do not recommend medications, doses, or treatments. "
     "Always frame answers as information to discuss with a doctor. "
-    "If a claim is not supported by the sources, say you don't have a source for it."
+    "If a claim is not supported by the sources, say you don't have a source for it.\n\n"
+    "Formatting rules (follow strictly):\n"
+    "- Use Markdown. Open with a one-sentence lead-in (no header above it).\n"
+    "- Group related points under short bold headers on their own line, e.g. "
+    "`**Symptoms:**`, `**When to see a doctor:**`, `**What to ask your doctor:**`.\n"
+    "- Under each header, use `-` bullets. One idea per bullet, one line per bullet.\n"
+    "- Never use numbered lists (`1.`, `2.`) for section grouping — bold headers only.\n"
+    "- Use **bold** inline for key terms the reader should remember.\n"
+    "- Do not output a `Sources:` section yourself — the system appends citations."
 )
 
 @app.on_event("startup")
@@ -245,12 +261,38 @@ async def upload_pdf(file: UploadFile = File(...)):
 # --------------------------------------------------
 # Query
 # --------------------------------------------------
+class HistoryTurn(BaseModel):
+    role: str
+    content: str
+
+
 class QueryRequest(BaseModel):
     question: str
+    session_id: Optional[str] = None
+    history: Optional[list[HistoryTurn]] = None
+
+
+HISTORY_MAX_TURNS = 6
+HISTORY_RETRIEVAL_USER_TURNS = 2
+
+
+def _retrieval_query_with_history(question: str, history: Optional[list]) -> str:
+    """Concatenate the last few user turns into the retrieval string so a
+    vague follow-up like 'what are the symptoms?' inherits the topic of
+    prior turns (e.g. 'hypertension'). Retrieval is bag-of-words-ish so
+    simple concatenation is enough — no LLM rewrite round-trip needed."""
+    if not history:
+        return question
+    prior_user = [h.content for h in history if h.role == "user" and h.content]
+    if not prior_user:
+        return question
+    tail = prior_user[-HISTORY_RETRIEVAL_USER_TURNS:]
+    return " ".join(tail + [question])
 
 
 RETRIEVE_K = 15
 CONTEXT_CHUNKS = 6
+DISPLAY_SOURCES = 3
 RERANK_MODEL = "rerank-v3.5"
 
 FILTER_FALLBACK_MIN_ROWS = 1  # only re-query Supabase if the filtered path yielded zero rows
@@ -332,6 +374,82 @@ def _weighted_final_score(row: dict, weights: Tuple[float, float, float]) -> flo
     )
 
 
+def _retrieve_ranked(question: str, *, intent: Optional[dict] = None) -> list:
+    """Run filtered hybrid retrieval → rerank → stage-weighted scoring.
+
+    Returns the full ranked row list (caller slices to CONTEXT_CHUNKS).
+    Extracted so Stage 2 navigation can run retrieval against the intake
+    summary with identical semantics to the routine /query path.
+    """
+    q_vec = get_query_encoder().encode_one(question)
+    if intent is None:
+        intent = classify_intent(question)
+    print(f"[intent] {intent} q={question[:60]!r}")
+    filter_kwargs = build_filter(question, intent=intent)
+    rows = match_chunks_hybrid_filtered(
+        to_pgvector_literal(q_vec),
+        question,
+        match_count=RETRIEVE_K,
+        **filter_kwargs,
+    )
+    if len(rows) < FILTER_FALLBACK_MIN_ROWS and intent is not None:
+        print(
+            f"[filter] intent={intent} yielded {len(rows)} rows (<{FILTER_FALLBACK_MIN_ROWS});"
+            f" falling back to Phase 2 default filter"
+        )
+        filter_kwargs = build_filter(question, intent=None)
+        rows = match_chunks_hybrid_filtered(
+            to_pgvector_literal(q_vec),
+            question,
+            match_count=RETRIEVE_K,
+            **filter_kwargs,
+        )
+    if len(rows) > CONTEXT_CHUNKS:
+        rows = _rerank_rows(question, rows)
+    weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
+    for r in rows:
+        r["final_score"] = _weighted_final_score(r, weights)
+    rows.sort(key=lambda r: r.get("final_score", 0.0), reverse=True)
+    return rows
+
+
+def _dedupe_sources(rows: list) -> list:
+    """Collapse retrieval rows that point at the same document into one
+    entry. Rows arrive already sorted by final_score, so keeping the
+    first occurrence of each key preserves the best-ranked chunk per
+    doc. Key preference: source_url, else (title, source) pair. Used
+    for DISPLAY only — LLM context still sees all chunks for diversity."""
+    seen: set = set()
+    unique: list = []
+    for r in rows:
+        url = r.get("doc_source_url")
+        key = url if url else (r.get("doc_title"), r.get("doc_source"))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(r)
+    return unique
+
+
+def _format_sources(top_rows: list) -> list:
+    return [
+        {
+            "rank": i,
+            "title": r.get("doc_title"),
+            "source": r.get("doc_source"),
+            "source_url": r.get("doc_source_url"),
+            "similarity": r.get("similarity"),
+            "rrf_score": r.get("rrf_score"),
+            "bm25_rank": r.get("bm25_rank"),
+            "rerank_score": r.get("rerank_score"),
+            "final_score": r.get("final_score"),
+            "authority_tier": r.get("doc_authority_tier"),
+            "publication_date": r.get("doc_publication_date"),
+        }
+        for i, r in enumerate(top_rows, start=1)
+    ]
+
+
 @app.post("/query")
 async def query_document(query: QueryRequest):
     # Week 6 Stage 0: deterministic red-flag screen runs first.
@@ -342,6 +460,7 @@ async def query_document(query: QueryRequest):
         return {
             "answer": rf.message,
             "sources": [],
+            "stage": "redflag",
             "red_flag": {
                 "rule_id": rf.rule_id,
                 "category": rf.category,
@@ -349,37 +468,92 @@ async def query_document(query: QueryRequest):
             },
         }
 
-    q_vec = get_query_encoder().encode_one(query.question)
-    intent = classify_intent(query.question)
-    print(f"[intent] {intent} q={query.question[:60]!r}")
-    filter_kwargs = build_filter(query.question, intent=intent)
-    rows = match_chunks_hybrid_filtered(
-        to_pgvector_literal(q_vec),
-        query.question,
-        match_count=RETRIEVE_K,
-        **filter_kwargs,
-    )
-    if len(rows) < FILTER_FALLBACK_MIN_ROWS and intent is not None:
-        print(
-            f"[filter] intent={intent} yielded {len(rows)} rows (<{FILTER_FALLBACK_MIN_ROWS});"
-            f" falling back to Phase 2 default filter"
-        )
-        filter_kwargs = build_filter(query.question, intent=None)
-        rows = match_chunks_hybrid_filtered(
-            to_pgvector_literal(q_vec),
-            query.question,
-            match_count=RETRIEVE_K,
-            **filter_kwargs,
-        )
-    # Skip Cohere rerank when we already have ≤CONTEXT_CHUNKS candidates:
-    # rerank's job is to narrow a wide pool down to the final context window,
-    # so running it on a pool that already fits in the window is pure latency.
-    if len(rows) > CONTEXT_CHUNKS:
-        rows = _rerank_rows(query.question, rows)
-    weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
-    for r in rows:
-        r["final_score"] = _weighted_final_score(r, weights)
-    rows.sort(key=lambda r: r.get("final_score", 0.0), reverse=True)
+    # Week 7A Stage 1: structured intake. Runs only when a session_id is
+    # provided and the session is in the 'intake' stage.
+    #
+    # Two sub-turns, driven by current session state in chat_sessions:
+    #   a) intent_bucket IS NULL → first intake turn: pick a template and
+    #      return its 5 slot questions. Persist the bucket.
+    #   b) intent_bucket NOT NULL and intake_summary IS NULL → second
+    #      intake turn: treat the user's message as the slot answers,
+    #      compose the bullet summary, persist it, and transition the
+    #      session to 'navigation'.
+    # Any other state (no session_id, stage past intake, summary already
+    # composed) falls through to the routine retrieval path below.
+    if query.session_id:
+        session = get_chat_session(query.session_id)
+        if session and session.get("current_stage") == "intake":
+            if not session.get("intent_bucket"):
+                template = intake_stage.select_template(
+                    query.question,
+                    groq_client=groq_client,
+                    groq_model=GROQ_MODEL,
+                )
+                questions = intake_stage.compose_questions(template)
+                update_chat_session(query.session_id, intent_bucket=template["id"])
+                print(f"[intake] bucket={template['id']} q={query.question[:60]!r}")
+                return {
+                    "answer": questions,
+                    "sources": [],
+                    "stage": "intake",
+                    "intake_turn": "questions",
+                    "intent_bucket": template["id"],
+                }
+            if not session.get("intake_summary"):
+                template = intake_stage.TEMPLATES_BY_ID.get(
+                    session["intent_bucket"],
+                    intake_stage.TEMPLATES_BY_ID["other"],
+                )
+                summary = intake_stage.compose_summary(
+                    template,
+                    user_answers=query.question,
+                    groq_client=groq_client,
+                    groq_model=GROQ_MODEL,
+                    cohere_client=co,
+                    cohere_model="command-r-08-2024",
+                )
+                # Stage 2 MVP: chain a care-tier recommendation onto the
+                # summary response so the user doesn't get a dead-end
+                # bullet list. Retrieval runs against the summary (richer
+                # signal than the raw slot answers) using the existing
+                # Week 5 corpus. Week 7B will upgrade the corpus with
+                # care-pathway content (WHO IMAI, NHS, MoHP STG).
+                nav_rows = _retrieve_ranked(summary)
+                nav_top = nav_rows[:CONTEXT_CHUNKS]
+                nav_block = navigation_stage.compose_recommendation(
+                    intake_summary=summary,
+                    intent_bucket=session["intent_bucket"],
+                    groq_client=groq_client,
+                    groq_model=GROQ_MODEL,
+                    cohere_client=co,
+                    cohere_model="command-r-08-2024",
+                    retrieval_rows=nav_top,
+                )
+                combined = f"{summary}\n\n---\n\n{nav_block}"
+                update_chat_session(
+                    query.session_id,
+                    current_stage="navigation",
+                    intake_summary=summary,
+                )
+                print(f"[intake] summary+nav composed bucket={template['id']}")
+                return {
+                    "answer": combined,
+                    "sources": _format_sources(
+                        _dedupe_sources(nav_rows)[:DISPLAY_SOURCES]
+                    ),
+                    "stage": "intake",
+                    "intake_turn": "summary",
+                    "intent_bucket": template["id"],
+                }
+
+    # Context-aware retrieval: concatenate prior user turns so follow-ups
+    # like "what are the symptoms?" inherit the topic ("hypertension") from
+    # earlier in the conversation. Without this the retrieval layer is
+    # fully stateless and a vague follow-up pulls unrelated chunks.
+    retrieval_query = _retrieval_query_with_history(query.question, query.history)
+    if retrieval_query != query.question:
+        print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
+    rows = _retrieve_ranked(retrieval_query)
 
     if not rows:
         return {
@@ -398,30 +572,19 @@ async def query_document(query: QueryRequest):
         context_blocks.append(f"[src:{i}] {title} — {heading}\n{r.get('content', '')}".strip())
     context_text = "\n\n".join(context_blocks)
 
-    sources = [
-        {
-            "rank": i,
-            "title": r.get("doc_title"),
-            "source": r.get("doc_source"),
-            "source_url": r.get("doc_source_url"),
-            "similarity": r.get("similarity"),
-            "rrf_score": r.get("rrf_score"),
-            "bm25_rank": r.get("bm25_rank"),
-            "rerank_score": r.get("rerank_score"),
-            "final_score": r.get("final_score"),
-            "authority_tier": r.get("doc_authority_tier"),
-            "publication_date": r.get("doc_publication_date"),
-        }
-        for i, r in enumerate(top_rows, start=1)
-    ]
+    sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
 
-    messages = [
-        {"role": "system", "content": MEDIRAG_SYSTEM_PROMPT},
+    messages: list[dict] = [{"role": "system", "content": MEDIRAG_SYSTEM_PROMPT}]
+    if query.history:
+        for h in query.history[-HISTORY_MAX_TURNS:]:
+            if h.role in ("user", "assistant") and h.content:
+                messages.append({"role": h.role, "content": h.content})
+    messages.append(
         {
             "role": "user",
             "content": f"Sources:\n{context_text}\n\nQuestion: {query.question}",
-        },
-    ]
+        }
+    )
 
     if groq_client is not None:
         try:
@@ -453,7 +616,7 @@ async def query_document(query: QueryRequest):
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
-    return {"answer": answer, "sources": sources}
+    return {"answer": answer, "sources": sources, "stage": "routine"}
 
 
 @app.get("/{full_path:path}")

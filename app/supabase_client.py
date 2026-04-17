@@ -86,11 +86,29 @@ def _get(table: str, params: Dict[str, str]) -> Any:
         return err
     query = "&".join(f"{k}={quote(v, safe='.,*()')}" for k, v in params.items())
     url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{query}"
-    resp = requests.get(url, headers=HEADERS)
+    resp = requests.get(url, headers=HEADERS, timeout=5)
     try:
         resp.raise_for_status()
     except Exception:
         print(f"[supabase_client] GET {table} failed: {resp.status_code} {resp.text}")
+        return {"error": resp.text}
+    try:
+        return resp.json()
+    except Exception:
+        return {"data": None}
+
+
+def _patch(table: str, params: Dict[str, str], payload: Dict[str, Any]) -> Any:
+    err = _config_ok()
+    if err is not None:
+        return err
+    query = "&".join(f"{k}={quote(v, safe='.,*()')}" for k, v in params.items())
+    url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{query}"
+    resp = requests.patch(url, json=payload, headers=HEADERS, timeout=5)
+    try:
+        resp.raise_for_status()
+    except Exception:
+        print(f"[supabase_client] PATCH {table} failed: {resp.status_code} {resp.text}")
         return {"error": resp.text}
     try:
         return resp.json()
@@ -242,6 +260,35 @@ def match_chunks_hybrid_filtered(
     if isinstance(res, list):
         return res
     return []
+
+
+def get_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch the stage-state fields for one chat_sessions row. Returns None
+    on any failure (missing row, config error, network error)."""
+    res = _get(
+        "chat_sessions",
+        {
+            "id": f"eq.{session_id}",
+            "select": "id,user_id,current_stage,intent_bucket,intake_summary",
+            "limit": "1",
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return None
+    if isinstance(res, list) and res:
+        return res[0]
+    return None
+
+
+def update_chat_session(session_id: str, **fields: Any) -> bool:
+    """Patch selected fields on one chat_sessions row. Returns True on
+    success, False on any failure."""
+    if not fields:
+        return True
+    res = _patch("chat_sessions", {"id": f"eq.{session_id}"}, fields)
+    if isinstance(res, dict) and res.get("error"):
+        return False
+    return True
 
 
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:

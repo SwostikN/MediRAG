@@ -14,7 +14,7 @@ import {
   LogIn,
   LogOut,
 } from "lucide-react";
-import { ChatMessage } from "./components/ChatMessage";
+import { ChatMessage, type ChatMessageSource } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
 import { MedicalContextPanel } from "./components/MedicalContextPanel";
 import { EmptyState } from "./components/EmptyState";
@@ -32,6 +32,8 @@ interface Message {
     category: string;
     urgency: string;
   };
+  stage?: string;
+  sources?: ChatMessageSource[];
 }
 
 interface ChatSessionRecord {
@@ -49,6 +51,12 @@ interface ChatMessageRecord {
   content: string;
   created_at: string;
   render_mode: "plain" | "query" | null;
+  stage?: string | null;
+  red_flag?: {
+    ruleId: string;
+    category: string;
+    urgency: string;
+  } | null;
 }
 
 type DesignVariant = "classic" | "diagnostic" | "research";
@@ -300,7 +308,7 @@ export default function App() {
 
   const persistConversationMessage = async (
     chatSessionId: string,
-    message: Pick<Message, "role" | "content" | "renderMode">,
+    message: Pick<Message, "role" | "content" | "renderMode" | "redFlag" | "stage">,
   ) => {
     const now = new Date().toISOString();
     const preview = message.content.slice(0, 140);
@@ -311,6 +319,14 @@ export default function App() {
         role: message.role,
         content: message.content,
         render_mode: message.renderMode ?? "plain",
+        stage: message.stage ?? null,
+        red_flag: message.redFlag
+          ? {
+              ruleId: message.redFlag.ruleId,
+              category: message.redFlag.category,
+              urgency: message.redFlag.urgency,
+            }
+          : null,
       },
     ]);
 
@@ -368,6 +384,12 @@ export default function App() {
 
   const handleUploadPdf = async (files: File[]) => {
     if (files.length === 0) {
+      return;
+    }
+
+    if (!session?.user?.id) {
+      setStatusMessage("Sign in to upload documents.");
+      setShowAuthScreen(true);
       return;
     }
 
@@ -469,10 +491,38 @@ export default function App() {
     setIsLoading(true);
 
     try {
+      // Send the last few turns as conversation context so follow-ups
+      // ("what are the symptoms?") inherit the topic of earlier turns
+      // ("hypertension"). Exclude red-flag messages (canned) and our own
+      // error placeholders. `messages` here is the closure value from
+      // this render — it does NOT include the user turn we just queued.
+      const historyTurns = messages
+        .filter(
+          (m) =>
+            !m.redFlag &&
+            !(m.role === "assistant" && m.content.startsWith("Error:")),
+        )
+        .slice(-6)
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      const queryBody: {
+        question: string;
+        session_id?: string;
+        history?: { role: "user" | "assistant"; content: string }[];
+      } = {
+        question: trimmedContent,
+      };
+      if (chatSessionId) {
+        queryBody.session_id = chatSessionId;
+      }
+      if (historyTurns.length > 0) {
+        queryBody.history = historyTurns;
+      }
+
       const queryResponse = await fetch(`${API_BASE_URL}/query`, {
         method: "POST",
         headers: buildRequestHeaders(true),
-        body: JSON.stringify({ question: trimmedContent }),
+        body: JSON.stringify(queryBody),
       });
 
       const queryPayload = await queryResponse.json();
@@ -480,6 +530,11 @@ export default function App() {
       if (!queryResponse.ok) {
         throw new Error(queryPayload.detail || "Failed to query document");
       }
+
+      const stage: string | undefined = queryPayload.stage;
+      const sources: ChatMessageSource[] | undefined = Array.isArray(queryPayload.sources)
+        ? (queryPayload.sources as ChatMessageSource[])
+        : undefined;
 
       const assistantMessage: Message = {
         id: Date.now() + 2,
@@ -494,6 +549,8 @@ export default function App() {
               urgency: queryPayload.red_flag.urgency,
             }
           : undefined,
+        stage,
+        sources,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -633,7 +690,7 @@ export default function App() {
         onBack={() => setShowAuthScreen(false)}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
-        statusMessage={statusMessage}
+        signupSuccessMessage={statusMessage}
       />
     );
   }
@@ -852,29 +909,28 @@ export default function App() {
                     </div>
                   )
                 ) : messages.length > 0 ? (
-                  <>
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
-                      Recent Activity
-                    </div>
-
-                    {messages
-                      .filter((message) => message.role === "user")
-                      .slice(-4)
-                      .reverse()
-                      .map((message) => (
-                        <button
-                          key={message.id}
-                          className="w-full text-left px-3 py-2.5 rounded-lg transition-colors hover:bg-muted/50"
-                        >
-                          <div className="text-sm font-medium mb-0.5 line-clamp-1">
-                            {message.content}
+                  (() => {
+                    const firstUserMessage = messages.find((m) => m.role === "user");
+                    if (!firstUserMessage) return null;
+                    return (
+                      <>
+                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                          Current Session
+                        </div>
+                        <button className="w-full text-left px-3 py-3 rounded-lg bg-accent/10 border border-accent/20 transition-colors">
+                          <div className="text-sm font-medium mb-1 line-clamp-2">
+                            {firstUserMessage.content}
                           </div>
-                          <div className="text-xs text-muted-foreground font-mono">
-                            {message.timestamp}
+                          <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
+                            {firstUserMessage.timestamp}
                           </div>
                         </button>
-                      ))}
-                  </>
+                        <p className="mt-3 px-2 text-[11px] leading-5 text-muted-foreground/80">
+                          Sign in to keep a history of past sessions.
+                        </p>
+                      </>
+                    );
+                  })()
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center px-4">
                     <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
@@ -907,6 +963,13 @@ export default function App() {
                   }}
                   onUpload={(files) => {
                     void handleUploadPdf(files);
+                  }}
+                  onUploadClick={() => {
+                    if (!session?.user?.id) {
+                      setStatusMessage("Sign in to upload documents.");
+                      setShowAuthScreen(true);
+                      return false;
+                    }
                   }}
                   isLoading={isLoading}
                   centered={false}
@@ -984,6 +1047,13 @@ export default function App() {
                     }}
                     onUpload={(files) => {
                       void handleUploadPdf(files);
+                    }}
+                    onUploadClick={() => {
+                      if (!session?.user?.id) {
+                        setStatusMessage("Sign in to upload documents.");
+                        setShowAuthScreen(true);
+                        return false;
+                      }
                     }}
                     isLoading={isLoading}
                     centered={false}

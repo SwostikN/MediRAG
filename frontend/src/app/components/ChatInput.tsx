@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 interface ChatInputProps {
   onSend: (message: string) => void;
   onUpload?: (files: File[]) => void;
+  onUploadClick?: () => boolean | void;
   isLoading?: boolean;
   placeholder?: string;
   centered?: boolean;
@@ -16,6 +17,7 @@ interface ChatInputProps {
 export function ChatInput({
   onSend,
   onUpload,
+  onUploadClick,
   isLoading,
   placeholder,
   centered = false,
@@ -137,7 +139,10 @@ export function ChatInput({
         }
       >
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (onUploadClick?.() === false) return;
+            fileInputRef.current?.click();
+          }}
           disabled={isLoading}
           className={`shrink-0 p-2.5 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             centered

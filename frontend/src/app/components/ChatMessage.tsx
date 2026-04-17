@@ -1,6 +1,15 @@
-import { Fragment, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ExternalLink } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+export interface ChatMessageSource {
+  rank?: number;
+  title?: string | null;
+  source?: string | null;
+  source_url?: string | null;
+  authority_tier?: number | null;
+}
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -12,95 +21,118 @@ interface ChatMessageProps {
     category: string;
     urgency: string;
   };
+  sources?: ChatMessageSource[];
 }
 
-function renderInlineFormatting(text: string): ReactNode[] {
-  const segments = text.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+const markdownComponents = {
+  h1: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">{children}</h3>
+  ),
+  h2: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">{children}</h3>
+  ),
+  h3: ({ children }: { children?: React.ReactNode }) => (
+    <h4 className="mt-3 mb-1.5 text-[15px] font-semibold text-foreground">{children}</h4>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="mb-3 last:mb-0 text-[15px] leading-7 text-foreground/92">{children}</p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul className="mb-3 last:mb-0 ml-5 list-disc space-y-1.5 text-[15px] leading-6 text-foreground/92 marker:text-accent">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol className="mb-3 last:mb-0 ml-5 list-decimal space-y-1.5 text-[15px] leading-6 text-foreground/92 marker:text-accent marker:font-semibold">
+      {children}
+    </ol>
+  ),
+  li: ({ children }: { children?: React.ReactNode }) => (
+    <li className="pl-1 [&>p]:mb-0">{children}</li>
+  ),
+  strong: ({ children }: { children?: React.ReactNode }) => (
+    <strong className="font-semibold text-foreground">{children}</strong>
+  ),
+  em: ({ children }: { children?: React.ReactNode }) => (
+    <em className="italic text-foreground/90">{children}</em>
+  ),
+  hr: () => <hr className="my-4 border-border/60" />,
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ children }: { children?: React.ReactNode }) => (
+    <code className="rounded bg-muted px-1.5 py-0.5 text-[13px] font-mono text-foreground/90">
+      {children}
+    </code>
+  ),
+  blockquote: ({ children }: { children?: React.ReactNode }) => (
+    <blockquote className="mb-3 border-l-4 border-accent/40 pl-4 italic text-foreground/85">
+      {children}
+    </blockquote>
+  ),
+};
 
-  return segments.map((segment, index) => {
-    if (segment.startsWith("**") && segment.endsWith("**")) {
-      return (
-        <strong key={index} className="font-semibold text-foreground">
-          {segment.slice(2, -2)}
-        </strong>
-      );
-    }
+function SourcesFooter({ sources }: { sources: ChatMessageSource[] }) {
+  const visible = sources.filter((s) => (s.title || s.source_url) != null);
+  if (visible.length === 0) return null;
 
-    return <Fragment key={index}>{segment}</Fragment>;
-  });
-}
-
-function renderFormattedContent(content: string): ReactNode {
-  const lines = content.split("\n");
-  const blocks: ReactNode[] = [];
-  let paragraphLines: string[] = [];
-  let listItems: string[] = [];
-
-  const flushParagraph = () => {
-    if (paragraphLines.length === 0) {
-      return;
-    }
-
-    const paragraph = paragraphLines.join(" ").trim();
-    if (paragraph) {
-      blocks.push(
-        <p key={`p-${blocks.length}`} className="leading-7 text-[15px] text-foreground/92">
-          {renderInlineFormatting(paragraph)}
-        </p>
-      );
-    }
-    paragraphLines = [];
-  };
-
-  const flushList = () => {
-    if (listItems.length === 0) {
-      return;
-    }
-
-    blocks.push(
-      <div key={`ol-${blocks.length}`} className="space-y-2 text-[15px] leading-6 text-foreground/92">
-        {listItems.map((item, index) => (
-          <p key={`${index}-${item.slice(0, 20)}`} className="m-0">
-            <span className="mr-2 font-semibold text-accent">{index + 1}.</span>
-            {renderInlineFormatting(item)}
-          </p>
-        ))}
+  return (
+    <div className="mt-4 border-t border-border/60 pt-3">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Sources
       </div>
-    );
-    listItems = [];
-  };
-
-  lines.forEach((rawLine) => {
-    const line = rawLine.trim();
-    const numberedMatch = line.match(/^\d+\.\s+(.*)$/);
-
-    if (!line) {
-      flushParagraph();
-      flushList();
-      return;
-    }
-
-    if (numberedMatch) {
-      flushParagraph();
-      listItems.push(numberedMatch[1]);
-      return;
-    }
-
-    flushList();
-    paragraphLines.push(line);
-  });
-
-  flushParagraph();
-  flushList();
-
-  if (blocks.length === 0) {
-    return <p className="leading-7 text-[15px] text-foreground/92">{content}</p>;
-  }
-
-  return <div className="space-y-4">{blocks}</div>;
+      <ol className="space-y-1.5 text-[13px] leading-5">
+        {visible.map((s, idx) => {
+          const label = s.title || s.source || "source";
+          const key = `${s.source_url ?? label}-${idx}`;
+          return (
+            <li key={key} className="flex items-start gap-2">
+              <span className="mt-[2px] shrink-0 text-muted-foreground font-mono text-[11px]">
+                [{idx + 1}]
+              </span>
+              {s.source_url ? (
+                <a
+                  href={s.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-start gap-1 text-foreground/85 hover:text-accent"
+                >
+                  <span className="underline decoration-border underline-offset-2 group-hover:decoration-accent">
+                    {label}
+                  </span>
+                  <ExternalLink className="mt-[3px] h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
+                </a>
+              ) : (
+                <span className="text-foreground/85">{label}</span>
+              )}
+              {s.source && s.title && (
+                <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/80">
+                  {s.source}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
 }
 
-export function ChatMessage({ role, content, timestamp, renderMode = "plain", redFlag }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  timestamp,
+  renderMode = "plain",
+  redFlag,
+  sources,
+}: ChatMessageProps) {
   const isUser = role === "user";
   const shouldFormatQueryAnswer = !isUser && renderMode === "query";
   const isRedFlag = !isUser && redFlag !== undefined;
@@ -109,7 +141,8 @@ export function ChatMessage({ role, content, timestamp, renderMode = "plain", re
     const isEmergency = redFlag?.urgency === "emergency";
     const banner = isEmergency
       ? {
-          container: "rounded-2xl border-2 border-red-500 bg-red-50 p-5 shadow-md dark:bg-red-950/40 dark:border-red-400",
+          container:
+            "rounded-2xl border-2 border-red-500 bg-red-50 p-5 shadow-md dark:bg-red-950/40 dark:border-red-400",
           icon: "text-red-600 dark:text-red-300",
           label: "text-red-700 dark:text-red-200",
           meta: "text-red-700/70 dark:text-red-300/70",
@@ -117,7 +150,8 @@ export function ChatMessage({ role, content, timestamp, renderMode = "plain", re
           text: "Emergency",
         }
       : {
-          container: "rounded-2xl border-2 border-amber-500 bg-amber-50 p-5 shadow-md dark:bg-amber-950/40 dark:border-amber-400",
+          container:
+            "rounded-2xl border-2 border-amber-500 bg-amber-50 p-5 shadow-md dark:bg-amber-950/40 dark:border-amber-400",
           icon: "text-amber-600 dark:text-amber-300",
           label: "text-amber-700 dark:text-amber-200",
           meta: "text-amber-700/70 dark:text-amber-300/70",
@@ -182,7 +216,12 @@ export function ChatMessage({ role, content, timestamp, renderMode = "plain", re
           ) : (
             <div className="relative">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
-              <div className="pt-1">{renderFormattedContent(content)}</div>
+              <div className="pt-1">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {content}
+                </ReactMarkdown>
+                {sources && sources.length > 0 && <SourcesFooter sources={sources} />}
+              </div>
             </div>
           )}
         </div>
