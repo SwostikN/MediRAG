@@ -53,6 +53,7 @@ try:
         classify_document,
         is_medically_relevant,
     )
+    from . import rate_limit
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -83,6 +84,7 @@ except ImportError:
         classify_document,
         is_medically_relevant,
     )
+    import rate_limit
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -405,6 +407,8 @@ async def upload(
     if not session_id or not user_id:
         raise HTTPException(status_code=400, detail="session_id and user_id are required.")
 
+    rate_limit.check(user_id, "upload")
+
     # Read once; reuse for hashing + extraction + persistence.
     try:
         data = await file.read()
@@ -691,6 +695,8 @@ async def upload_resolve(req: ResolveUploadRequest):
             status_code=400,
             detail="doc_type must be 'lab_report' or 'research_paper'.",
         )
+
+    rate_limit.check(req.user_id, "upload")
 
     row = get_session_document(req.session_doc_id)
     if not row:
@@ -1068,6 +1074,8 @@ def _format_sources(top_rows: list) -> list:
 
 @app.post("/query")
 async def query_document(query: QueryRequest):
+    rate_limit.check(query.session_id or "anon", "query")
+
     # Week 6 Stage 0: deterministic red-flag screen runs first.
     # If any rule fires, the LLM is never invoked and retrieval is skipped.
     rf = redflag_check(query.question)
@@ -1305,6 +1313,8 @@ def _sse(event: str, payload: dict) -> bytes:
 
 @app.post("/query/stream")
 async def query_document_stream(query: QueryRequest):
+    rate_limit.check(query.session_id or "anon", "query")
+
     async def event_stream():
         # ── Stage 0: red-flag (instant, no LLM) ──────────────────────────
         rf = redflag_check(query.question)
