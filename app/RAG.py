@@ -1,10 +1,11 @@
+import json
 import os
 import re
 import sys
 from pathlib import Path
 from typing import Any, Optional, Tuple
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -684,6 +685,264 @@ async def query_document(query: QueryRequest):
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
     return {"answer": answer, "sources": sources, "stage": "routine"}
+
+
+# ─── Streaming endpoint ─────────────────────────────────────────────────────
+#
+# /query/stream returns Server-Sent Events. Frontend reads incrementally so
+# the user sees the first token in ~250ms (Groq TTFT) instead of staring at
+# a spinner for ~1.5s while the full answer generates.
+#
+# SSE event types (all `data:` payloads are JSON):
+#   meta    — initial event with stage, red_flag, intake_turn, coverage,
+#             intent_bucket. Sent once, first.
+#   delta   — incremental text. `{"text": "..."}`. Sent 0..N times.
+#   sources — citations payload. Sent once if there are sources.
+#   error   — recoverable mid-stream error. `{"message": "..."}`.
+#   done    — terminal event. Sent once, last. Body is `{}`.
+#
+# Non-streaming responses (red-flag, refusal, Stage 1 questions, Stage 1+2
+# chained summary) are emitted as: meta → one big delta → sources (if any)
+# → done. So the frontend has a single code path: append every delta to
+# the assistant message; finalize on done.
+#
+# /query (non-streaming JSON) is preserved unchanged for backward compat —
+# evals (`eval/test_redflag.py` etc.) and any external consumer keep working.
+
+
+def _sse(event: str, payload: dict) -> bytes:
+    """Encode a single SSE event. Two-newline terminator is required by
+    the SSE spec for the client to flush the event."""
+    return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n".encode()
+
+
+@app.post("/query/stream")
+async def query_document_stream(query: QueryRequest):
+    async def event_stream():
+        # ── Stage 0: red-flag (instant, no LLM) ──────────────────────────
+        rf = redflag_check(query.question)
+        if rf is not None:
+            print(f"[redflag] fired rule={rf.rule_id} category={rf.category}")
+            yield _sse("meta", {
+                "stage": "redflag",
+                "red_flag": {
+                    "rule_id": rf.rule_id,
+                    "category": rf.category,
+                    "urgency": rf.urgency,
+                },
+            })
+            yield _sse("delta", {"text": rf.message})
+            yield _sse("done", {})
+            return
+
+        # ── Stage 1: structured intake (multi-turn) ──────────────────────
+        # Question turn returns 5 slot questions as one block — no LLM
+        # streaming, just emit as a single delta. Summary turn does run
+        # LLM(s) but chains Stage 2 on top, which is too entangled to
+        # stream cleanly this iteration; emit as a single delta after both
+        # finish. Streaming the chained path is on the Week 7B-or-later
+        # roadmap.
+        if query.session_id:
+            session = get_chat_session(query.session_id)
+            if session and session.get("current_stage") == "intake":
+                if not session.get("intent_bucket"):
+                    template = intake_stage.select_template(
+                        query.question,
+                        groq_client=groq_client,
+                        groq_model=GROQ_MODEL,
+                    )
+                    questions = intake_stage.compose_questions(template)
+                    update_chat_session(query.session_id, intent_bucket=template["id"])
+                    print(f"[intake] bucket={template['id']} q={query.question[:60]!r}")
+                    yield _sse("meta", {
+                        "stage": "intake",
+                        "intake_turn": "questions",
+                        "intent_bucket": template["id"],
+                    })
+                    yield _sse("delta", {"text": questions})
+                    yield _sse("done", {})
+                    return
+                if not session.get("intake_summary"):
+                    template = intake_stage.TEMPLATES_BY_ID.get(
+                        session["intent_bucket"],
+                        intake_stage.TEMPLATES_BY_ID["other"],
+                    )
+                    summary = intake_stage.compose_summary(
+                        template,
+                        user_answers=query.question,
+                        groq_client=groq_client,
+                        groq_model=GROQ_MODEL,
+                        cohere_client=co,
+                        cohere_model="command-r-08-2024",
+                    )
+                    nav_rows = _retrieve_ranked(summary)
+                    nav_top = nav_rows[:CONTEXT_CHUNKS]
+                    nav_block = navigation_stage.compose_recommendation(
+                        intake_summary=summary,
+                        intent_bucket=session["intent_bucket"],
+                        groq_client=groq_client,
+                        groq_model=GROQ_MODEL,
+                        cohere_client=co,
+                        cohere_model="command-r-08-2024",
+                        retrieval_rows=nav_top,
+                    )
+                    combined = f"{summary}\n\n---\n\n{nav_block}"
+                    update_chat_session(
+                        query.session_id,
+                        current_stage="navigation",
+                        intake_summary=summary,
+                    )
+                    nav_sources = _format_sources(
+                        _dedupe_sources(nav_rows)[:DISPLAY_SOURCES]
+                    )
+                    print(f"[intake] summary+nav composed bucket={template['id']}")
+                    yield _sse("meta", {
+                        "stage": "intake",
+                        "intake_turn": "summary",
+                        "intent_bucket": template["id"],
+                    })
+                    yield _sse("delta", {"text": combined})
+                    if nav_sources:
+                        yield _sse("sources", {"sources": nav_sources})
+                    yield _sse("done", {})
+                    return
+
+        # ── Routine: retrieve, gate, then stream Groq tokens ─────────────
+        retrieval_query = _retrieval_query_with_history(query.question, query.history)
+        if retrieval_query != query.question:
+            print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
+        rows = _retrieve_ranked(retrieval_query)
+
+        refusal_text = (
+            "I don't have a source for that in my current library. "
+            "Please try rewording your question, or ask your doctor directly."
+        )
+
+        def emit_refusal(reason: str):
+            print(f"[refusal-gate] refusing ({reason})")
+            return [
+                _sse("meta", {"stage": "routine", "coverage": "no_source"}),
+                _sse("delta", {"text": refusal_text}),
+                _sse("done", {}),
+            ]
+
+        if not rows:
+            for ev in emit_refusal("retrieval returned 0 rows"):
+                yield ev
+            return
+        top_rerank = rows[0].get("rerank_score")
+        print(f"[refusal-gate] top rerank_score={top_rerank} threshold={RERANK_REFUSAL_THRESHOLD}")
+        if top_rerank is None:
+            for ev in emit_refusal("rerank did not run, cannot judge relevance"):
+                yield ev
+            return
+        if top_rerank < RERANK_REFUSAL_THRESHOLD:
+            for ev in emit_refusal(f"top rerank_score {top_rerank:.3f} < {RERANK_REFUSAL_THRESHOLD}"):
+                yield ev
+            return
+
+        rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
+        if not rows:
+            for ev in emit_refusal(f"no chunks above RERANK_CONTEXT_MIN ({RERANK_CONTEXT_MIN}) after filter"):
+                yield ev
+            return
+
+        top_rows = rows[:CONTEXT_CHUNKS]
+        context_blocks = []
+        for i, r in enumerate(top_rows, start=1):
+            heading = r.get("section_heading") or ""
+            title = r.get("doc_title") or r.get("doc_source") or "source"
+            context_blocks.append(f"[src:{i}] {title} — {heading}\n{r.get('content', '')}".strip())
+        context_text = "\n\n".join(context_blocks)
+        sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
+
+        messages: list[dict] = [{"role": "system", "content": MEDIRAG_SYSTEM_PROMPT}]
+        if query.history:
+            for h in query.history[-HISTORY_MAX_TURNS:]:
+                if h.role in ("user", "assistant") and h.content:
+                    messages.append({"role": h.role, "content": h.content})
+        messages.append(
+            {
+                "role": "user",
+                "content": f"Sources:\n{context_text}\n\nQuestion: {query.question}",
+            }
+        )
+
+        # Stage opens with the meta event so the frontend can set up the
+        # message shell (mark it as a routine query, prepare to render
+        # markdown) before any tokens arrive.
+        yield _sse("meta", {"stage": "routine"})
+
+        streamed_any = False
+        # Groq primary streaming path. If it fails BEFORE any token is
+        # streamed, fall back to Cohere streaming. If it fails MID-stream,
+        # we can't unwind the partial answer — emit an error event and end
+        # cleanly so the frontend marks the message as incomplete.
+        if groq_client is not None:
+            try:
+                stream = groq_client.chat.completions.create(
+                    model=GROQ_MODEL,
+                    messages=messages,
+                    max_tokens=250,
+                    stream=True,
+                )
+                for chunk in stream:
+                    delta = ""
+                    try:
+                        delta = chunk.choices[0].delta.content or ""
+                    except Exception:
+                        delta = ""
+                    if delta:
+                        streamed_any = True
+                        yield _sse("delta", {"text": delta})
+            except Exception as exc:
+                print(f"[groq-stream] failed (streamed_any={streamed_any}): {exc}")
+                if streamed_any:
+                    yield _sse("error", {"message": "Generation interrupted. Partial answer above."})
+                    yield _sse("done", {})
+                    return
+                # else: fall through to Cohere fallback below
+
+        if not streamed_any:
+            try:
+                cohere_stream = co.chat_stream(
+                    model="command-r-08-2024",
+                    messages=messages,
+                    max_tokens=250,
+                )
+                for ev in cohere_stream:
+                    text = ""
+                    try:
+                        # cohere v2 stream events: type=='content-delta'
+                        if getattr(ev, "type", None) == "content-delta":
+                            text = ev.delta.message.content.text or ""
+                    except Exception:
+                        text = ""
+                    if text:
+                        streamed_any = True
+                        yield _sse("delta", {"text": text})
+            except Exception as exc:
+                print(f"[cohere-stream] failed: {exc}")
+                if not streamed_any:
+                    yield _sse("error", {"message": "Generation failed. Please try again."})
+                    yield _sse("done", {})
+                    return
+
+        if sources:
+            yield _sse("sources", {"sources": sources})
+        yield _sse("done", {})
+
+    # text/event-stream + no-cache so intermediate proxies don't buffer
+    # tokens. X-Accel-Buffering disables buffering on nginx specifically.
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.get("/{full_path:path}")

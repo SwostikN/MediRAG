@@ -79,6 +79,99 @@ function formatStoredTimestamp(value: string) {
   return getTimestamp(new Date(value));
 }
 
+interface StreamCallbacks {
+  onMeta?: (meta: Record<string, unknown>) => void;
+  onDelta?: (text: string) => void;
+  onSources?: (sources: ChatMessageSource[]) => void;
+  onError?: (message: string) => void;
+}
+
+// Read a Server-Sent Events stream from /query/stream and dispatch each
+// event to the matching callback. Resolves once the stream emits "done"
+// or the response body closes. Throws on non-2xx responses or transport
+// failure — caller wraps in try/catch.
+async function streamQuery(
+  url: string,
+  body: unknown,
+  headers: HeadersInit,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const txt = await response.text();
+      if (txt) detail = txt;
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
+  }
+  if (!response.body) {
+    throw new Error("Streaming response has no body");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let done = false;
+
+  while (!done) {
+    const { value, done: streamDone } = await reader.read();
+    if (streamDone) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE event blocks are separated by a blank line ("\n\n"). The last
+    // chunk may be partial — keep it in the buffer until the next read.
+    const blocks = buffer.split("\n\n");
+    buffer = blocks.pop() ?? "";
+
+    for (const block of blocks) {
+      const trimmed = block.trim();
+      if (!trimmed) continue;
+
+      let eventType = "message";
+      let dataLine = "";
+      for (const line of trimmed.split("\n")) {
+        if (line.startsWith("event:")) eventType = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLine = line.slice(5).trim();
+      }
+      if (!dataLine) continue;
+
+      let payload: Record<string, unknown>;
+      try {
+        payload = JSON.parse(dataLine);
+      } catch {
+        continue;
+      }
+
+      if (eventType === "meta") {
+        callbacks.onMeta?.(payload);
+      } else if (eventType === "delta") {
+        callbacks.onDelta?.(typeof payload.text === "string" ? payload.text : "");
+      } else if (eventType === "sources") {
+        const list = Array.isArray(payload.sources) ? (payload.sources as ChatMessageSource[]) : [];
+        callbacks.onSources?.(list);
+      } else if (eventType === "error") {
+        callbacks.onError?.(
+          typeof payload.message === "string" ? payload.message : "stream error",
+        );
+      } else if (eventType === "done") {
+        done = true;
+      }
+    }
+  }
+}
+
 function generateSessionTitle(seed: string) {
   const trimmed = seed.trim().replace(/\s+/g, " ");
   if (!trimmed) {
@@ -543,47 +636,119 @@ export default function App() {
         queryBody.history = historyTurns;
       }
 
-      const queryResponse = await fetch(`${API_BASE_URL}/query`, {
-        method: "POST",
-        headers: buildRequestHeaders(true),
-        body: JSON.stringify(queryBody),
-      });
-
-      const queryPayload = await queryResponse.json();
-
-      if (!queryResponse.ok) {
-        throw new Error(queryPayload.detail || "Failed to query document");
-      }
-
-      const stage: string | undefined = queryPayload.stage;
-      const sources: ChatMessageSource[] | undefined = Array.isArray(queryPayload.sources)
-        ? (queryPayload.sources as ChatMessageSource[])
-        : undefined;
-      const noCoverage = queryPayload.coverage === "no_source";
-
-      const assistantMessage: Message = {
-        id: Date.now() + 2,
+      // Streaming path. We DON'T insert the assistant bubble immediately —
+      // if we did, it would render as an empty bubble alongside the
+      // "Contacting DocuMed AI backend..." dots loader (line ~1160), which
+      // looks like two separate things happening at once. Instead, the
+      // dots loader stays visible during the wait, and we add the bubble
+      // only when the first delta arrives. The dots disappear and the
+      // answer appears in the same render pass, in the same place.
+      //
+      // Meta info (stage, red_flag, coverage) may arrive BEFORE the first
+      // delta — we buffer it in `pendingMeta` and apply it when we
+      // finally create the bubble.
+      const assistantMessageId = Date.now() + 2;
+      let bubbleAdded = false;
+      let pendingMeta: Partial<Message> = {};
+      let pendingSources: ChatMessageSource[] | undefined;
+      let finalMessage: Message = {
+        id: assistantMessageId,
         role: "assistant",
-        content: queryPayload.answer,
+        content: "",
         timestamp: getTimestamp(),
         renderMode: "query",
-        redFlag: queryPayload.red_flag
-          ? {
-              ruleId: queryPayload.red_flag.rule_id,
-              category: queryPayload.red_flag.category,
-              urgency: queryPayload.red_flag.urgency,
-            }
-          : undefined,
-        stage,
-        sources,
-        noCoverage: noCoverage || undefined,
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const ensureBubble = (initialContent: string) => {
+        if (bubbleAdded) return;
+        bubbleAdded = true;
+        finalMessage = {
+          ...finalMessage,
+          ...pendingMeta,
+          content: initialContent,
+          sources: pendingSources,
+        };
+        const snapshot = finalMessage;
+        setMessages((prev) => [...prev, snapshot]);
+      };
+
+      await streamQuery(
+        `${API_BASE_URL}/query/stream`,
+        queryBody,
+        buildRequestHeaders(true),
+        {
+          onMeta: (meta) => {
+            const stage = typeof meta.stage === "string" ? meta.stage : undefined;
+            const noCoverage = meta.coverage === "no_source" ? true : undefined;
+            const rf = meta.red_flag as
+              | { rule_id?: string; category?: string; urgency?: string }
+              | undefined;
+            const redFlag = rf
+              ? {
+                  ruleId: rf.rule_id ?? "",
+                  category: rf.category ?? "",
+                  urgency: rf.urgency ?? "",
+                }
+              : undefined;
+            pendingMeta = { stage, noCoverage, redFlag };
+            if (bubbleAdded) {
+              finalMessage = { ...finalMessage, ...pendingMeta };
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMessageId ? { ...m, ...pendingMeta } : m,
+                ),
+              );
+            }
+          },
+          onDelta: (text) => {
+            if (!text) return;
+            if (!bubbleAdded) {
+              ensureBubble(text);
+              return;
+            }
+            finalMessage = { ...finalMessage, content: finalMessage.content + text };
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessageId ? { ...m, content: m.content + text } : m,
+              ),
+            );
+          },
+          onSources: (sources) => {
+            if (!bubbleAdded) {
+              pendingSources = sources;
+              return;
+            }
+            finalMessage = { ...finalMessage, sources };
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantMessageId ? { ...m, sources } : m)),
+            );
+          },
+          onError: (msg) => {
+            const note = `\n\n_${msg}_`;
+            if (!bubbleAdded) {
+              ensureBubble(note.trimStart());
+              return;
+            }
+            finalMessage = { ...finalMessage, content: finalMessage.content + note };
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessageId ? { ...m, content: m.content + note } : m,
+              ),
+            );
+          },
+        },
+      );
+
+      // Stream closed without ever sending a delta or error. Surface
+      // something rather than leaving the dots loader stranded.
+      if (!bubbleAdded) {
+        ensureBubble("(no response)");
+      }
+
       setStatusMessage("Backend response received");
 
       if (chatSessionId) {
-        void persistConversationMessage(chatSessionId, assistantMessage);
+        void persistConversationMessage(chatSessionId, finalMessage);
       }
     } catch (error) {
       const message =
@@ -1030,7 +1195,7 @@ export default function App() {
                     ))}
                   </AnimatePresence>
 
-                  {isLoading && (
+                  {isLoading && (messages.length === 0 || messages[messages.length - 1].role === "user") && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1054,7 +1219,7 @@ export default function App() {
                               />
                             </div>
                             <span className="text-sm text-muted-foreground">
-                              Contacting DocuMed AI backend...
+                              Contacting DocuMed AI Doctor...
                             </span>
                           </div>
                         </div>
