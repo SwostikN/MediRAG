@@ -55,7 +55,12 @@ try:
         is_medically_relevant,
     )
     from . import rate_limit
-    from .guardrails import apply_guardrails
+    from .guardrails import (
+        apply_guardrails,
+        process_streaming_chunk,
+        flush_streaming_buffer,
+    )
+    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -88,7 +93,12 @@ except ImportError:
         is_medically_relevant,
     )
     import rate_limit
-    from guardrails import apply_guardrails
+    from guardrails import (
+        apply_guardrails,
+        process_streaming_chunk,
+        flush_streaming_buffer,
+    )
+    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -1361,6 +1371,31 @@ async def query_document(query: QueryRequest):
         )
         return refusal
 
+    # Week 10 scope-guard: policy layer on top of the NLI factual layer.
+    # NLI says "is this sentence grounded?"; scope-guard says "is it the
+    # kind of claim we should be making at all?". A well-grounded dose
+    # recommendation is still a dose recommendation — this closes that gap.
+    scope = classify_scope(filtered_answer)
+    if scope in ("diagnostic", "prescriptive"):
+        scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
+        print(f"[scope-guard] filtered answer classified as {scope}, refusing")
+        _log_query_safe(
+            session_id=query.session_id,
+            stage="routine",
+            query_text=query.question,
+            response_text=scope_refusal_text,
+            refusal_triggered=True,
+            refusal_reason=f"scope_guard_{scope}",
+            prompt_hash=_prompt_hash(messages),
+            nli_entailment_scores=nli_scores,
+        )
+        return {
+            "answer": scope_refusal_text,
+            "sources": [],
+            "stage": "routine",
+            "coverage": "scope_refused",
+        }
+
     _log_query_safe(
         session_id=query.session_id,
         stage="routine",
@@ -1592,12 +1627,40 @@ async def query_document_stream(query: QueryRequest):
         # markdown) before any tokens arrive.
         yield _sse("meta", {"stage": "routine"})
 
+        # Week 10 streaming guardrails (Option C: buffer-per-sentence).
+        # Tokens accumulate in `buffer` until a sentence boundary is crossed;
+        # each completed sentence runs through the same classify → NLI →
+        # tiered-action pipeline as batch mode, then only the surviving
+        # (possibly softened) sentence is flushed to the SSE stream. This
+        # adds ~1–2s of sentence-level latency but guarantees the user
+        # never sees a sentence we would later retract.
+        chunk_texts = [r.get("content", "") for r in top_rows if r.get("content")]
+        buffer = ""
+        nli_scores: list[dict] = []
+        emitted_parts: list[str] = []
         streamed_any = False
-        collected_parts: list[str] = []
-        # Groq primary streaming path. If it fails BEFORE any token is
-        # streamed, fall back to Cohere streaming. If it fails MID-stream,
-        # we can't unwind the partial answer — emit an error event and end
-        # cleanly so the frontend marks the message as incomplete.
+        source: str = "none"  # which provider actually emitted text
+
+        def _guard_and_emit(delta: str):
+            """Feed a provider delta into the streaming guardrail and yield
+            any sentences that cleared the filter. Mutates the closed-over
+            buffer / nli_scores / emitted_parts / streamed_any state."""
+            nonlocal buffer, streamed_any
+            buffer, emits = process_streaming_chunk(
+                buffer, delta, chunk_texts, nli_scores
+            )
+            events = []
+            for sent_out in emits:
+                emitted_parts.append(sent_out)
+                streamed_any = True
+                # Re-introduce the separating space the splitter consumed.
+                events.append(_sse("delta", {"text": sent_out + " "}))
+            return events
+
+        # Groq primary. Mid-stream failure after content emitted → we can't
+        # unwind emitted sentences; report error and end cleanly. Failure
+        # before any emit → fall through to Cohere.
+        groq_failed_midstream = False
         if groq_client is not None:
             try:
                 stream = groq_client.chat.completions.create(
@@ -1606,6 +1669,7 @@ async def query_document_stream(query: QueryRequest):
                     max_tokens=250,
                     stream=True,
                 )
+                source = "groq"
                 for chunk in stream:
                     delta = ""
                     try:
@@ -1613,36 +1677,41 @@ async def query_document_stream(query: QueryRequest):
                     except Exception:
                         delta = ""
                     if delta:
-                        streamed_any = True
-                        collected_parts.append(delta)
-                        yield _sse("delta", {"text": delta})
+                        for ev in _guard_and_emit(delta):
+                            yield ev
             except Exception as exc:
                 print(f"[groq-stream] failed (streamed_any={streamed_any}): {exc}")
                 if streamed_any:
-                    yield _sse("error", {"message": "Generation interrupted. Partial answer above."})
-                    yield _sse("done", {})
-                    return
-                # else: fall through to Cohere fallback below
+                    groq_failed_midstream = True
+                else:
+                    # Reset guardrail state for a clean fallback attempt.
+                    buffer = ""
+                    nli_scores.clear()
+                    source = "none"
 
-        if not streamed_any:
+        if groq_failed_midstream:
+            yield _sse("error", {"message": "Generation interrupted. Partial answer above."})
+            yield _sse("done", {})
+            return
+
+        if not streamed_any and source == "none":
             try:
                 cohere_stream = co.chat_stream(
                     model="command-r-08-2024",
                     messages=messages,
                     max_tokens=250,
                 )
+                source = "cohere"
                 for ev in cohere_stream:
                     text = ""
                     try:
-                        # cohere v2 stream events: type=='content-delta'
                         if getattr(ev, "type", None) == "content-delta":
                             text = ev.delta.message.content.text or ""
                     except Exception:
                         text = ""
                     if text:
-                        streamed_any = True
-                        collected_parts.append(text)
-                        yield _sse("delta", {"text": text})
+                        for out_ev in _guard_and_emit(text):
+                            yield out_ev
             except Exception as exc:
                 print(f"[cohere-stream] failed: {exc}")
                 if not streamed_any:
@@ -1650,16 +1719,77 @@ async def query_document_stream(query: QueryRequest):
                     yield _sse("done", {})
                     return
 
+        # Flush any trailing sentence that did not end with whitespace —
+        # LLMs commonly drop the terminal newline on short answers.
+        for sent_out in flush_streaming_buffer(buffer, chunk_texts, nli_scores):
+            emitted_parts.append(sent_out)
+            streamed_any = True
+            yield _sse("delta", {"text": sent_out})
+
+        filtered_answer = " ".join(emitted_parts).strip()
+
+        # Total-redaction fallback: if every sentence was dropped by the
+        # guardrail we have nothing to show the user. Emit the standard
+        # no-source refusal as a final delta so the frontend's existing
+        # "append delta, finalize on done" path handles it without changes.
+        if not filtered_answer:
+            refusal_msg = (
+                "I don't have a source for that in my current library. "
+                "Please try rewording your question, or ask your doctor directly."
+            )
+            yield _sse("delta", {"text": refusal_msg})
+            _log_query_safe(
+                session_id=query.session_id,
+                stage="routine",
+                query_text=query.question,
+                response_text=refusal_msg,
+                refusal_triggered=True,
+                refusal_reason="all_sentences_redacted_by_guardrails",
+                prompt_hash=_prompt_hash(messages),
+                nli_entailment_scores=nli_scores,
+            )
+            yield _sse("done", {})
+            return
+
+        # Scope-guard on the final (already NLI-filtered) answer. If the
+        # surviving text still reads as a diagnosis or a prescription we
+        # have emitted it token-by-token and cannot unemit, so the best we
+        # can do is append a scope refusal and flag it for the frontend to
+        # render the refusal in place of the streamed text. The frontend
+        # watches for `coverage: "scope_refused"` on the sources event.
+        scope = classify_scope(filtered_answer)
+        if scope in ("diagnostic", "prescriptive"):
+            scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
+            print(f"[scope-guard] streamed answer classified as {scope}, overriding")
+            yield _sse("sources", {
+                "sources": [],
+                "coverage": "scope_refused",
+                "override_text": scope_refusal_text,
+            })
+            _log_query_safe(
+                session_id=query.session_id,
+                stage="routine",
+                query_text=query.question,
+                response_text=scope_refusal_text,
+                refusal_triggered=True,
+                refusal_reason=f"scope_guard_{scope}",
+                prompt_hash=_prompt_hash(messages),
+                nli_entailment_scores=nli_scores,
+            )
+            yield _sse("done", {})
+            return
+
         if sources:
             yield _sse("sources", {"sources": sources})
         _log_query_safe(
             session_id=query.session_id,
             stage="routine",
             query_text=query.question,
-            response_text="".join(collected_parts),
+            response_text=filtered_answer,
             citations=sources,
             retrieved_chunk_ids=[r.get("id") for r in top_rows if r.get("id")],
             prompt_hash=_prompt_hash(messages),
+            nli_entailment_scores=nli_scores,
         )
         yield _sse("done", {})
 

@@ -253,6 +253,78 @@ def _split_sentences(text: str) -> list[str]:
     return [p.strip() for p in _SENTENCE_SPLIT_RE.split(text.strip()) if p.strip()]
 
 
+def _process_sentence(
+    sent: str,
+    chunk_texts: list[str],
+    *,
+    verifier,
+    classifier,
+) -> tuple[str | None, dict]:
+    """Apply classify → NLI → tiered-action to one sentence.
+
+    Returns `(emit_text, score_entry)`. `emit_text` is the string to append
+    to the filtered answer, or `None` if the sentence is redacted. Shared
+    between batch (apply_guardrails) and streaming (process_streaming_chunk)
+    so both paths apply exactly the same policy.
+    """
+    feats = classifier(sent)
+    flags = {
+        "dose": feats.has_dose,
+        "threshold": feats.has_threshold,
+        "diagnosis": feats.has_diagnosis_verb,
+        "duration": feats.has_duration,
+    }
+
+    if not feats.requires_nli:
+        return sent, {
+            "sentence": sent[:200],
+            "action": "keep_no_claim",
+            "requires_nli": False,
+            "p_entail": None,
+            "flags": flags,
+        }
+
+    p_entail: float = 0.0
+    nli_error: str = ""
+    try:
+        for ct in chunk_texts:
+            p = verifier(sent, ct)
+            if p > p_entail:
+                p_entail = p
+    except Exception as exc:
+        nli_error = str(exc)[:200]
+        print(f"[guardrails] NLI call failed, fail-soft: {exc}")
+
+    is_hard_claim = feats.has_dose or feats.has_diagnosis_verb
+
+    if nli_error:
+        emit = sent + " _(not independently verified)_"
+        action = "soften_nli_error"
+    elif is_hard_claim and p_entail < _NLI_HARD_CLAIM_MIN:
+        emit = None
+        action = "redact_hard_claim"
+    elif p_entail < _NLI_REDACT_BELOW:
+        emit = None
+        action = "redact"
+    elif p_entail < _NLI_SOFTEN_BELOW:
+        emit = sent + " _(not directly stated in sources — confirm with a clinician)_"
+        action = "soften"
+    else:
+        emit = sent
+        action = "keep"
+
+    entry = {
+        "sentence": sent[:200],
+        "action": action,
+        "requires_nli": True,
+        "p_entail": round(p_entail, 3) if not nli_error else None,
+        "flags": flags,
+    }
+    if nli_error:
+        entry["error"] = nli_error
+    return emit, entry
+
+
 def apply_guardrails(
     answer: str,
     top_rows: list[dict],
@@ -297,66 +369,109 @@ def apply_guardrails(
     score_log: list[dict] = []
 
     for sent in sentences:
-        feats = classifier(sent)
-        flags = {
-            "dose": feats.has_dose,
-            "threshold": feats.has_threshold,
-            "diagnosis": feats.has_diagnosis_verb,
-            "duration": feats.has_duration,
-        }
-
-        if not feats.requires_nli:
-            kept.append(sent)
-            score_log.append({
-                "sentence": sent[:200],
-                "action": "keep_no_claim",
-                "requires_nli": False,
-                "p_entail": None,
-                "flags": flags,
-            })
-            continue
-
-        # Run NLI against every chunk; keep the max. If any chunk entails
-        # the sentence, we treat it as supported.
-        p_entail: float = 0.0
-        nli_error: str = ""
-        try:
-            for ct in chunk_texts:
-                p = verifier(sent, ct)
-                if p > p_entail:
-                    p_entail = p
-        except Exception as exc:
-            nli_error = str(exc)[:200]
-            print(f"[guardrails] NLI call failed, fail-soft: {exc}")
-
-        is_hard_claim = feats.has_dose or feats.has_diagnosis_verb
-
-        if nli_error:
-            kept.append(sent + " _(not independently verified)_")
-            action = "soften_nli_error"
-        elif is_hard_claim and p_entail < _NLI_HARD_CLAIM_MIN:
-            action = "redact_hard_claim"
-            # sentence is dropped
-        elif p_entail < _NLI_REDACT_BELOW:
-            action = "redact"
-            # sentence is dropped
-        elif p_entail < _NLI_SOFTEN_BELOW:
-            kept.append(
-                sent + " _(not directly stated in sources — confirm with a clinician)_"
-            )
-            action = "soften"
-        else:
-            kept.append(sent)
-            action = "keep"
-
-        score_log.append({
-            "sentence": sent[:200],
-            "action": action,
-            "requires_nli": True,
-            "p_entail": round(p_entail, 3) if not nli_error else None,
-            "flags": flags,
-            **({"error": nli_error} if nli_error else {}),
-        })
+        emit, entry = _process_sentence(
+            sent, chunk_texts, verifier=verifier, classifier=classifier
+        )
+        if emit is not None:
+            kept.append(emit)
+        score_log.append(entry)
 
     filtered = " ".join(kept).strip()
     return filtered, score_log
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Streaming guardrails — Option C (buffer-per-sentence)
+# ──────────────────────────────────────────────────────────────────────────
+#
+# `/query/stream` receives tokens one at a time from Groq/Cohere. We can't
+# guardrail a partial sentence because the NLI verifier needs a complete
+# clinical claim. Option C buffers tokens until a sentence boundary, runs
+# the exact same _process_sentence pipeline as batch mode, then emits the
+# (possibly redacted or softened) sentence to the SSE stream.
+#
+# Why not stream-then-replace (Option B)? The user would briefly see an
+# unsafe sentence on screen before the redaction edit landed. For a health
+# tool that is a nonstarter. Option C adds ~1–2s of sentence-level latency
+# but never shows the user text we later retract.
+
+
+# Sentence boundary used for streaming. Splits on `.!?` followed by whitespace,
+# tolerating either uppercase / digit / `[` start (same shape as _SENTENCE_SPLIT_RE)
+# but also happy to emit on pure whitespace since tokens arrive mid-word.
+_STREAM_BOUNDARY_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def process_streaming_chunk(
+    buffer: str,
+    token: str,
+    chunk_texts: list[str],
+    score_log: list[dict],
+    *,
+    verifier=None,
+    classifier=None,
+) -> tuple[str, list[str]]:
+    """Incrementally feed `token` into `buffer`; return any complete
+    sentences that passed guardrails and are safe to flush to the client.
+
+    The caller owns `buffer` and `score_log` across calls — we mutate
+    `score_log` in place so the final record at end-of-stream matches
+    the batch-mode shape exactly (same JSON, same schema, same logging).
+
+    Returns
+    -------
+    (new_buffer, emits)
+        new_buffer : remaining text that is still a partial sentence
+        emits      : list of sentence strings safe to yield to the client
+                     (may be empty if no sentence boundary crossed)
+    """
+    verifier = verifier or verify_entailment
+    classifier = classifier or classify_claim
+
+    buffer = buffer + token
+    emits: list[str] = []
+
+    while True:
+        m = _STREAM_BOUNDARY_RE.search(buffer)
+        if not m:
+            break
+        sent = buffer[: m.start() + 1].strip()  # include the punctuation
+        buffer = buffer[m.end():]
+        if not sent:
+            continue
+        emit, entry = _process_sentence(
+            sent, chunk_texts, verifier=verifier, classifier=classifier
+        )
+        score_log.append(entry)
+        if emit is not None:
+            emits.append(emit)
+
+    return buffer, emits
+
+
+def flush_streaming_buffer(
+    buffer: str,
+    chunk_texts: list[str],
+    score_log: list[dict],
+    *,
+    verifier=None,
+    classifier=None,
+) -> list[str]:
+    """End-of-stream flush. If `buffer` still holds a partial sentence
+    (the model's final sentence often lacks a trailing space), run it
+    through the guardrail pipeline one last time.
+
+    Mutates `score_log` in place. Returns the list of surviving sentence
+    strings (0 or 1 elements in practice).
+    """
+    verifier = verifier or verify_entailment
+    classifier = classifier or classify_claim
+
+    sent = buffer.strip()
+    if not sent:
+        return []
+    emit, entry = _process_sentence(
+        sent, chunk_texts, verifier=verifier, classifier=classifier
+    )
+    score_log.append(entry)
+    return [emit] if emit is not None else []
