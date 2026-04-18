@@ -1,0 +1,31 @@
+-- Week 10: add NLI entailment score trace to query_log.
+--
+-- One jsonb column storing a list of per-sentence records from the
+-- Week 10 guardrail pass:
+--
+--   [
+--     {
+--       "sentence": "…",            -- truncated to 200 chars for audit
+--       "action":   "keep" | "soften" | "redact" | "redact_hard_claim"
+--                  | "keep_no_claim" | "soften_nli_error",
+--       "requires_nli": bool,
+--       "p_entail":   float | null,  -- max over retrieved chunks, or null
+--                                    -- if NLI failed / sentence skipped
+--       "flags":     {"dose": bool, "threshold": bool,
+--                     "diagnosis": bool, "duration": bool}
+--     },
+--     ...
+--   ]
+--
+-- Stored as jsonb (not a separate table) because it is a per-response
+-- trace, always fetched together with the query_log row, and never
+-- queried across responses except for aggregate analytics which can
+-- use jsonb path operators.
+--
+-- Additive migration: nullable, no backfill — pre-Week-10 rows stay
+-- NULL and the app treats NULL as "guardrails did not run".
+--
+-- Safe to re-run.
+
+alter table public.query_log
+  add column if not exists nli_entailment_scores jsonb;

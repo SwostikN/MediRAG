@@ -558,10 +558,15 @@ def insert_query_log(
     refusal_reason: Optional[str] = None,
     red_flag_fired: bool = False,
     red_flag_rule_id: Optional[str] = None,
+    nli_entailment_scores: Optional[List[Any]] = None,
 ) -> Optional[dict]:
     """Insert one row into public.query_log (P2.11). Fire-and-forget —
     the caller is expected to swallow exceptions so a logging outage
-    never breaks the user response."""
+    never breaks the user response.
+
+    nli_entailment_scores is the per-sentence guardrail trace from
+    app.guardrails.apply_guardrails (Week 10, migration 013). NULL for
+    stages that skip guardrails (redflag, intake_*) and pre-Week-10 rows."""
     payload = {
         "user_id": user_id,
         "session_id": session_id,
@@ -575,6 +580,7 @@ def insert_query_log(
         "refusal_reason": refusal_reason,
         "red_flag_fired": red_flag_fired,
         "red_flag_rule_id": red_flag_rule_id,
+        "nli_entailment_scores": nli_entailment_scores,
     }
     return _post_table("query_log", [payload])
 

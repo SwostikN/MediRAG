@@ -55,6 +55,7 @@ try:
         is_medically_relevant,
     )
     from . import rate_limit
+    from .guardrails import apply_guardrails
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -87,6 +88,7 @@ except ImportError:
         is_medically_relevant,
     )
     import rate_limit
+    from guardrails import apply_guardrails
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -1338,16 +1340,38 @@ async def query_document(query: QueryRequest):
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
+    # Week 10 guardrails: classify + NLI-verify each sentence. On
+    # contradiction we redact; on weak support we soften; dose / diagnosis
+    # sentences get the harder rule (redact unless strongly entailed).
+    # If every claim sentence was redacted, fall back to the standard
+    # no-coverage refusal — we do not emit an answer with only framing
+    # sentences because that would feel conversational but empty.
+    filtered_answer, nli_scores = apply_guardrails(answer, top_rows)
+    if not filtered_answer.strip():
+        print("[guardrails] all claim sentences redacted, falling back to refusal")
+        _log_query_safe(
+            session_id=query.session_id,
+            stage="routine",
+            query_text=query.question,
+            response_text=refusal["answer"],
+            refusal_triggered=True,
+            refusal_reason="all_sentences_redacted_by_guardrails",
+            prompt_hash=_prompt_hash(messages),
+            nli_entailment_scores=nli_scores,
+        )
+        return refusal
+
     _log_query_safe(
         session_id=query.session_id,
         stage="routine",
         query_text=query.question,
-        response_text=answer,
+        response_text=filtered_answer,
         citations=sources,
         retrieved_chunk_ids=[r.get("id") for r in top_rows if r.get("id")],
         prompt_hash=_prompt_hash(messages),
+        nli_entailment_scores=nli_scores,
     )
-    return {"answer": answer, "sources": sources, "stage": "routine"}
+    return {"answer": filtered_answer, "sources": sources, "stage": "routine"}
 
 
 # ─── Streaming endpoint ─────────────────────────────────────────────────────

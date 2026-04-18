@@ -218,3 +218,145 @@ def verify_entailment(sentence: str, chunk_text: str) -> float:
         logits = mdl(**inputs).logits[0]
     probs = torch.softmax(logits, dim=-1)
     return float(probs[entail_idx].item())
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Layer 3 — Orchestration: apply_guardrails
+# ──────────────────────────────────────────────────────────────────────────
+#
+# Ties Layer 1 (classifier) and Layer 2 (NLI verifier) into the shape the
+# response path actually needs: given the generated answer and the list of
+# retrieved chunks the LLM saw, produce a (filtered_answer, score_log) pair.
+#
+# Thresholds are deliberately constants here rather than constructor args.
+# Calibration (Week 10 item 4) will move them to a config file once we have
+# gold-set measurements to support the numbers.
+
+
+# Tier cutoffs on P(entailment). See DOCUMED §10.6 for rationale.
+_NLI_REDACT_BELOW = 0.2
+_NLI_SOFTEN_BELOW = 0.5
+# Hard-claim floor: dose + diagnosis sentences must clear this or they
+# are redacted, never softened. Hard claims ARE the dangerous failure mode.
+_NLI_HARD_CLAIM_MIN = 0.5
+
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\[])")
+
+
+def _split_sentences(text: str) -> list[str]:
+    """Cheap sentence splitter. Good enough for patient-ed prose; does not
+    try to handle abbreviations like 'e.g.' or 'Dr.' perfectly — the cost
+    of a wrong split is one extra (or one missed) classifier call, which
+    fails-soft either way. A proper tokeniser is an upgrade path."""
+    if not text or not text.strip():
+        return []
+    return [p.strip() for p in _SENTENCE_SPLIT_RE.split(text.strip()) if p.strip()]
+
+
+def apply_guardrails(
+    answer: str,
+    top_rows: list[dict],
+    *,
+    verifier=None,
+    classifier=None,
+) -> tuple[str, list[dict]]:
+    """Run the Layer-1 classifier + Layer-2 NLI verifier on `answer`.
+
+    Parameters
+    ----------
+    answer    : the LLM's generated response.
+    top_rows  : the retrieved chunks passed to the LLM as context. Each
+                row must have a 'content' key. We check each classified-
+                claim sentence against EVERY chunk and take the max
+                P(entail) — if any chunk entails it, we treat the
+                sentence as supported.
+    verifier  : optional override for verify_entailment. Tests inject a
+                mock to avoid loading the 400 MB NLI model.
+    classifier: optional override for classify_claim.
+
+    Returns
+    -------
+    filtered_answer : the answer with redacted sentences removed and
+                      softened sentences annotated. If every claim
+                      sentence was redacted, returns "" and callers
+                      should fall back to the standard refusal.
+    score_log       : list of per-sentence records suitable for jsonb
+                      persistence on public.query_log. See migration
+                      013 for the schema contract.
+    """
+    verifier = verifier or verify_entailment
+    classifier = classifier or classify_claim
+
+    sentences = _split_sentences(answer)
+    if not sentences:
+        return answer, []
+
+    chunk_texts = [r.get("content", "") for r in top_rows if r.get("content")]
+
+    kept: list[str] = []
+    score_log: list[dict] = []
+
+    for sent in sentences:
+        feats = classifier(sent)
+        flags = {
+            "dose": feats.has_dose,
+            "threshold": feats.has_threshold,
+            "diagnosis": feats.has_diagnosis_verb,
+            "duration": feats.has_duration,
+        }
+
+        if not feats.requires_nli:
+            kept.append(sent)
+            score_log.append({
+                "sentence": sent[:200],
+                "action": "keep_no_claim",
+                "requires_nli": False,
+                "p_entail": None,
+                "flags": flags,
+            })
+            continue
+
+        # Run NLI against every chunk; keep the max. If any chunk entails
+        # the sentence, we treat it as supported.
+        p_entail: float = 0.0
+        nli_error: str = ""
+        try:
+            for ct in chunk_texts:
+                p = verifier(sent, ct)
+                if p > p_entail:
+                    p_entail = p
+        except Exception as exc:
+            nli_error = str(exc)[:200]
+            print(f"[guardrails] NLI call failed, fail-soft: {exc}")
+
+        is_hard_claim = feats.has_dose or feats.has_diagnosis_verb
+
+        if nli_error:
+            kept.append(sent + " _(not independently verified)_")
+            action = "soften_nli_error"
+        elif is_hard_claim and p_entail < _NLI_HARD_CLAIM_MIN:
+            action = "redact_hard_claim"
+            # sentence is dropped
+        elif p_entail < _NLI_REDACT_BELOW:
+            action = "redact"
+            # sentence is dropped
+        elif p_entail < _NLI_SOFTEN_BELOW:
+            kept.append(
+                sent + " _(not directly stated in sources — confirm with a clinician)_"
+            )
+            action = "soften"
+        else:
+            kept.append(sent)
+            action = "keep"
+
+        score_log.append({
+            "sentence": sent[:200],
+            "action": action,
+            "requires_nli": True,
+            "p_entail": round(p_entail, 3) if not nli_error else None,
+            "flags": flags,
+            **({"error": nli_error} if nli_error else {}),
+        })
+
+    filtered = " ".join(kept).strip()
+    return filtered, score_log
