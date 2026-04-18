@@ -129,3 +129,92 @@ def classify_claim(sentence: str) -> ClaimFeatures:
         has_duration=has_duration,
         is_disclaimer=is_disclaimer,
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Layer 2 — NLI entailment verifier
+# ──────────────────────────────────────────────────────────────────────────
+#
+# `verify_entailment(sentence, chunk)` returns P(entailment) in [0, 1] from
+# a cross-encoder NLI model. Callers decide the tier action on the score
+# (the integration layer in /query will redact below 0.2, soften 0.2–0.5,
+# keep above 0.5; dose + diagnosis claims ignore the soften tier).
+#
+# The model (~400 MB) is lazy-loaded on first call and cached module-wide.
+# Startup is NOT slowed — nothing below this comment runs on import.
+
+
+NLI_MODEL_NAME = "cross-encoder/nli-deberta-v3-base"
+
+_nli_state: dict = {"tokenizer": None, "model": None, "entail_idx": None}
+
+
+def _load_nli() -> dict:
+    """Idempotent loader. Populates _nli_state on first call, then returns
+    it. Raises on failure — callers are expected to catch and treat the
+    exception as 'could not verify' (fail-closed at integration time).
+
+    Looking up the entailment index via model.config.id2label rather than
+    hardcoding is deliberate: MNLI-era models use [contradiction, neutral,
+    entailment] while FEVER-era and some ANLI-era models use [contradiction,
+    entailment, neutral]. Hardcoding is a silent-bug factory on model swaps.
+    """
+    if _nli_state["model"] is not None:
+        return _nli_state
+    import torch  # local import so module import stays cheap
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    tok = AutoTokenizer.from_pretrained(NLI_MODEL_NAME)
+    mdl = AutoModelForSequenceClassification.from_pretrained(NLI_MODEL_NAME)
+    mdl.eval()
+
+    entail_idx = None
+    for idx, label in mdl.config.id2label.items():
+        if str(label).lower().startswith("entail"):
+            entail_idx = int(idx)
+            break
+    if entail_idx is None:
+        raise RuntimeError(
+            f"NLI model {NLI_MODEL_NAME!r} has no 'entailment' label in "
+            f"config.id2label={mdl.config.id2label!r}"
+        )
+
+    _nli_state["tokenizer"] = tok
+    _nli_state["model"] = mdl
+    _nli_state["entail_idx"] = entail_idx
+    _nli_state["torch"] = torch
+    return _nli_state
+
+
+def verify_entailment(sentence: str, chunk_text: str) -> float:
+    """Return P(entailment) in [0, 1] for 'does chunk_text support sentence?'.
+
+    NLI convention: premise=chunk_text, hypothesis=sentence. The model
+    scores whether the premise entails the hypothesis.
+
+    Empty inputs short-circuit to 0.0 — a sentence with no supporting
+    chunk cannot be entailed. Callers should not call this on classifier-
+    skipped sentences (disclaimers, navigation) because the score has no
+    meaning there."""
+    if not sentence or not sentence.strip():
+        return 0.0
+    if not chunk_text or not chunk_text.strip():
+        return 0.0
+
+    state = _load_nli()
+    tok = state["tokenizer"]
+    mdl = state["model"]
+    entail_idx = state["entail_idx"]
+    torch = state["torch"]
+
+    inputs = tok(
+        chunk_text,
+        sentence,
+        return_tensors="pt",
+        truncation=True,
+        max_length=512,
+    )
+    with torch.no_grad():
+        logits = mdl(**inputs).logits[0]
+    probs = torch.softmax(logits, dim=-1)
+    return float(probs[entail_idx].item())
