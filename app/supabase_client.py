@@ -86,7 +86,7 @@ def _get(table: str, params: Dict[str, str]) -> Any:
         return err
     query = "&".join(f"{k}={quote(v, safe='.,*()')}" for k, v in params.items())
     url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{query}"
-    resp = requests.get(url, headers=HEADERS, timeout=5)
+    resp = requests.get(url, headers=HEADERS, timeout=30)
     try:
         resp.raise_for_status()
     except Exception:
@@ -104,7 +104,7 @@ def _patch(table: str, params: Dict[str, str], payload: Dict[str, Any]) -> Any:
         return err
     query = "&".join(f"{k}={quote(v, safe='.,*()')}" for k, v in params.items())
     url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{query}"
-    resp = requests.patch(url, json=payload, headers=HEADERS, timeout=5)
+    resp = requests.patch(url, json=payload, headers=HEADERS, timeout=30)
     try:
         resp.raise_for_status()
     except Exception:
