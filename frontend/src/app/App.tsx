@@ -114,6 +114,11 @@ interface StreamCallbacks {
   onDelta?: (text: string) => void;
   onSources?: (sources: ChatMessageSource[]) => void;
   onError?: (message: string) => void;
+  // Fired when the backend's Week 10 scope-guard fires mid/end-stream.
+  // The assistant has already streamed tokens token-by-token that the
+  // guard now judges as a diagnosis / prescription; the caller should
+  // REPLACE the bubble content with `text` rather than appending to it.
+  onOverride?: (override: { text: string; coverage?: string; reason?: string }) => void;
 }
 
 // Read a Server-Sent Events stream from /query/stream and dispatch each
@@ -191,6 +196,12 @@ async function streamQuery(
       } else if (eventType === "sources") {
         const list = Array.isArray(payload.sources) ? (payload.sources as ChatMessageSource[]) : [];
         callbacks.onSources?.(list);
+      } else if (eventType === "override") {
+        callbacks.onOverride?.({
+          text: typeof payload.text === "string" ? payload.text : "",
+          coverage: typeof payload.coverage === "string" ? payload.coverage : undefined,
+          reason: typeof payload.reason === "string" ? payload.reason : undefined,
+        });
       } else if (eventType === "error") {
         callbacks.onError?.(
           typeof payload.message === "string" ? payload.message : "stream error",
@@ -372,8 +383,16 @@ export default function App() {
         return;
       }
 
+      // Profile sync is telemetry on user_profiles. A failure here
+      // (RLS drift, missing column, etc.) must not block history load —
+      // chat_sessions is the source of truth for the sidebar and uses
+      // the auth-session user_id, not the profile row.
       try {
         await syncUserProfile(activeSession);
+      } catch (profileError) {
+        console.warn("user_profiles sync failed (continuing)", profileError);
+      }
+      try {
         setHistoryAvailable(true);
         await loadConversationHistory(activeSession.user.id);
       } catch (historyError) {
@@ -401,6 +420,10 @@ export default function App() {
       void (async () => {
         try {
           await syncUserProfile(nextSession);
+        } catch (profileError) {
+          console.warn("user_profiles sync failed (continuing)", profileError);
+        }
+        try {
           setHistoryAvailable(true);
           await loadConversationHistory(nextSession.user.id);
           setShowAuthScreen(false);
@@ -985,6 +1008,41 @@ export default function App() {
             finalMessage = { ...finalMessage, sources };
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantMessageId ? { ...m, sources } : m)),
+            );
+          },
+          // Scope-guard override: backend decided the streamed answer is
+          // out of scope (diagnosis / prescription). Replace whatever we
+          // already streamed into the bubble with the refusal text and
+          // strip sources so the bubble renders as a refusal. `noCoverage`
+          // also makes `skipAssistant` drop this pair from the next
+          // retrieval rewrite (same treatment as other refusals).
+          onOverride: ({ text }) => {
+            if (!text) return;
+            if (!bubbleAdded) {
+              pendingSources = undefined;
+              ensureBubble(text);
+              finalMessage = { ...finalMessage, noCoverage: true, sources: undefined };
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMessageId
+                    ? { ...m, content: text, noCoverage: true, sources: undefined }
+                    : m,
+                ),
+              );
+              return;
+            }
+            finalMessage = {
+              ...finalMessage,
+              content: text,
+              noCoverage: true,
+              sources: undefined,
+            };
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessageId
+                  ? { ...m, content: text, noCoverage: true, sources: undefined }
+                  : m,
+              ),
             );
           },
           onError: (msg) => {

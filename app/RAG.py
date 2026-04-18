@@ -1753,18 +1753,19 @@ async def query_document_stream(query: QueryRequest):
 
         # Scope-guard on the final (already NLI-filtered) answer. If the
         # surviving text still reads as a diagnosis or a prescription we
-        # have emitted it token-by-token and cannot unemit, so the best we
-        # can do is append a scope refusal and flag it for the frontend to
-        # render the refusal in place of the streamed text. The frontend
-        # watches for `coverage: "scope_refused"` on the sources event.
+        # have emitted it token-by-token and cannot unemit — emit a
+        # dedicated `override` event so the frontend can *replace* the
+        # streamed bubble content with the scope refusal instead of
+        # appending to it. Separate event type keeps the `sources`
+        # contract single-shape.
         scope = classify_scope(filtered_answer)
         if scope in ("diagnostic", "prescriptive"):
             scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
             print(f"[scope-guard] streamed answer classified as {scope}, overriding")
-            yield _sse("sources", {
-                "sources": [],
+            yield _sse("override", {
+                "text": scope_refusal_text,
                 "coverage": "scope_refused",
-                "override_text": scope_refusal_text,
+                "reason": f"scope_guard_{scope}",
             })
             _log_query_safe(
                 session_id=query.session_id,

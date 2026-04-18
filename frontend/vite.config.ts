@@ -32,9 +32,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/health": "http://127.0.0.1:8000",
-      "/query": "http://127.0.0.1:8000",
-      "/upload_pdf": "http://127.0.0.1:8000",
+      // Each FastAPI route the frontend talks to needs an entry here —
+      // Vite's SPA fallback otherwise answers unknown POSTs with an
+      // empty 404 body, and the frontend's `response.json()` throws
+      // "Unexpected end of JSON input". Regex key matches the exact
+      // path and any sub-path, so "/upload" also catches "/upload/resolve".
+      "^/(health|query|query/stream|upload|upload/resolve|uploads|upload_pdf)(/|$)":
+        "http://127.0.0.1:8000",
     },
   },
 
