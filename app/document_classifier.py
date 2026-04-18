@@ -175,24 +175,131 @@ _MEDICAL_TERMS = re.compile(
 )
 
 
-def is_medically_relevant(text: str, *, min_hits: int = 5) -> bool:
+# ---------------------------------------------------------------------------
+# Non-medical counter-signals — catches meta-documents about medical RAG /
+# health software that trivially mention "patient", "diagnosis", "NICE", etc.
+# but are actually CS / engineering design docs.
+#
+# The original is_medically_relevant probe was a simple keyword-density
+# check. A software design document describing a medical RAG system
+# (e.g. "RAG_Filtering_Documentation.pdf") hits the medical-term list
+# easily — it discusses the domain — but is NOT a medical paper and
+# MediRAG should refuse to ingest it.
+#
+# Policy: "we only cater for medical papers" → bias toward REJECTING
+# borderline. False-positive rejection of an edge medical paper is
+# preferable to admitting a non-medical paper.
+
+# Programming / code-block signals. Any one of these is a smoke-signal
+# that the document contains source code — not a research paper.
+_CODE_TERMS = re.compile(
+    r"(?:"
+    r"\bdef\s+\w+\s*\(|"                  # python function def
+    r"\bclass\s+\w+\s*[:\(]|"             # python class def
+    r"\bimport\s+\w+|"                    # python import
+    r"\bfrom\s+\w+\s+import\b|"           # python from-import
+    r"\breturn\s+\w+|"                    # generic return statement
+    r"\bfunction\s+\w+\s*\(|"             # JS/TS function
+    r"\bconst\s+\w+\s*=|\blet\s+\w+\s*=|" # JS/TS decl
+    r"\basync\s+def\b|\bawait\s+\w+|"     # python async
+    r"={2,3}|!={1,2}|"                    # equality operators
+    r"\{[\s\S]{0,40}\":|"                 # JSON-ish object
+    r"-->|<--|"                           # arrow comments
+    r"```[a-zA-Z]*|"                      # markdown code fence
+    r"\[\s*[\"'][^\"']+[\"']\s*,"         # list-literal of strings
+    r")",
+    re.MULTILINE,
+)
+
+# Engineering / CS / ML vocabulary — the giveaway that the doc is
+# ABOUT a system, not a clinical study.
+_CS_TERMS = re.compile(
+    r"\b(?:"
+    r"RAG|retrieval[- ]augmented|vector\s*store|vectorstore|"
+    r"embedding|embeddings|embed|re[- ]?ranker|reranker|rerank|"
+    r"FAISS|pgvector|chromadb|qdrant|pinecone|weaviate|"
+    r"LLM|LLMs|large\s+language\s+model|"
+    r"GPT|ChatGPT|Claude|Llama|Mistral|Gemini|Cohere|OpenAI|Anthropic|"
+    r"transformer|attention\s+mechanism|fine[- ]?tun(?:e|ing|ed)|"
+    r"tokeniz(?:er|ation|e)|prompt\s+engineer\w*|"
+    r"cosine\s+similarity|semantic\s+search|"
+    r"chunk(?:ing|ed|s)?|chunk\s+size|sliding\s+window|"
+    r"API|endpoint|backend|frontend|middleware|microservice|"
+    r"pipeline|data\s+pipeline|ETL|"
+    r"docker|kubernetes|postgres|sqlite|redis|fastapi|flask|django|"
+    r"numpy|pandas|pytorch|tensorflow|scikit[- ]learn|sklearn|"
+    r"hyperparameter|loss\s+function|gradient\s+descent|"
+    r"precision|recall|f1[- ]score|benchmark|"
+    r"repository|repo|commit|pull\s+request|github|gitlab"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _count_code_signals(text: str) -> int:
+    """Distinct code / CS signal hits in `text`. Used as a counter-weight
+    to the medical-term probe so meta-documents about medical software
+    get rejected at the upload gate."""
+    hits = _CODE_TERMS.findall(text) + _CS_TERMS.findall(text)
+    # Normalize case so "RAG" and "rag" don't both count.
+    return len({h.lower().strip() for h in hits if h})
+
+
+def _approx_token_count(text: str) -> int:
+    """Cheap whitespace token count — used for density normalisation."""
+    return max(1, len(text.split()))
+
+
+def is_medically_relevant(
+    text: str,
+    *,
+    min_hits: int = 5,
+    min_density_per_1k: float = 4.0,
+    max_cs_ratio: float = 0.6,
+) -> bool:
     """Cheap medical-domain probe over the first ~2 pages.
 
-    Returns True if at least `min_hits` distinct medical terms appear.
-    Used by the /upload gate to reject obviously off-domain research
-    papers (pure CS, civil engineering, etc.) before they get chunked
-    and embedded into the user's session.
+    A document passes only if ALL of:
+      (1) At least `min_hits` distinct medical terms appear (original rule).
+      (2) Medical-term density per 1k tokens meets `min_density_per_1k` —
+          a long CS doc that mentions "patient" / "trial" in passing
+          will fail this even if the raw count is high.
+      (3) The non-medical counter-signal (programming + CS/ML vocab) is
+          not dominant. Specifically, if #cs_signals > max_cs_ratio *
+          #medical_signals, reject — this catches "medical RAG design
+          document" false positives.
 
-    Threshold is set so a paper that mentions "patient" or "trial" once
-    in passing won't pass — but a real medical paper hits this trivially
-    in its abstract.
+    Policy bias: "we only cater for medical papers". Rejecting a
+    borderline medical paper is cheaper than admitting a CS doc whose
+    chunks poison the session corpus.
+
+    Keywords-only, no ML dependency. Sits on the upload critical path.
     """
     if not text:
         return False
     sample = text[:_SAMPLE_CHARS]
-    hits = _MEDICAL_TERMS.findall(sample)
-    distinct = {h.lower() for h in hits}
-    return len(distinct) >= min_hits
+
+    med_hits_all = _MEDICAL_TERMS.findall(sample)
+    distinct_med = {h.lower() for h in med_hits_all}
+    if len(distinct_med) < min_hits:
+        return False
+
+    # Density guard — real medical papers carry ~10-40 medical terms per
+    # 1000 tokens in their abstract+intro. A CS design document that
+    # discusses medical topics tends to sit well below that.
+    tokens = _approx_token_count(sample)
+    density_per_1k = (len(med_hits_all) / tokens) * 1000.0
+    if density_per_1k < min_density_per_1k:
+        return False
+
+    # Counter-signal guard — reject if CS/code vocabulary rivals the
+    # medical vocabulary. Using distinct-medical (not raw hits) so a
+    # doc that repeats "patient" 40 times can't swamp the ratio.
+    cs_count = _count_code_signals(sample)
+    if cs_count > max_cs_ratio * len(distinct_med):
+        return False
+
+    return True
 
 
 # ---------------------------------------------------------------------------

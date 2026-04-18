@@ -287,7 +287,7 @@ def get_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
         "chat_sessions",
         {
             "id": f"eq.{session_id}",
-            "select": "id,user_id,current_stage,intent_bucket,intake_summary",
+            "select": "id,user_id,current_stage,intent_bucket,intake_summary,attached_documents",
             "limit": "1",
         },
     )

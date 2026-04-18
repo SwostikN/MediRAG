@@ -864,6 +864,21 @@ def _log_query_safe(**kwargs: Any) -> None:
         print(f"[query_log] insert failed (swallowed): {exc}")
 
 
+def _session_in_doc_qa_mode(session: Optional[dict]) -> bool:
+    """True if the session has ANY uploaded document attached.
+
+    Stage 1 intake is for symptom triage. Once the user has uploaded a
+    document — even one that was classified as 'other' or later rejected
+    by the domain gate — the conversation is clearly about a document,
+    not a symptom complaint. Route those questions to retrieval (or a
+    no-source refusal), never to the symptom-intake template.
+    """
+    if not session:
+        return False
+    docs = session.get("attached_documents") or []
+    return len(docs) > 0
+
+
 def _retrieval_query_with_history(question: str, history: Optional[list]) -> str:
     """Concatenate the last few user turns into the retrieval string so a
     vague follow-up like 'what are the symptoms?' inherits the topic of
@@ -1116,6 +1131,7 @@ async def query_document(query: QueryRequest):
     if rf is not None:
         print(f"[redflag] fired rule={rf.rule_id} category={rf.category}")
         _log_query_safe(
+            user_id=None,
             session_id=query.session_id,
             stage="redflag",
             query_text=query.question,
@@ -1148,6 +1164,12 @@ async def query_document(query: QueryRequest):
     # composed) falls through to the routine retrieval path below.
     if query.session_id:
         session = get_chat_session(query.session_id)
+        if session and session.get("current_stage") == "intake" and _session_in_doc_qa_mode(session):
+            # Doc-Q&A mode: a classified document is attached. Advance the
+            # stage so subsequent turns also skip intake, then fall through
+            # to retrieval (session-merge picks up the indexed chunks).
+            update_chat_session(query.session_id, current_stage="navigation")
+            session = None  # neutralise the intake check below
         if session and session.get("current_stage") == "intake":
             if not session.get("intent_bucket"):
                 template = intake_stage.select_template(
@@ -1159,6 +1181,7 @@ async def query_document(query: QueryRequest):
                 update_chat_session(query.session_id, intent_bucket=template["id"])
                 print(f"[intake] bucket={template['id']} q={query.question[:60]!r}")
                 _log_query_safe(
+                    user_id=None,
                     session_id=query.session_id,
                     stage="intake_questions",
                     query_text=query.question,
@@ -1212,6 +1235,7 @@ async def query_document(query: QueryRequest):
                     _dedupe_sources(nav_rows)[:DISPLAY_SOURCES]
                 )
                 _log_query_safe(
+                    user_id=None,
                     session_id=query.session_id,
                     stage="intake_summary",
                     query_text=query.question,
@@ -1260,6 +1284,7 @@ async def query_document(query: QueryRequest):
     #       The corpus does not cover this query well enough.
     def _log_refusal(reason: str) -> None:
         _log_query_safe(
+            user_id=None,
             session_id=query.session_id,
             stage="routine",
             query_text=query.question,
@@ -1360,6 +1385,7 @@ async def query_document(query: QueryRequest):
     if not filtered_answer.strip():
         print("[guardrails] all claim sentences redacted, falling back to refusal")
         _log_query_safe(
+            user_id=None,
             session_id=query.session_id,
             stage="routine",
             query_text=query.question,
@@ -1380,6 +1406,7 @@ async def query_document(query: QueryRequest):
         scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
         print(f"[scope-guard] filtered answer classified as {scope}, refusing")
         _log_query_safe(
+            user_id=None,
             session_id=query.session_id,
             stage="routine",
             query_text=query.question,
@@ -1397,6 +1424,7 @@ async def query_document(query: QueryRequest):
         }
 
     _log_query_safe(
+        user_id=None,
         session_id=query.session_id,
         stage="routine",
         query_text=query.question,
@@ -1457,6 +1485,7 @@ async def query_document_stream(query: QueryRequest):
             })
             yield _sse("delta", {"text": rf.message})
             _log_query_safe(
+                user_id=None,
                 session_id=query.session_id,
                 stage="redflag",
                 query_text=query.question,
@@ -1476,6 +1505,10 @@ async def query_document_stream(query: QueryRequest):
         # roadmap.
         if query.session_id:
             session = get_chat_session(query.session_id)
+            if session and session.get("current_stage") == "intake" and _session_in_doc_qa_mode(session):
+                update_chat_session(query.session_id, current_stage="navigation")
+                print(f"[intake] skipped: doc-Q&A mode (session={query.session_id})")
+                session = None
             if session and session.get("current_stage") == "intake":
                 if not session.get("intent_bucket"):
                     template = intake_stage.select_template(
@@ -1493,6 +1526,7 @@ async def query_document_stream(query: QueryRequest):
                     })
                     yield _sse("delta", {"text": questions})
                     _log_query_safe(
+                        user_id=None,
                         session_id=query.session_id,
                         stage="intake_questions",
                         query_text=query.question,
@@ -1543,6 +1577,7 @@ async def query_document_stream(query: QueryRequest):
                     if nav_sources:
                         yield _sse("sources", {"sources": nav_sources})
                     _log_query_safe(
+                        user_id=None,
                         session_id=query.session_id,
                         stage="intake_summary",
                         query_text=query.question,
@@ -1567,6 +1602,7 @@ async def query_document_stream(query: QueryRequest):
         def emit_refusal(reason: str):
             print(f"[refusal-gate] refusing ({reason})")
             _log_query_safe(
+                user_id=None,
                 session_id=query.session_id,
                 stage="routine",
                 query_text=query.question,
@@ -1739,6 +1775,7 @@ async def query_document_stream(query: QueryRequest):
             )
             yield _sse("delta", {"text": refusal_msg})
             _log_query_safe(
+                user_id=None,
                 session_id=query.session_id,
                 stage="routine",
                 query_text=query.question,
@@ -1768,6 +1805,7 @@ async def query_document_stream(query: QueryRequest):
                 "reason": f"scope_guard_{scope}",
             })
             _log_query_safe(
+                user_id=None,
                 session_id=query.session_id,
                 stage="routine",
                 query_text=query.question,
@@ -1783,6 +1821,7 @@ async def query_document_stream(query: QueryRequest):
         if sources:
             yield _sse("sources", {"sources": sources})
         _log_query_safe(
+            user_id=None,
             session_id=query.session_id,
             stage="routine",
             query_text=query.question,

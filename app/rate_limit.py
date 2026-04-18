@@ -45,7 +45,7 @@ _LOCK = Lock()
 #     20/day stops anyone slow-draining storage or token budget.
 _PER_USER_LIMITS: Dict[str, List[Tuple[int, int]]] = {
     "query":  [(20, 60), (200, 86400)],
-    "upload": [(5, 3600), (20, 86400)],
+    "upload": [(10, 3600), (20, 86400)],
 }
 
 # Global (cross-user) safety net.
