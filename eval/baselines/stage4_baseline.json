@@ -1,0 +1,103 @@
+{
+  "n_total": 5,
+  "n_runnable": 5,
+  "n_errors": 0,
+  "marker_parse_recall": 0.8,
+  "hint_coverage": 0.6466666666666667,
+  "refusal_hygiene_rate": 1.0,
+  "escalation_present_rate": 1.0,
+  "errors": [],
+  "timestamp": "2026-04-18T13:54:49.387615+00:00",
+  "label": "baseline_v1_post_corpus",
+  "use_retrieval": true,
+  "gold_path": "/Users/rewati/Desktop/MediRAG/eval/gold/results.jsonl",
+  "per_case": [
+    {
+      "id": "rs-001",
+      "expected_markers": [
+        "TSH",
+        "Free T4"
+      ],
+      "parsed_marker_names": [
+        "TSH"
+      ],
+      "marker_parse_recall": 0.5,
+      "hint_coverage": 0.8333333333333334,
+      "refusal_clean": true,
+      "forbidden_phrases": [],
+      "escalation_present": true,
+      "n_sources": 3,
+      "answer_chars": 1407,
+      "error": null
+    },
+    {
+      "id": "rs-002",
+      "expected_markers": [
+        "hemoglobin"
+      ],
+      "parsed_marker_names": [
+        "Hb"
+      ],
+      "marker_parse_recall": 1.0,
+      "hint_coverage": 0.5,
+      "refusal_clean": true,
+      "forbidden_phrases": [],
+      "escalation_present": true,
+      "n_sources": 1,
+      "answer_chars": 1182,
+      "error": null
+    },
+    {
+      "id": "rs-003",
+      "expected_markers": [
+        "fasting glucose",
+        "HbA1c"
+      ],
+      "parsed_marker_names": [
+        "HbA1c"
+      ],
+      "marker_parse_recall": 0.5,
+      "hint_coverage": 1.0,
+      "refusal_clean": true,
+      "forbidden_phrases": [],
+      "escalation_present": true,
+      "n_sources": 1,
+      "answer_chars": 1300,
+      "error": null
+    },
+    {
+      "id": "rs-004",
+      "expected_markers": [
+        "creatinine"
+      ],
+      "parsed_marker_names": [
+        "Creatinine"
+      ],
+      "marker_parse_recall": 1.0,
+      "hint_coverage": 0.5,
+      "refusal_clean": true,
+      "forbidden_phrases": [],
+      "escalation_present": true,
+      "n_sources": 1,
+      "answer_chars": 1356,
+      "error": null
+    },
+    {
+      "id": "rs-005",
+      "expected_markers": [
+        "LDL cholesterol"
+      ],
+      "parsed_marker_names": [
+        "LDL"
+      ],
+      "marker_parse_recall": 1.0,
+      "hint_coverage": 0.4,
+      "refusal_clean": true,
+      "forbidden_phrases": [],
+      "escalation_present": true,
+      "n_sources": 1,
+      "answer_chars": 1334,
+      "error": null
+    }
+  ]
+}
