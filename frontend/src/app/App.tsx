@@ -21,6 +21,17 @@ import { EmptyState } from "./components/EmptyState";
 import { AuthScreen } from "./components/AuthScreen";
 import { supabase } from "../lib/supabase";
 
+// One parsed lab marker shown in the inline table under a Stage 4
+// explainer message. Mirrors backend app.stages.results.LabMarker
+// (only the fields the frontend renders).
+export interface LabMarker {
+  name: string;
+  value: number;
+  unit: string;
+  reference_range: string | null;
+  status: "low" | "normal" | "high" | "unknown";
+}
+
 interface Message {
   id: number | string;
   role: "user" | "assistant";
@@ -39,6 +50,25 @@ interface Message {
   // conversation history before the next /query call so an unanswered
   // question doesn't pollute the next retrieval rewrite.
   noCoverage?: boolean;
+  // Stage 4 lab-report responses ship a parsed marker list; ChatMessage
+  // renders it as a structured table below the prose.
+  markers?: LabMarker[];
+  // For 'needs_user_intent' upload responses the assistant message
+  // shows two buttons that POST /upload/resolve with the user's
+  // chosen doc_type. Cleared once a button is clicked.
+  resolveActions?: {
+    sessionDocId: string;
+    filename: string;
+  };
+}
+
+// Per-session attached document — populated from /upload responses and
+// from chat_sessions.attached_documents on session restore.
+interface AttachedDoc {
+  id: string;
+  filename: string;
+  doc_type: "lab_report" | "research_paper" | "other";
+  page_count?: number | null;
 }
 
 interface ChatSessionRecord {
@@ -202,6 +232,14 @@ export default function App() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(true);
   const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
+  // Rich attached-doc list (filename + doc_type), used for the chip
+  // strip near the input. uploadedDocuments stays as a flat name list
+  // for the existing context-panel readouts.
+  const [attachedDocs, setAttachedDocs] = useState<AttachedDoc[]>([]);
+  // session_doc_ids currently mid-resolve; used to disable both
+  // disambiguation buttons after one is clicked so the request can't
+  // fire twice.
+  const [resolvingDocs, setResolvingDocs] = useState<Set<string>>(new Set());
   const [statusMessage, setStatusMessage] = useState("No documents indexed yet");
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -222,6 +260,7 @@ export default function App() {
   const resetLocalConversation = (nextStatus = "No documents indexed yet") => {
     setMessages([]);
     setUploadedDocuments([]);
+    setAttachedDocs([]);
     setCurrentSessionId(null);
     setStatusMessage(nextStatus);
   };
@@ -263,8 +302,27 @@ export default function App() {
 
     setMessages(toUiMessages((data ?? []) as ChatMessageRecord[]));
     setCurrentSessionId(chatSessionId);
-    setUploadedDocuments([]);
-    setStatusMessage("Session restored. Re-upload the PDF if you want to continue querying.");
+
+    // Restore the per-session attached documents from the
+    // chat_sessions.attached_documents JSONB column. The chunks/markers
+    // themselves live in session_chunks / user_lab_markers and are
+    // pulled at query time via the session-merge path in
+    // _retrieve_ranked, so we don't need to re-index anything here.
+    const { data: sessionRow } = await supabase
+      .from("chat_sessions")
+      .select("attached_documents")
+      .eq("id", chatSessionId)
+      .maybeSingle();
+    const restored = Array.isArray(sessionRow?.attached_documents)
+      ? (sessionRow!.attached_documents as AttachedDoc[])
+      : [];
+    setAttachedDocs(restored);
+    setUploadedDocuments(restored.map((d) => d.filename));
+    setStatusMessage(
+      restored.length
+        ? `Session restored with ${restored.length} attached document(s).`
+        : "Session restored.",
+    );
   };
 
   const loadConversationHistory = async (userId: string) => {
@@ -480,6 +538,10 @@ export default function App() {
     return headers;
   };
 
+  // Uploads now go through /upload (per-session, never the shared corpus).
+  // The endpoint classifies the file (lab_report | research_paper | other)
+  // and returns a different shape per branch — this handler maps each
+  // shape to one assistant message and updates the attached-docs strip.
   const handleUploadPdf = async (files: File[]) => {
     if (files.length === 0) {
       return;
@@ -493,53 +555,139 @@ export default function App() {
 
     setIsLoading(true);
     try {
-      const uploadedPdfNames: string[] = [];
       const chatSessionId = await ensureConversationId(files[0].name);
+      if (!chatSessionId) {
+        throw new Error(
+          "Could not create a conversation to attach this document to. Please sign in again.",
+        );
+      }
 
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("session_id", chatSessionId);
+        formData.append("user_id", session.user.id);
 
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload_pdf`, {
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
           method: "POST",
           headers: buildRequestHeaders(false),
           body: formData,
         });
 
-        const uploadPayload = await uploadResponse.json();
+        const payload = await uploadResponse.json();
 
         if (!uploadResponse.ok) {
-          throw new Error(uploadPayload.detail || "Failed to upload PDF");
+          throw new Error(payload.detail || payload.message || "Failed to upload PDF");
         }
 
-        uploadedPdfNames.push(file.name);
+        const status = payload.status as string | undefined;
+        const docType = payload.doc_type as
+          | "lab_report"
+          | "research_paper"
+          | "other"
+          | undefined;
+
+        // Build the assistant message for this file based on the response
+        // shape. Five terminal shapes the backend can return:
+        //   ok + lab_report      → markdown explainer + markers table
+        //   ok + research_paper  → "indexed N sections" plain msg
+        //   needs_user_intent    → "is this lab or paper?" plain msg
+        //   duplicate            → "already attached" plain msg
+        //   unreadable / off_domain / empty_after_chunking → server message
+        let assistantMessage: Message;
+
+        if (status === "ok" && docType === "lab_report") {
+          assistantMessage = {
+            id: `${Date.now()}-${file.name}`,
+            role: "assistant",
+            content: payload.answer || "Lab report processed.",
+            timestamp: getTimestamp(),
+            renderMode: "query",
+            stage: "results",
+            sources: Array.isArray(payload.sources) ? payload.sources : [],
+            markers: Array.isArray(payload.markers) ? payload.markers : [],
+          };
+        } else if (status === "ok" && docType === "research_paper") {
+          assistantMessage = {
+            id: `${Date.now()}-${file.name}`,
+            role: "assistant",
+            content:
+              payload.message ||
+              `Indexed ${payload.chunks ?? "the"} sections from ${file.name}.`,
+            timestamp: getTimestamp(),
+            renderMode: "plain",
+            stage: "upload",
+          };
+        } else if (status === "needs_user_intent") {
+          assistantMessage = {
+            id: `${Date.now()}-${file.name}`,
+            role: "assistant",
+            content:
+              payload.message ||
+              "I'm not sure how to handle this document. Tell me whether it's a lab report or a research paper.",
+            timestamp: getTimestamp(),
+            renderMode: "plain",
+            stage: "upload",
+            resolveActions: {
+              sessionDocId: payload.session_doc_id,
+              filename: payload.filename || file.name,
+            },
+          };
+        } else if (status === "duplicate") {
+          assistantMessage = {
+            id: `${Date.now()}-${file.name}`,
+            role: "assistant",
+            content:
+              payload.message ||
+              `${file.name} is already attached to this conversation.`,
+            timestamp: getTimestamp(),
+            renderMode: "plain",
+            stage: "upload",
+          };
+        } else {
+          // unreadable | off_domain | empty_after_chunking | other errors
+          assistantMessage = {
+            id: `${Date.now()}-${file.name}`,
+            role: "assistant",
+            content:
+              payload.message ||
+              `I couldn't process ${file.name}. Please try a different file.`,
+            timestamp: getTimestamp(),
+            renderMode: "plain",
+            stage: "upload",
+          };
+        }
+
+        setMessages((prev) => [...prev, assistantMessage]);
+        if (chatSessionId) {
+          void persistConversationMessage(chatSessionId, assistantMessage);
+        }
+
+        // Update the attached-docs strip for any response that produced
+        // a session_documents row (everything except read-failures).
+        if (
+          payload.session_doc_id &&
+          (status === "ok" ||
+            status === "duplicate" ||
+            status === "needs_user_intent")
+        ) {
+          const entry: AttachedDoc = {
+            id: payload.session_doc_id,
+            filename: payload.filename || file.name,
+            doc_type: (docType as AttachedDoc["doc_type"]) || "other",
+            page_count: payload.page_count ?? null,
+          };
+          setAttachedDocs((prev) => {
+            if (prev.some((d) => d.id === entry.id)) return prev;
+            return [...prev, entry];
+          });
+          setUploadedDocuments((prev) =>
+            Array.from(new Set([...prev, entry.filename])),
+          );
+        }
       }
 
-      setUploadedDocuments((prev) => Array.from(new Set([...prev, ...uploadedPdfNames])));
-      setStatusMessage(
-        session?.user?.id
-          ? `Indexed ${uploadedPdfNames.length} PDF file(s) and linked them to your account.`
-          : `Indexed ${uploadedPdfNames.length} PDF file(s) in local mode.`,
-      );
-
-      const uploadedLabel =
-        uploadedPdfNames.length === 1 ? uploadedPdfNames[0] : `${uploadedPdfNames.length} documents`;
-
-      const assistantMessage: Message = {
-        id: Date.now(),
-        role: "assistant",
-        content: `${uploadedLabel} uploaded successfully. Your document is ready, and you can now ask questions about its contents.`,
-        timestamp: getTimestamp(),
-        renderMode: "plain",
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      if (chatSessionId) {
-        void persistConversationMessage(chatSessionId, assistantMessage);
-      } else if (session?.user?.id) {
-        setStatusMessage("Document uploaded. Supabase history tables are unavailable, so this session is running without saved history.");
-      }
+      setStatusMessage(`Processed ${files.length} file(s).`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong while uploading the PDF";
@@ -557,6 +705,122 @@ export default function App() {
       setStatusMessage("Upload failed");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fires when the user clicks "Treat as lab report" / "Treat as research
+  // paper" under a needs_user_intent upload message. Calls /upload/resolve,
+  // then rewrites the same assistant message in-place with the resolved
+  // result (markers + explainer, or "indexed N sections") and strips the
+  // buttons. Also flips the doc-type chip colour in attachedDocs from grey.
+  const handleResolveUpload = async (
+    sessionDocId: string,
+    docType: "lab_report" | "research_paper",
+    messageId: number | string,
+  ) => {
+    if (!session?.user?.id || !currentSessionId) {
+      setStatusMessage("Sign in to continue.");
+      return;
+    }
+    if (resolvingDocs.has(sessionDocId)) return;
+
+    setResolvingDocs((prev) => {
+      const next = new Set(prev);
+      next.add(sessionDocId);
+      return next;
+    });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/upload/resolve`, {
+        method: "POST",
+        headers: buildRequestHeaders(true),
+        body: JSON.stringify({
+          session_doc_id: sessionDocId,
+          session_id: currentSessionId,
+          user_id: session.user.id,
+          doc_type: docType,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.detail || payload.message || "Resolve failed");
+      }
+
+      const status = payload.status as string | undefined;
+      const returnedType = payload.doc_type as
+        | "lab_report"
+        | "research_paper"
+        | undefined;
+
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          if (status === "ok" && returnedType === "lab_report") {
+            return {
+              ...m,
+              content: payload.answer || "Lab report processed.",
+              renderMode: "query",
+              stage: "results",
+              sources: Array.isArray(payload.sources) ? payload.sources : [],
+              markers: Array.isArray(payload.markers) ? payload.markers : [],
+              resolveActions: undefined,
+            };
+          }
+          if (status === "ok" && returnedType === "research_paper") {
+            return {
+              ...m,
+              content:
+                payload.message ||
+                `Indexed ${payload.chunks ?? "the"} sections.`,
+              renderMode: "plain",
+              stage: "upload",
+              resolveActions: undefined,
+            };
+          }
+          return {
+            ...m,
+            content:
+              payload.message ||
+              "Could not process this document as the selected type.",
+            renderMode: "plain",
+            stage: "upload",
+            resolveActions: status === "off_domain" ? undefined : m.resolveActions,
+          };
+        }),
+      );
+
+      if (status === "ok" && returnedType) {
+        setAttachedDocs((prev) =>
+          prev.map((d) =>
+            d.id === sessionDocId ? { ...d, doc_type: returnedType } : d,
+          ),
+        );
+        setStatusMessage(
+          returnedType === "lab_report"
+            ? "Lab report processed."
+            : `Indexed ${payload.chunks ?? ""} sections.`.trim(),
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not resolve this document.";
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, content: `${m.content}\n\nError: ${message}` }
+            : m,
+        ),
+      );
+      setStatusMessage("Resolve failed");
+    } finally {
+      setResolvingDocs((prev) => {
+        const next = new Set(prev);
+        next.delete(sessionDocId);
+        return next;
+      });
     }
   };
 
@@ -1191,7 +1455,18 @@ export default function App() {
                 <div className="relative z-10 h-full overflow-y-auto px-6 pt-6 pb-44 space-y-6">
                   <AnimatePresence mode="popLayout">
                     {messages.map((message) => (
-                      <ChatMessage key={message.id} {...message} />
+                      <ChatMessage
+                        key={message.id}
+                        {...message}
+                        onResolveUpload={(sid, dt) =>
+                          void handleResolveUpload(sid, dt, message.id)
+                        }
+                        resolvePending={
+                          message.resolveActions
+                            ? resolvingDocs.has(message.resolveActions.sessionDocId)
+                            : false
+                        }
+                      />
                     ))}
                   </AnimatePresence>
 
@@ -1232,6 +1507,40 @@ export default function App() {
               <div className="sticky bottom-0 z-20 px-3 pb-3 sm:px-6 sm:pb-5 bg-background">
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-background" />
                 <div className="relative">
+                  {attachedDocs.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {attachedDocs.map((doc) => {
+                        const typeLabel =
+                          doc.doc_type === "lab_report"
+                            ? "Lab"
+                            : doc.doc_type === "research_paper"
+                              ? "Paper"
+                              : "Doc";
+                        const typeChipClass =
+                          doc.doc_type === "lab_report"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200"
+                            : doc.doc_type === "research_paper"
+                              ? "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-200"
+                              : "bg-muted text-muted-foreground";
+                        return (
+                          <div
+                            key={doc.id}
+                            className="flex items-center gap-2 rounded-full border border-border/70 bg-card/90 px-3 py-1 text-xs shadow-sm"
+                            title={`${doc.filename}${doc.page_count ? ` · ${doc.page_count} pages` : ""}`}
+                          >
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${typeChipClass}`}
+                            >
+                              {typeLabel}
+                            </span>
+                            <span className="max-w-[180px] truncate font-medium text-foreground">
+                              {doc.filename}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   <ChatInput
                     onSend={(message) => {
                       void handleSendMessage(message);

@@ -11,6 +11,14 @@ export interface ChatMessageSource {
   authority_tier?: number | null;
 }
 
+export interface ChatMessageMarker {
+  name: string;
+  value: number;
+  unit: string;
+  reference_range: string | null;
+  status: "low" | "normal" | "high" | "unknown";
+}
+
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
@@ -22,6 +30,21 @@ interface ChatMessageProps {
     urgency: string;
   };
   sources?: ChatMessageSource[];
+  markers?: ChatMessageMarker[];
+  // When set, render two disambiguation buttons under the message
+  // body for an upload the classifier couldn't bucket. The parent
+  // owns the click → POST /upload/resolve flow.
+  resolveActions?: {
+    sessionDocId: string;
+    filename: string;
+  };
+  onResolveUpload?: (
+    sessionDocId: string,
+    docType: "lab_report" | "research_paper",
+  ) => void;
+  // Disables the disambiguation buttons after a click so the user
+  // can't fire the resolve twice while waiting on the response.
+  resolvePending?: boolean;
 }
 
 const markdownComponents = {
@@ -79,6 +102,62 @@ const markdownComponents = {
   ),
 };
 
+// Inline lab-marker table for Stage 4 explainer responses. The table
+// renders BEFORE the prose because the patient's own values are the
+// most useful thing on screen — the prose explains them.
+function MarkersTable({ markers }: { markers: ChatMessageMarker[] }) {
+  if (!markers || markers.length === 0) return null;
+
+  const statusBadge = (status: ChatMessageMarker["status"]) => {
+    const base =
+      "inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide";
+    switch (status) {
+      case "high":
+        return `${base} bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-200`;
+      case "low":
+        return `${base} bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200`;
+      case "normal":
+        return `${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200`;
+      default:
+        return `${base} bg-muted text-muted-foreground`;
+    }
+  };
+
+  return (
+    <div className="mb-4 overflow-x-auto rounded-xl border border-border/70 bg-background/40">
+      <table className="w-full text-[13px]">
+        <thead className="bg-muted/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 font-semibold">Marker</th>
+            <th className="px-3 py-2 font-semibold">Value</th>
+            <th className="px-3 py-2 font-semibold">Reference</th>
+            <th className="px-3 py-2 font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {markers.map((m, idx) => (
+            <tr
+              key={`${m.name}-${idx}`}
+              className="border-t border-border/50 align-middle"
+            >
+              <td className="px-3 py-2 font-medium text-foreground">{m.name}</td>
+              <td className="px-3 py-2 font-mono text-foreground/90">
+                {m.value} <span className="text-muted-foreground">{m.unit}</span>
+              </td>
+              <td className="px-3 py-2 font-mono text-muted-foreground">
+                {m.reference_range || "—"}
+              </td>
+              <td className="px-3 py-2">
+                <span className={statusBadge(m.status)}>{m.status}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function SourcesFooter({ sources }: { sources: ChatMessageSource[] }) {
   const visible = sources.filter((s) => (s.title || s.source_url) != null);
   if (visible.length === 0) return null;
@@ -132,6 +211,10 @@ export function ChatMessage({
   renderMode = "plain",
   redFlag,
   sources,
+  markers,
+  resolveActions,
+  onResolveUpload,
+  resolvePending,
 }: ChatMessageProps) {
   const isUser = role === "user";
   const shouldFormatQueryAnswer = !isUser && renderMode === "query";
@@ -206,17 +289,47 @@ export function ChatMessage({
           }`}
         >
           {!shouldFormatQueryAnswer ? (
-            <p
-              className={`m-0 whitespace-pre-wrap text-[15px] leading-7 ${
-                isUser ? "text-accent-foreground" : "text-foreground/92"
-              }`}
-            >
-              {content}
-            </p>
+            <>
+              <p
+                className={`m-0 whitespace-pre-wrap text-[15px] leading-7 ${
+                  isUser ? "text-accent-foreground" : "text-foreground/92"
+                }`}
+              >
+                {content}
+              </p>
+              {resolveActions && onResolveUpload && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={resolvePending}
+                    onClick={() =>
+                      onResolveUpload(resolveActions.sessionDocId, "lab_report")
+                    }
+                    className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-950/60"
+                  >
+                    Treat as lab report
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resolvePending}
+                    onClick={() =>
+                      onResolveUpload(
+                        resolveActions.sessionDocId,
+                        "research_paper",
+                      )
+                    }
+                    className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-950/60"
+                  >
+                    Treat as research paper
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="relative">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
               <div className="pt-1">
+                {markers && markers.length > 0 && <MarkersTable markers={markers} />}
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                   {content}
                 </ReactMarkdown>
