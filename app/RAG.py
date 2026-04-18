@@ -42,6 +42,7 @@ try:
         update_session_attached_documents,
         list_user_session_documents,
         delete_session_document,
+        insert_query_log,
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
@@ -73,6 +74,7 @@ except ImportError:
         update_session_attached_documents,
         list_user_session_documents,
         delete_session_document,
+        insert_query_log,
     )
     from filters import build_filter
     from intent import classify as classify_intent
@@ -830,6 +832,26 @@ HISTORY_MAX_TURNS = 6
 HISTORY_RETRIEVAL_USER_TURNS = 2
 
 
+def _prompt_hash(messages: list[dict]) -> str:
+    """SHA-256 over the JSON-encoded message list. Stable fingerprint of
+    the exact prompt sent to the LLM — lets us detect silent system-prompt
+    drift from audit logs without storing the full prompt."""
+    try:
+        blob = json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()
+        return hashlib.sha256(blob).hexdigest()
+    except Exception:
+        return ""
+
+
+def _log_query_safe(**kwargs: Any) -> None:
+    """Fire-and-forget wrapper around insert_query_log. Audit logging must
+    never break the user-facing response path — swallow everything."""
+    try:
+        insert_query_log(**kwargs)
+    except Exception as exc:
+        print(f"[query_log] insert failed (swallowed): {exc}")
+
+
 def _retrieval_query_with_history(question: str, history: Optional[list]) -> str:
     """Concatenate the last few user turns into the retrieval string so a
     vague follow-up like 'what are the symptoms?' inherits the topic of
@@ -1081,6 +1103,14 @@ async def query_document(query: QueryRequest):
     rf = redflag_check(query.question)
     if rf is not None:
         print(f"[redflag] fired rule={rf.rule_id} category={rf.category}")
+        _log_query_safe(
+            session_id=query.session_id,
+            stage="redflag",
+            query_text=query.question,
+            response_text=rf.message,
+            red_flag_fired=True,
+            red_flag_rule_id=rf.rule_id,
+        )
         return {
             "answer": rf.message,
             "sources": [],
@@ -1116,6 +1146,12 @@ async def query_document(query: QueryRequest):
                 questions = intake_stage.compose_questions(template)
                 update_chat_session(query.session_id, intent_bucket=template["id"])
                 print(f"[intake] bucket={template['id']} q={query.question[:60]!r}")
+                _log_query_safe(
+                    session_id=query.session_id,
+                    stage="intake_questions",
+                    query_text=query.question,
+                    response_text=questions,
+                )
                 return {
                     "answer": questions,
                     "sources": [],
@@ -1160,11 +1196,20 @@ async def query_document(query: QueryRequest):
                     intake_summary=summary,
                 )
                 print(f"[intake] summary+nav composed bucket={template['id']}")
+                nav_sources = _format_sources(
+                    _dedupe_sources(nav_rows)[:DISPLAY_SOURCES]
+                )
+                _log_query_safe(
+                    session_id=query.session_id,
+                    stage="intake_summary",
+                    query_text=query.question,
+                    response_text=combined,
+                    citations=nav_sources,
+                    retrieved_chunk_ids=[r.get("id") for r in nav_top if r.get("id")],
+                )
                 return {
                     "answer": combined,
-                    "sources": _format_sources(
-                        _dedupe_sources(nav_rows)[:DISPLAY_SOURCES]
-                    ),
+                    "sources": nav_sources,
                     "stage": "intake",
                     "intake_turn": "summary",
                     "intent_bucket": template["id"],
@@ -1201,19 +1246,32 @@ async def query_document(query: QueryRequest):
     #       degraded path). We cannot judge relevance → refuse.
     #   (c) Top chunk's rerank_score is below RERANK_REFUSAL_THRESHOLD.
     #       The corpus does not cover this query well enough.
+    def _log_refusal(reason: str) -> None:
+        _log_query_safe(
+            session_id=query.session_id,
+            stage="routine",
+            query_text=query.question,
+            response_text=refusal["answer"],
+            refusal_triggered=True,
+            refusal_reason=reason,
+        )
+
     if not rows:
         print("[refusal-gate] refusing: retrieval returned 0 rows")
+        _log_refusal("no_rows")
         return refusal
     top_rerank = rows[0].get("rerank_score")
     print(f"[refusal-gate] top rerank_score={top_rerank} threshold={RERANK_REFUSAL_THRESHOLD}")
     if top_rerank is None:
         print("[refusal-gate] refusing: rerank did not run, cannot judge relevance")
+        _log_refusal("rerank_missing")
         return refusal
     if top_rerank < RERANK_REFUSAL_THRESHOLD:
         print(
             f"[refusal-gate] refusing: top rerank_score {top_rerank:.3f} "
             f"< {RERANK_REFUSAL_THRESHOLD}"
         )
+        _log_refusal(f"below_threshold:{top_rerank:.3f}")
         return refusal
 
     # Gate passed. Now also drop any low-score chunks from the LLM context
@@ -1225,6 +1283,7 @@ async def query_document(query: QueryRequest):
             f"[refusal-gate] refusing: no chunks above RERANK_CONTEXT_MIN "
             f"({RERANK_CONTEXT_MIN}) after filter"
         )
+        _log_refusal("context_empty_after_filter")
         return refusal
 
     top_rows = rows[:CONTEXT_CHUNKS]
@@ -1279,6 +1338,15 @@ async def query_document(query: QueryRequest):
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
 
+    _log_query_safe(
+        session_id=query.session_id,
+        stage="routine",
+        query_text=query.question,
+        response_text=answer,
+        citations=sources,
+        retrieved_chunk_ids=[r.get("id") for r in top_rows if r.get("id")],
+        prompt_hash=_prompt_hash(messages),
+    )
     return {"answer": answer, "sources": sources, "stage": "routine"}
 
 
@@ -1329,6 +1397,14 @@ async def query_document_stream(query: QueryRequest):
                 },
             })
             yield _sse("delta", {"text": rf.message})
+            _log_query_safe(
+                session_id=query.session_id,
+                stage="redflag",
+                query_text=query.question,
+                response_text=rf.message,
+                red_flag_fired=True,
+                red_flag_rule_id=rf.rule_id,
+            )
             yield _sse("done", {})
             return
 
@@ -1357,6 +1433,12 @@ async def query_document_stream(query: QueryRequest):
                         "intent_bucket": template["id"],
                     })
                     yield _sse("delta", {"text": questions})
+                    _log_query_safe(
+                        session_id=query.session_id,
+                        stage="intake_questions",
+                        query_text=query.question,
+                        response_text=questions,
+                    )
                     yield _sse("done", {})
                     return
                 if not session.get("intake_summary"):
@@ -1401,6 +1483,14 @@ async def query_document_stream(query: QueryRequest):
                     yield _sse("delta", {"text": combined})
                     if nav_sources:
                         yield _sse("sources", {"sources": nav_sources})
+                    _log_query_safe(
+                        session_id=query.session_id,
+                        stage="intake_summary",
+                        query_text=query.question,
+                        response_text=combined,
+                        citations=nav_sources,
+                        retrieved_chunk_ids=[r.get("id") for r in nav_top if r.get("id")],
+                    )
                     yield _sse("done", {})
                     return
 
@@ -1417,6 +1507,14 @@ async def query_document_stream(query: QueryRequest):
 
         def emit_refusal(reason: str):
             print(f"[refusal-gate] refusing ({reason})")
+            _log_query_safe(
+                session_id=query.session_id,
+                stage="routine",
+                query_text=query.question,
+                response_text=refusal_text,
+                refusal_triggered=True,
+                refusal_reason=reason,
+            )
             return [
                 _sse("meta", {"stage": "routine", "coverage": "no_source"}),
                 _sse("delta", {"text": refusal_text}),
@@ -1471,6 +1569,7 @@ async def query_document_stream(query: QueryRequest):
         yield _sse("meta", {"stage": "routine"})
 
         streamed_any = False
+        collected_parts: list[str] = []
         # Groq primary streaming path. If it fails BEFORE any token is
         # streamed, fall back to Cohere streaming. If it fails MID-stream,
         # we can't unwind the partial answer — emit an error event and end
@@ -1491,6 +1590,7 @@ async def query_document_stream(query: QueryRequest):
                         delta = ""
                     if delta:
                         streamed_any = True
+                        collected_parts.append(delta)
                         yield _sse("delta", {"text": delta})
             except Exception as exc:
                 print(f"[groq-stream] failed (streamed_any={streamed_any}): {exc}")
@@ -1517,6 +1617,7 @@ async def query_document_stream(query: QueryRequest):
                         text = ""
                     if text:
                         streamed_any = True
+                        collected_parts.append(text)
                         yield _sse("delta", {"text": text})
             except Exception as exc:
                 print(f"[cohere-stream] failed: {exc}")
@@ -1527,6 +1628,15 @@ async def query_document_stream(query: QueryRequest):
 
         if sources:
             yield _sse("sources", {"sources": sources})
+        _log_query_safe(
+            session_id=query.session_id,
+            stage="routine",
+            query_text=query.question,
+            response_text="".join(collected_parts),
+            citations=sources,
+            retrieved_chunk_ids=[r.get("id") for r in top_rows if r.get("id")],
+            prompt_hash=_prompt_hash(messages),
+        )
         yield _sse("done", {})
 
     # text/event-stream + no-cache so intermediate proxies don't buffer
