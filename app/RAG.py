@@ -40,6 +40,8 @@ try:
         insert_user_lab_markers,
         get_session_attached_documents,
         update_session_attached_documents,
+        list_user_session_documents,
+        delete_session_document,
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
@@ -68,6 +70,8 @@ except ImportError:
         insert_user_lab_markers,
         get_session_attached_documents,
         update_session_attached_documents,
+        list_user_session_documents,
+        delete_session_document,
     )
     from filters import build_filter
     from intent import classify as classify_intent
@@ -752,6 +756,54 @@ async def upload_resolve(req: ResolveUploadRequest):
     update_session_attached_documents(req.session_id, attached)
 
     return result
+
+
+# --------------------------------------------------
+# Upload listing + deletion
+# --------------------------------------------------
+# Retention policy:
+#   - doc_type == "lab_report"     → PHI, user-owned, deletable via
+#                                    DELETE /upload/{id}. FK cascade
+#                                    (migrations 009/010) removes the
+#                                    associated session_chunks and
+#                                    user_lab_markers rows.
+#   - doc_type == "research_paper" → candidate for admin promotion into
+#                                    the shared corpus; NOT auto-deleted
+#                                    on user request (for now we still
+#                                    accept delete — admin workflow is a
+#                                    later project milestone).
+#   - other                        → treated like lab_report (PHI-safe
+#                                    default).
+# The user_id match on DELETE is the privacy guard: a user cannot delete
+# another user's upload even if they guess the id.
+class DeleteUploadRequest(BaseModel):
+    user_id: str
+
+
+@app.get("/uploads")
+async def list_uploads(user_id: str) -> Dict[str, Any]:
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    rows = list_user_session_documents(user_id)
+    return {"uploads": rows}
+
+
+@app.delete("/upload/{session_doc_id}")
+async def delete_upload(session_doc_id: str, req: DeleteUploadRequest) -> Dict[str, Any]:
+    if not req.user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    doc = get_session_document(session_doc_id)
+    if doc is None or doc.get("user_id") != req.user_id:
+        raise HTTPException(status_code=404, detail="upload not found")
+    session_id = doc.get("session_id")
+    ok = delete_session_document(session_doc_id, req.user_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="upload not found")
+    if session_id:
+        attached = get_session_attached_documents(session_id) or []
+        attached = [a for a in attached if a.get("id") != session_doc_id]
+        update_session_attached_documents(session_id, attached)
+    return {"ok": True, "deleted": session_doc_id}
 
 
 # --------------------------------------------------

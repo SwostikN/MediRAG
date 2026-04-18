@@ -116,6 +116,24 @@ def _patch(table: str, params: Dict[str, str], payload: Dict[str, Any]) -> Any:
         return {"data": None}
 
 
+def _delete(table: str, params: Dict[str, str]) -> Any:
+    err = _config_ok()
+    if err is not None:
+        return err
+    query = "&".join(f"{k}={quote(v, safe='.,*()')}" for k, v in params.items())
+    url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{query}"
+    resp = requests.delete(url, headers=HEADERS, timeout=30)
+    try:
+        resp.raise_for_status()
+    except Exception:
+        print(f"[supabase_client] DELETE {table} failed: {resp.status_code} {resp.text}")
+        return {"error": resp.text}
+    try:
+        return resp.json()
+    except Exception:
+        return []
+
+
 def insert_document(
     title: str,
     source: str,
@@ -349,6 +367,41 @@ def update_session_document(session_doc_id: str, **fields: Any) -> bool:
     if isinstance(res, dict) and res.get("error"):
         return False
     return True
+
+
+def list_user_session_documents(user_id: str) -> List[Dict[str, Any]]:
+    """All uploads owned by a user, newest first. Backs GET /uploads so
+    the user can see and delete their own reports."""
+    res = _get(
+        "session_documents",
+        {
+            "user_id": f"eq.{user_id}",
+            "select": "id,session_id,filename,doc_type,page_count,byte_size,uploaded_at",
+            "order": "uploaded_at.desc",
+            "limit": "200",
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return []
+    if isinstance(res, list):
+        return res
+    return []
+
+
+def delete_session_document(session_doc_id: str, user_id: str) -> bool:
+    """Delete a session_documents row owned by user_id. Cascades to
+    session_chunks (009) and user_lab_markers (010) via FK on delete
+    cascade. Returns False if the row does not exist OR is not owned by
+    user_id — the user_id match is the privacy guard."""
+    res = _delete(
+        "session_documents",
+        {"id": f"eq.{session_doc_id}", "user_id": f"eq.{user_id}"},
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return False
+    if isinstance(res, list):
+        return len(res) > 0
+    return False
 
 
 def find_session_document_by_hash(
