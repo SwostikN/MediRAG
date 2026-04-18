@@ -1,10 +1,11 @@
+import hashlib
 import json
 import os
 import re
 import sys
 from pathlib import Path
 from typing import Any, Optional, Tuple
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, Header, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -30,12 +31,26 @@ try:
         match_chunks_hybrid_filtered,
         get_chat_session,
         update_chat_session,
+        insert_session_document,
+        find_session_document_by_hash,
+        get_session_document,
+        update_session_document,
+        insert_session_chunk,
+        match_session_chunks,
+        insert_user_lab_markers,
+        get_session_attached_documents,
+        update_session_attached_documents,
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
     from .redflag import check as redflag_check
     from .stages import intake as intake_stage
     from .stages import navigation as navigation_stage
+    from .stages import results as results_stage
+    from .document_classifier import (
+        classify_document,
+        is_medically_relevant,
+    )
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -44,12 +59,26 @@ except ImportError:
         match_chunks_hybrid_filtered,
         get_chat_session,
         update_chat_session,
+        insert_session_document,
+        find_session_document_by_hash,
+        get_session_document,
+        update_session_document,
+        insert_session_chunk,
+        match_session_chunks,
+        insert_user_lab_markers,
+        get_session_attached_documents,
+        update_session_attached_documents,
     )
     from filters import build_filter
     from intent import classify as classify_intent
     from redflag import check as redflag_check
     from stages import intake as intake_stage
     from stages import navigation as navigation_stage
+    from stages import results as results_stage
+    from document_classifier import (
+        classify_document,
+        is_medically_relevant,
+    )
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -87,6 +116,19 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 groq_client = Groq(api_key=GROQ_API_KEY) if (Groq and GROQ_API_KEY) else None
 print(f"Groq generate enabled: {groq_client is not None} (model={GROQ_MODEL if groq_client else 'n/a'})")
+
+# Admin token for the corpus-ingestion endpoint /upload_pdf. /upload_pdf
+# writes to the SHARED chunks corpus, so we cannot let arbitrary users
+# call it (a public POST would let anyone seed the corpus that everyone
+# else searches). When ADMIN_UPLOAD_TOKEN is unset, /upload_pdf refuses
+# every request — fail-closed by default. Operator workflow: set the
+# env var in the deploy environment, then run admin scripts with
+# `curl -H "X-Admin-Token: <token>" -F file=@who.pdf …`.
+ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN")
+print(
+    "Admin upload gate: "
+    + ("active (token required)" if ADMIN_UPLOAD_TOKEN else "DISABLED — /upload_pdf will refuse all requests until ADMIN_UPLOAD_TOKEN is set")
+)
 
 _article_encoder: Optional[ArticleEncoder] = None
 _query_encoder: Optional[QueryEncoder] = None
@@ -185,13 +227,14 @@ def _parse_pdf_date(raw: Optional[str]) -> Optional[str]:
     return f"{year}-{month}-{day}"
 
 
-def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
+def _extract_text_from_pdf_bytes(data: bytes) -> Tuple[str, dict]:
+    """Core PDF text + metadata extractor. Operates on raw bytes so the
+    caller can pre-read once and reuse the bytes for hashing,
+    persistence, etc. Raises HTTPException(400) on a corrupt PDF."""
     try:
-        data = file.file.read()
         doc = pymupdf.open(stream=data, filetype="pdf")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"PDF read error: {e}")
-
     try:
         text_parts = []
         for page in doc:
@@ -199,7 +242,6 @@ def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
             if page_text:
                 text_parts.append(page_text)
         text = "\n".join(text_parts).strip()
-
         raw_meta = doc.metadata or {}
         metadata = {
             "title": (raw_meta.get("title") or "").strip() or None,
@@ -211,6 +253,16 @@ def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
         return text, metadata
     finally:
         doc.close()
+
+
+def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
+    try:
+        data = file.file.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"PDF read error: {e}")
+    try:
+        return _extract_text_from_pdf_bytes(data)
+    finally:
         file.file.close()
 
 
@@ -218,7 +270,24 @@ def extract_text_from_pdf(file: UploadFile) -> Tuple[str, dict]:
 # Upload PDF
 # --------------------------------------------------
 @app.post("/upload_pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token"),
+):
+    # Admin gate. /upload_pdf writes to the SHARED corpus; users go
+    # through /upload, which is per-session. Unauthenticated calls here
+    # would let anyone seed the corpus that every other user searches.
+    if not ADMIN_UPLOAD_TOKEN:
+        raise HTTPException(
+            status_code=503,
+            detail="/upload_pdf is disabled: ADMIN_UPLOAD_TOKEN is not configured.",
+        )
+    if not x_admin_token or x_admin_token != ADMIN_UPLOAD_TOKEN:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing or invalid X-Admin-Token. /upload_pdf is admin-only; users should use /upload.",
+        )
+
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -268,6 +337,421 @@ async def upload_pdf(file: UploadFile = File(...)):
         "chunks": len(chunks),
         "chunk_errors": chunk_errors,
     }
+
+
+# --------------------------------------------------
+# /upload — user-facing per-session document upload (Week 8)
+#
+# Distinct from /upload_pdf, which is the admin/corpus ingestion path
+# (writes to the SHARED chunks table — used to seed the corpus from
+# WHO/MoHP PDFs). /upload writes ONLY to session_documents +
+# session_chunks (or user_lab_markers for lab reports). A patient's
+# uploaded data NEVER reaches the shared corpus — that invariant is
+# the entire reason these are two separate endpoints.
+#
+# Flow:
+#   1. Validate (.pdf, session_id, user_id present).
+#   2. Read bytes once → SHA-256 hash → check for prior re-upload of
+#      the exact same file in this session (dedup short-circuit).
+#   3. Extract text via pymupdf. Empty text → "scanned image" error.
+#   4. Run heuristic classifier (lab_report / research_paper / other).
+#   5. Branch by doc_type:
+#        - lab_report:     parse markers → persist to user_lab_markers
+#                          → run Stage 4 explainer → return inline.
+#        - research_paper: gate on is_medically_relevant (refuse pure
+#                          off-domain papers at upload time, not at
+#                          query time). Then chunk + embed → insert
+#                          into session_chunks. Future queries in this
+#                          session pull these via _retrieve_ranked's
+#                          session-merge path.
+#        - other:          persist the file row + return
+#                          {needs_user_intent: true} so the frontend
+#                          can prompt "Lab report or Research paper?".
+#                          No chunking until user disambiguates.
+#   6. Update chat_sessions.attached_documents with the doc-chip entry
+#      (frontend uses this to render the chips strip in the header).
+# --------------------------------------------------
+
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB ceiling — typical Nepal lab PDF is <2 MB
+SESSION_PAPER_CHUNK_SIZE = 1500
+SESSION_PAPER_CHUNK_OVERLAP = 200
+
+
+def _build_attached_doc_entry(
+    *, session_doc_id: str, filename: str, doc_type: str, page_count: Optional[int]
+) -> dict:
+    """One entry in chat_sessions.attached_documents (used for the
+    sidebar / chat-header chip strip)."""
+    return {
+        "id": session_doc_id,
+        "filename": filename,
+        "doc_type": doc_type,
+        "page_count": page_count,
+    }
+
+
+@app.post("/upload")
+async def upload(
+    file: UploadFile = File(...),
+    session_id: str = Form(...),
+    user_id: str = Form(...),
+):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    if not session_id or not user_id:
+        raise HTTPException(status_code=400, detail="session_id and user_id are required.")
+
+    # Read once; reuse for hashing + extraction + persistence.
+    try:
+        data = await file.read()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Could not read upload: {exc}")
+    finally:
+        await file.close()
+
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty file.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large: {len(data)} bytes (max {MAX_UPLOAD_BYTES}).",
+        )
+
+    content_hash = hashlib.sha256(data).hexdigest()
+
+    # Re-upload of the exact same PDF in the same session → return the
+    # existing row instead of duplicating chunks/markers.
+    existing = find_session_document_by_hash(session_id, content_hash)
+    if existing:
+        print(f"[upload] dedup hit: session={session_id} hash={content_hash[:12]}…")
+        return {
+            "stage": "upload",
+            "status": "duplicate",
+            "doc_type": existing.get("doc_type"),
+            "session_doc_id": existing.get("id"),
+            "filename": existing.get("filename"),
+            "message": (
+                "This document is already attached to this conversation."
+            ),
+        }
+
+    text, pdf_metadata = _extract_text_from_pdf_bytes(data)
+
+    # Image-only / scanned PDF: pymupdf returns no extractable text.
+    # Return a clear, user-facing message rather than the generic 400.
+    if not text or len(text) < 50:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "stage": "upload",
+                "status": "unreadable",
+                "error": "scanned_or_image",
+                "message": (
+                    "We couldn't read any text from this PDF. It may be a "
+                    "scanned image or a photo. If you have a text-based "
+                    "version of the report, please upload that instead."
+                ),
+            },
+        )
+
+    classification = classify_document(text)
+    doc_type = classification.doc_type
+    print(
+        f"[upload] classify → {doc_type} (conf={classification.confidence}, "
+        f"lab={classification.lab_score}, paper={classification.paper_score})"
+    )
+
+    # Domain gate — only applies when the classifier picked research_paper.
+    # Lab reports are exempt (their own signals are strong enough);
+    # 'other' is exempt (we'll ask the user to disambiguate).
+    if doc_type == "research_paper" and not is_medically_relevant(text):
+        return JSONResponse(
+            status_code=200,
+            content={
+                "stage": "upload",
+                "status": "off_domain",
+                "error": "non_medical_paper",
+                "message": (
+                    "This document doesn't look like a health or medicine "
+                    "paper. MediRAG only accepts medical / clinical / "
+                    "public-health documents. Please upload a different "
+                    "file."
+                ),
+            },
+        )
+
+    page_count = pdf_metadata.get("page_count")
+    doc_res = insert_session_document(
+        session_id,
+        user_id,
+        filename=file.filename,
+        doc_type=doc_type,
+        content_hash=content_hash,
+        page_count=page_count,
+        byte_size=len(data),
+    )
+    if isinstance(doc_res, dict) and doc_res.get("error"):
+        raise HTTPException(
+            status_code=502,
+            detail=f"supabase: session_document insert failed: {doc_res['error']}",
+        )
+    try:
+        session_doc_id = doc_res[0].get("id")
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="supabase: could not parse session_document insert response",
+        )
+
+    # Maintain the chat-session's attached-documents pointer list.
+    attached = get_session_attached_documents(session_id)
+    attached.append(_build_attached_doc_entry(
+        session_doc_id=session_doc_id,
+        filename=file.filename,
+        doc_type=doc_type,
+        page_count=page_count,
+    ))
+    update_session_attached_documents(session_id, attached)
+
+    if doc_type == "lab_report":
+        return _handle_lab_report(text, session_doc_id, user_id, file.filename, page_count)
+    if doc_type == "research_paper":
+        return _handle_research_paper(text, session_doc_id, file.filename, page_count)
+    # doc_type == "other": persist extracted text so the user's
+    # disambiguation click on /upload/resolve can re-run the right
+    # handler without forcing a re-upload.
+    update_session_document(session_doc_id, extracted_text=text)
+    return {
+        "stage": "upload",
+        "status": "needs_user_intent",
+        "doc_type": "other",
+        "session_doc_id": session_doc_id,
+        "filename": file.filename,
+        "page_count": page_count,
+        "lab_score": classification.lab_score,
+        "paper_score": classification.paper_score,
+        "message": (
+            "I'm not sure how to handle this document. Is it a lab report "
+            "(values to explain) or a research paper (questions to answer "
+            "from the text)?"
+        ),
+    }
+
+
+def _handle_lab_report(
+    text: str,
+    session_doc_id: str,
+    user_id: str,
+    filename: str,
+    page_count: Optional[int],
+) -> dict:
+    """Parse markers, persist them, run the Stage 4 explainer, return
+    the answer + table data ready for the frontend."""
+    explainer = results_stage.compose_explainer(
+        text,
+        # Pass _retrieve_ranked itself — the composer queries it
+        # per-marker. Session-merge is intentionally OFF here: marker
+        # explanations should pull from the curated lab-explainer
+        # corpus (NHS / Lab Tests Online), not from other docs the
+        # user happened to upload.
+        retrieve_fn=lambda q: _retrieve_ranked(q),
+        groq_client=groq_client,
+        groq_model=GROQ_MODEL,
+        cohere_client=co,
+    )
+
+    # Persist parsed markers to user_lab_markers for longitudinal
+    # tracking. Failure here does NOT block the response — the
+    # explainer already has the markers in memory and ships them.
+    if explainer.get("markers"):
+        rows = [
+            {
+                "marker_name": m["name"],
+                "value": m["value"],
+                "unit": m["unit"],
+                "reference_range": m.get("reference_range"),
+                "status": m.get("status") or "unknown",
+            }
+            for m in explainer["markers"]
+        ]
+        insert_user_lab_markers(user_id, session_doc_id, rows)
+
+    return {
+        "stage": "results",
+        "status": "ok",
+        "doc_type": "lab_report",
+        "session_doc_id": session_doc_id,
+        "filename": filename,
+        "page_count": page_count,
+        "answer": explainer["answer"],
+        "sources": explainer["sources"],
+        "markers": explainer["markers"],
+    }
+
+
+def _handle_research_paper(
+    text: str,
+    session_doc_id: str,
+    filename: str,
+    page_count: Optional[int],
+) -> dict:
+    """Chunk + embed the paper, insert chunks into session_chunks.
+    Future /query calls in this session will retrieve them via
+    _retrieve_ranked's session-merge path."""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=SESSION_PAPER_CHUNK_SIZE,
+        chunk_overlap=SESSION_PAPER_CHUNK_OVERLAP,
+    )
+    chunks = [c for c in splitter.split_text(text) if c.strip()]
+    if not chunks:
+        return {
+            "stage": "upload",
+            "status": "empty_after_chunking",
+            "doc_type": "research_paper",
+            "session_doc_id": session_doc_id,
+            "message": "We couldn't split this paper into searchable sections.",
+        }
+
+    try:
+        pairs = [(filename, c) for c in chunks]
+        vectors = get_article_encoder().encode(pairs)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MedCPT embedding failed: {exc}")
+
+    chunk_errors = 0
+    for ord_index, (chunk_text, vec) in enumerate(zip(chunks, vectors)):
+        res = insert_session_chunk(
+            session_doc_id,
+            ord_index,
+            chunk_text,
+            token_count=len(chunk_text.split()),
+            embedding=to_pgvector_literal(vec),
+        )
+        if isinstance(res, dict) and res.get("error"):
+            chunk_errors += 1
+
+    return {
+        "stage": "upload",
+        "status": "ok",
+        "doc_type": "research_paper",
+        "session_doc_id": session_doc_id,
+        "filename": filename,
+        "page_count": page_count,
+        "chunks": len(chunks),
+        "chunk_errors": chunk_errors,
+        "message": (
+            f"Got it — I've indexed {len(chunks)} sections from "
+            f"\"{filename}\". You can now ask me questions about this "
+            f"paper in this conversation."
+        ),
+    }
+
+
+# --------------------------------------------------
+# /upload/resolve — user disambiguation for 'other'-bucket uploads
+#
+# When the heuristic classifier returns 'other' (low confidence), the
+# frontend shows two buttons under the assistant message:
+#   [Treat as lab report]  [Treat as research paper]
+# Clicking a button hits this endpoint with the existing
+# session_doc_id, so we can re-run the chosen handler on the
+# already-uploaded text without forcing a re-upload.
+#
+# Pre-conditions:
+#   - The session_documents row exists and was created by this user.
+#   - extracted_text on the row is non-null (set by /upload's 'other'
+#     branch). For lab_report / research_paper rows extracted_text is
+#     null, so resolve refuses (idempotency guard).
+#   - The session_id in the request matches the row's session_id.
+#
+# After the chosen handler runs:
+#   - doc_type on the row flips to the user's pick.
+#   - extracted_text is cleared (we don't need it once chunked /
+#     parsed, and it would otherwise duplicate session_chunks content).
+#   - chat_sessions.attached_documents has the matching chip's
+#     doc_type updated in-place so the frontend strip recolors.
+# --------------------------------------------------
+
+
+class ResolveUploadRequest(BaseModel):
+    session_doc_id: str
+    session_id: str
+    user_id: str
+    doc_type: str  # 'lab_report' | 'research_paper'
+
+
+@app.post("/upload/resolve")
+async def upload_resolve(req: ResolveUploadRequest):
+    if req.doc_type not in ("lab_report", "research_paper"):
+        raise HTTPException(
+            status_code=400,
+            detail="doc_type must be 'lab_report' or 'research_paper'.",
+        )
+
+    row = get_session_document(req.session_doc_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    # Defence in depth on top of RLS — make sure the requester owns
+    # this document AND it belongs to the claimed session.
+    if row.get("user_id") != req.user_id or row.get("session_id") != req.session_id:
+        raise HTTPException(status_code=403, detail="Document does not belong to this session/user.")
+
+    if row.get("doc_type") != "other":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document is already classified as '{row.get('doc_type')}'; cannot resolve again.",
+        )
+
+    text = row.get("extracted_text") or ""
+    if not text:
+        raise HTTPException(
+            status_code=410,
+            detail="Extracted text is no longer available for this document; please re-upload.",
+        )
+
+    filename = row.get("filename") or "document.pdf"
+    page_count = row.get("page_count")
+
+    # Domain gate for research_paper choice — same rule as /upload.
+    if req.doc_type == "research_paper" and not is_medically_relevant(text):
+        return JSONResponse(
+            status_code=200,
+            content={
+                "stage": "upload",
+                "status": "off_domain",
+                "error": "non_medical_paper",
+                "message": (
+                    "This document doesn't look like a health or medicine "
+                    "paper. MediRAG only accepts medical / clinical / "
+                    "public-health documents."
+                ),
+            },
+        )
+
+    # Run the chosen handler.
+    if req.doc_type == "lab_report":
+        result = _handle_lab_report(text, req.session_doc_id, req.user_id, filename, page_count)
+    else:
+        result = _handle_research_paper(text, req.session_doc_id, filename, page_count)
+
+    # Flip doc_type and drop the cached text — handler outputs
+    # (markers, chunks) are now the source of truth.
+    update_session_document(
+        req.session_doc_id,
+        doc_type=req.doc_type,
+        extracted_text=None,
+    )
+
+    # Update the chat_sessions.attached_documents chip in-place so the
+    # frontend strip recolors from grey ('Doc') to green/blue.
+    attached = get_session_attached_documents(req.session_id)
+    for entry in attached:
+        if entry.get("id") == req.session_doc_id:
+            entry["doc_type"] = req.doc_type
+            break
+    update_session_attached_documents(req.session_id, attached)
+
+    return result
 
 
 # --------------------------------------------------
@@ -403,12 +887,31 @@ def _weighted_final_score(row: dict, weights: Tuple[float, float, float]) -> flo
     )
 
 
-def _retrieve_ranked(question: str, *, intent: Optional[dict] = None) -> list:
+SESSION_RETRIEVE_K = 6  # max session-private rows to merge before rerank
+
+
+def _retrieve_ranked(
+    question: str,
+    *,
+    intent: Optional[dict] = None,
+    session_id: Optional[str] = None,
+) -> list:
     """Run filtered hybrid retrieval → rerank → stage-weighted scoring.
 
     Returns the full ranked row list (caller slices to CONTEXT_CHUNKS).
     Extracted so Stage 2 navigation can run retrieval against the intake
     summary with identical semantics to the routine /query path.
+
+    When `session_id` is given, also pulls up to SESSION_RETRIEVE_K
+    session-private chunks (uploaded research papers, lab reports) for
+    THIS session and merges them into the candidate pool BEFORE rerank.
+    The reranker then judges shared-corpus and session-private chunks
+    against each other on the same scale, so an off-topic uploaded
+    paper can't crowd out the corpus, and the existing
+    RERANK_REFUSAL_THRESHOLD gate still catches off-domain questions.
+    Session chunks are normalised to the same row shape as corpus
+    chunks (doc_title, doc_source, etc.) so downstream code is
+    untouched.
     """
     q_vec = get_query_encoder().encode_one(question)
     if intent is None:
@@ -433,6 +936,38 @@ def _retrieve_ranked(question: str, *, intent: Optional[dict] = None) -> list:
             match_count=RETRIEVE_K,
             **filter_kwargs,
         )
+
+    # Session-private chunks (Week 8). Merged BEFORE rerank so the
+    # cross-encoder can judge them on equal footing with corpus chunks.
+    if session_id:
+        try:
+            session_rows = match_session_chunks(
+                session_id,
+                to_pgvector_literal(q_vec),
+                question,
+                match_count=SESSION_RETRIEVE_K,
+            )
+        except Exception as exc:
+            print(f"[session-merge] match_session_chunks failed: {exc}")
+            session_rows = []
+        if session_rows:
+            print(f"[session-merge] +{len(session_rows)} session-private chunks for session={session_id}")
+            for sr in session_rows:
+                rows.append({
+                    "chunk_id": sr.get("chunk_id"),
+                    "content": sr.get("content"),
+                    "section_heading": sr.get("section_heading"),
+                    "rrf_score": sr.get("rrf_score"),
+                    "similarity": sr.get("similarity"),
+                    "bm25_rank": sr.get("bm25_rank"),
+                    "doc_title": sr.get("doc_filename") or "Uploaded document",
+                    "doc_source": "user-upload",
+                    "doc_source_url": None,
+                    "doc_authority_tier": 5,
+                    "doc_publication_date": None,
+                    "is_session_chunk": True,
+                })
+
     if len(rows) > CONTEXT_CHUNKS:
         rows = _rerank_rows(question, rows)
     weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
@@ -582,7 +1117,7 @@ async def query_document(query: QueryRequest):
     retrieval_query = _retrieval_query_with_history(query.question, query.history)
     if retrieval_query != query.question:
         print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
-    rows = _retrieve_ranked(retrieval_query)
+    rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
     refusal = {
         "answer": (
@@ -811,7 +1346,7 @@ async def query_document_stream(query: QueryRequest):
         retrieval_query = _retrieval_query_with_history(query.question, query.history)
         if retrieval_query != query.question:
             print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
-        rows = _retrieve_ranked(retrieval_query)
+        rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
         refusal_text = (
             "I don't have a source for that in my current library. "
