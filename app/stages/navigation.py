@@ -71,6 +71,29 @@ Strict rules:
    triggers specific to this complaint — never generic platitudes.
 6. Keep the whole block under 150 words.
 
+EMERGENCY OVERRIDES — these patterns ALWAYS route to "Nearest
+Emergency Department — call 102 for ambulance", overriding rule 4.
+Match on the pattern; you are not diagnosing, you are recognising a
+known dangerous presentation:
+- Postpartum within 6 weeks AND any fever (≥38°C) or foul-smelling
+  vaginal discharge → ED (puerperal sepsis is a leading maternal
+  mortality cause in Nepal).
+- Known severe lung disease (COPD, asthma) AND inability to speak full
+  sentences OR reduced response to the patient's usual reliever inhaler
+  → ED.
+- New weakness on one side, slurred speech, facial droop, or sudden
+  confusion in any adult → ED (FAST stroke pattern; time-critical).
+- Snake bite with swelling spreading above the bite site OR any
+  neurological symptom (drooping eyelids, weakness, difficulty
+  swallowing) → ED.
+- Chest pain at rest in adult ≥40 yr AND any of: lasting >15 minutes,
+  sweating with the pain, radiating to arm/jaw/back, history of
+  hypertension/diabetes/smoking → ED.
+- Severe headache + neck stiffness + fever (any age) → ED (meningitis
+  pattern).
+- Infant under 2 months with any fever, OR infant 2–12 months with
+  fever + lethargy/poor feeding → ED (IMCI danger signs).
+
 Output EXACTLY this markdown structure and nothing else:
 
 **Where to go:** <tier label from the ladder>
