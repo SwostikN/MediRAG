@@ -291,6 +291,206 @@ def update_chat_session(session_id: str, **fields: Any) -> bool:
     return True
 
 
+def insert_session_document(
+    session_id: str,
+    user_id: str,
+    *,
+    filename: str,
+    doc_type: str,
+    content_hash: Optional[str] = None,
+    page_count: Optional[int] = None,
+    byte_size: Optional[int] = None,
+) -> Optional[dict]:
+    """Insert one row into session_documents (per-session uploaded file).
+
+    doc_type must be one of: 'lab_report', 'research_paper', 'other'.
+    The unique (session_id, content_hash) index dedups re-uploads of
+    the same PDF in one session — caller should detect the conflict
+    via the returned error and look up the existing row instead.
+    """
+    payload = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "filename": filename,
+        "doc_type": doc_type,
+        "content_hash": content_hash,
+        "page_count": page_count,
+        "byte_size": byte_size,
+    }
+    return _post_table("session_documents", [payload])
+
+
+def get_session_document(session_doc_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch one session_documents row by id. Includes extracted_text
+    (used by /upload/resolve to re-run a handler on a previously
+    uploaded 'other'-bucket file without a re-upload)."""
+    res = _get(
+        "session_documents",
+        {
+            "id": f"eq.{session_doc_id}",
+            "select": "id,session_id,user_id,filename,doc_type,page_count,byte_size,extracted_text",
+            "limit": "1",
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return None
+    if isinstance(res, list) and res:
+        return res[0]
+    return None
+
+
+def update_session_document(session_doc_id: str, **fields: Any) -> bool:
+    """Patch selected fields on one session_documents row. Used by
+    /upload/resolve to flip doc_type and clear extracted_text after
+    the user's chosen handler has finished."""
+    if not fields:
+        return True
+    res = _patch("session_documents", {"id": f"eq.{session_doc_id}"}, fields)
+    if isinstance(res, dict) and res.get("error"):
+        return False
+    return True
+
+
+def find_session_document_by_hash(
+    session_id: str, content_hash: str
+) -> Optional[Dict[str, Any]]:
+    """Return the existing session_documents row for this session+hash if
+    it already exists (re-upload of the same PDF). None when absent."""
+    res = _get(
+        "session_documents",
+        {
+            "session_id": f"eq.{session_id}",
+            "content_hash": f"eq.{content_hash}",
+            "select": "id,filename,doc_type,page_count,byte_size,uploaded_at",
+            "limit": "1",
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return None
+    if isinstance(res, list) and res:
+        return res[0]
+    return None
+
+
+def insert_session_chunk(
+    session_doc_id: str,
+    ord: int,
+    content: str,
+    *,
+    section_heading: Optional[str] = None,
+    token_count: Optional[int] = None,
+    embedding: Optional[str] = None,
+) -> Optional[dict]:
+    """Insert one chunk into session_chunks (private to the owning session)."""
+    payload: Dict[str, Any] = {
+        "session_doc_id": session_doc_id,
+        "ord": ord,
+        "content": content,
+        "section_heading": section_heading,
+        "token_count": token_count,
+    }
+    if embedding is not None:
+        payload["embedding"] = embedding
+    return _post_table("session_chunks", [payload])
+
+
+def match_session_chunks(
+    p_session_id: str,
+    query_embedding: str,
+    query_text: str,
+    *,
+    match_count: int = 10,
+    candidate_count: int = 30,
+    rrf_k: int = 60,
+) -> List[dict]:
+    """RRF hybrid retrieval restricted to ONE session. See migration 009."""
+    res = _rpc(
+        "match_session_chunks",
+        {
+            "p_session_id": p_session_id,
+            "query_embedding": query_embedding,
+            "query_text": query_text,
+            "match_count": match_count,
+            "candidate_count": candidate_count,
+            "rrf_k": rrf_k,
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        print(f"[supabase_client] match_session_chunks failed: {res['error']}")
+        return []
+    if isinstance(res, list):
+        return res
+    return []
+
+
+def insert_user_lab_markers(
+    user_id: str,
+    session_doc_id: str,
+    markers: List[Dict[str, Any]],
+) -> Optional[dict]:
+    """Bulk insert parsed lab markers for one uploaded report.
+
+    `markers` items shape (matching app.stages.results.LabMarker):
+        {
+          "marker_name":     "TSH",
+          "value":           8.4,
+          "unit":            "mIU/L",
+          "reference_range": "0.4 - 4.0" | None,
+          "status":          "low" | "normal" | "high" | "unknown",
+          "taken_at":        ISO timestamp | None  # falls back to now()
+        }
+    """
+    if not markers:
+        return {"data": None}
+    payload = []
+    for m in markers:
+        row: Dict[str, Any] = {
+            "user_id": user_id,
+            "session_doc_id": session_doc_id,
+            "marker_name": m["marker_name"],
+            "value": m["value"],
+            "unit": m["unit"],
+            "reference_range": m.get("reference_range"),
+            "status": m.get("status") or "unknown",
+        }
+        if m.get("taken_at"):
+            row["taken_at"] = m["taken_at"]
+        payload.append(row)
+    return _post_table("user_lab_markers", payload)
+
+
+def update_session_attached_documents(
+    session_id: str, attached: List[Dict[str, Any]]
+) -> bool:
+    """Overwrite chat_sessions.attached_documents with the given list.
+
+    The frontend uses this to show the doc-chip strip in the chat header.
+    Caller is responsible for fetching the current list, appending the
+    new entry, and passing the merged result here.
+    """
+    return update_chat_session(session_id, attached_documents=attached)
+
+
+def get_session_attached_documents(session_id: str) -> List[Dict[str, Any]]:
+    """Read the attached_documents JSONB column for one session.
+    Returns [] on any failure or empty state."""
+    res = _get(
+        "chat_sessions",
+        {
+            "id": f"eq.{session_id}",
+            "select": "attached_documents",
+            "limit": "1",
+        },
+    )
+    if isinstance(res, dict) and res.get("error"):
+        return []
+    if isinstance(res, list) and res:
+        att = res[0].get("attached_documents") or []
+        if isinstance(att, list):
+            return att
+    return []
+
+
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:
     payload = {"query_text": query_text, "user_id": user_id, "timestamp": None}
     return _post_table("query", [payload])
