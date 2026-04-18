@@ -112,6 +112,17 @@ MEDIRAG_SYSTEM_PROMPT = (
     "Do not recommend medications, doses, or treatments. "
     "Always frame answers as information to discuss with a doctor. "
     "If a claim is not supported by the sources, say you don't have a source for it.\n\n"
+    "CRITICAL — topic match rule:\n"
+    "The user asked about ONE specific topic. The retrieved sources may be "
+    "about adjacent-but-different topics (e.g. thyroid sources retrieved for "
+    "a question about hyperthermia, because both start with 'hyper'). If the "
+    "sources do NOT directly discuss the exact topic in the user's question, "
+    "you MUST respond with exactly this and nothing else:\n\n"
+    "I don't have a source for that in my current library. Please try "
+    "rewording your question, or ask your doctor directly.\n\n"
+    "Do NOT discuss the adjacent topic as a substitute. Do NOT say "
+    "\"but <other thing> is discussed\". Do NOT suggest what the user could "
+    "ask their doctor about the adjacent thing. Refuse cleanly and stop.\n\n"
     "Formatting rules (follow strictly):\n"
     "- Use Markdown. Open with a one-sentence lead-in (no header above it).\n"
     "- Group related points under short bold headers on their own line, e.g. "
@@ -294,6 +305,23 @@ RETRIEVE_K = 15
 CONTEXT_CHUNKS = 6
 DISPLAY_SOURCES = 3
 RERANK_MODEL = "rerank-v3.5"
+
+# Three-layer no-coverage refusal gate. Cohere rerank-v3.5 scores in [0, 1].
+# Empirical bands: strong on-topic 0.5+, good 0.3–0.5, adjacent-topic drift
+# 0.15–0.35 (the "hyperthermia → hyperthyroidism" failure mode lives here),
+# clearly off-topic <0.15.
+#
+# Gate behavior:
+# 1. If no rows retrieved at all → refuse.
+# 2. If rerank didn't run (Cohere error / network) → refuse. We can't judge
+#    relevance, so we must fail closed, not fall back to uncalibrated RRF.
+# 3. If top rerank_score < RERANK_REFUSAL_THRESHOLD → refuse.
+# 4. Chunks with rerank_score < RERANK_CONTEXT_MIN are stripped from the
+#    LLM context even when gate #3 passes, so the model cannot pivot to
+#    low-score adjacent chunks that rode in on a single strong chunk's
+#    coattails.
+RERANK_REFUSAL_THRESHOLD = 0.4
+RERANK_CONTEXT_MIN = 0.2
 
 FILTER_FALLBACK_MIN_ROWS = 1  # only re-query Supabase if the filtered path yielded zero rows
 
@@ -555,14 +583,53 @@ async def query_document(query: QueryRequest):
         print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
     rows = _retrieve_ranked(retrieval_query)
 
+    refusal = {
+        "answer": (
+            "I don't have a source for that in my current library. "
+            "Please try rewording your question, or ask your doctor directly."
+        ),
+        "sources": [],
+        # Frontend uses this marker to drop the (user-question, refusal)
+        # pair from conversation history before the next /query call. If we
+        # don't, the next retrieval rewrite concatenates the unanswered
+        # question into its query (e.g. "who is a gynac? what is hypertension?")
+        # and can drag a follow-up's rerank score below the gate threshold.
+        "coverage": "no_source",
+    }
+
+    # Fail-closed no-coverage gate. Any of these three conditions → refuse,
+    # without ever calling the LLM:
+    #
+    #   (a) Retrieval returned nothing.
+    #   (b) Rerank didn't attach a score to the top row (Cohere error or
+    #       degraded path). We cannot judge relevance → refuse.
+    #   (c) Top chunk's rerank_score is below RERANK_REFUSAL_THRESHOLD.
+    #       The corpus does not cover this query well enough.
     if not rows:
-        return {
-            "answer": (
-                "I don't have enough reliable information to answer this safely yet. "
-                "The corpus may not be populated. Please ingest sources first or ask your doctor."
-            ),
-            "sources": [],
-        }
+        print("[refusal-gate] refusing: retrieval returned 0 rows")
+        return refusal
+    top_rerank = rows[0].get("rerank_score")
+    print(f"[refusal-gate] top rerank_score={top_rerank} threshold={RERANK_REFUSAL_THRESHOLD}")
+    if top_rerank is None:
+        print("[refusal-gate] refusing: rerank did not run, cannot judge relevance")
+        return refusal
+    if top_rerank < RERANK_REFUSAL_THRESHOLD:
+        print(
+            f"[refusal-gate] refusing: top rerank_score {top_rerank:.3f} "
+            f"< {RERANK_REFUSAL_THRESHOLD}"
+        )
+        return refusal
+
+    # Gate passed. Now also drop any low-score chunks from the LLM context
+    # so the model never sees junk it could pivot to. If filtering empties
+    # the context (shouldn't happen given gate #3 already cleared), refuse.
+    rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
+    if not rows:
+        print(
+            f"[refusal-gate] refusing: no chunks above RERANK_CONTEXT_MIN "
+            f"({RERANK_CONTEXT_MIN}) after filter"
+        )
+        return refusal
 
     top_rows = rows[:CONTEXT_CHUNKS]
     context_blocks = []

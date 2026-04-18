@@ -34,6 +34,11 @@ interface Message {
   };
   stage?: string;
   sources?: ChatMessageSource[];
+  // Set true when the backend returned coverage:"no_source" (no-coverage
+  // refusal). The (preceding-user, this-assistant) pair is dropped from
+  // conversation history before the next /query call so an unanswered
+  // question doesn't pollute the next retrieval rewrite.
+  noCoverage?: boolean;
 }
 
 interface ChatSessionRecord {
@@ -493,15 +498,34 @@ export default function App() {
     try {
       // Send the last few turns as conversation context so follow-ups
       // ("what are the symptoms?") inherit the topic of earlier turns
-      // ("hypertension"). Exclude red-flag messages (canned) and our own
-      // error placeholders. `messages` here is the closure value from
-      // this render — it does NOT include the user turn we just queued.
+      // ("hypertension"). Drop *pairs* (user-question + its assistant
+      // response) that we don't want polluting the next retrieval rewrite:
+      //   - red-flag emergency templates
+      //   - error placeholders
+      //   - no-coverage refusals (otherwise "who is a gynac?" gets
+      //     concatenated into the next retrieval query and drags the
+      //     rerank score below the gate threshold for a follow-up that
+      //     would otherwise have answered correctly)
+      // Refusal text is also matched on content for the case where messages
+      // were rehydrated from Supabase (chat_messages doesn't persist the
+      // coverage marker, so the flag is missing on resumed sessions).
+      const REFUSAL_PREFIX = "I don't have a source for that in my current library";
+      const skipAssistant = (m: Message) =>
+        Boolean(m.redFlag) ||
+        m.noCoverage === true ||
+        (m.role === "assistant" && m.content.startsWith("Error:")) ||
+        (m.role === "assistant" && m.content.startsWith(REFUSAL_PREFIX));
+      const skipIndices = new Set<number>();
+      messages.forEach((m, i) => {
+        if (m.role === "assistant" && skipAssistant(m)) {
+          skipIndices.add(i);
+          if (i > 0 && messages[i - 1].role === "user") {
+            skipIndices.add(i - 1);
+          }
+        }
+      });
       const historyTurns = messages
-        .filter(
-          (m) =>
-            !m.redFlag &&
-            !(m.role === "assistant" && m.content.startsWith("Error:")),
-        )
+        .filter((_, i) => !skipIndices.has(i))
         .slice(-6)
         .map((m) => ({ role: m.role, content: m.content }));
 
@@ -535,6 +559,7 @@ export default function App() {
       const sources: ChatMessageSource[] | undefined = Array.isArray(queryPayload.sources)
         ? (queryPayload.sources as ChatMessageSource[])
         : undefined;
+      const noCoverage = queryPayload.coverage === "no_source";
 
       const assistantMessage: Message = {
         id: Date.now() + 2,
@@ -551,6 +576,7 @@ export default function App() {
           : undefined,
         stage,
         sources,
+        noCoverage: noCoverage || undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
