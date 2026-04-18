@@ -491,6 +491,41 @@ def get_session_attached_documents(session_id: str) -> List[Dict[str, Any]]:
     return []
 
 
+def insert_query_log(
+    *,
+    user_id: Optional[str],
+    session_id: Optional[str],
+    stage: Optional[str],
+    query_text: Optional[str],
+    response_text: Optional[str],
+    citations: Optional[List[Any]] = None,
+    retrieved_chunk_ids: Optional[List[str]] = None,
+    prompt_hash: Optional[str] = None,
+    refusal_triggered: bool = False,
+    refusal_reason: Optional[str] = None,
+    red_flag_fired: bool = False,
+    red_flag_rule_id: Optional[str] = None,
+) -> Optional[dict]:
+    """Insert one row into public.query_log (P2.11). Fire-and-forget —
+    the caller is expected to swallow exceptions so a logging outage
+    never breaks the user response."""
+    payload = {
+        "user_id": user_id,
+        "session_id": session_id,
+        "stage": stage,
+        "query_text": query_text,
+        "response_text": response_text,
+        "citations": citations,
+        "retrieved_chunk_ids": retrieved_chunk_ids,
+        "prompt_hash": prompt_hash,
+        "refusal_triggered": refusal_triggered,
+        "refusal_reason": refusal_reason,
+        "red_flag_fired": red_flag_fired,
+        "red_flag_rule_id": red_flag_rule_id,
+    }
+    return _post_table("query_log", [payload])
+
+
 def insert_query(query_text: str, user_id: Optional[str] = None) -> Optional[dict]:
     payload = {"query_text": query_text, "user_id": user_id, "timestamp": None}
     return _post_table("query", [payload])
