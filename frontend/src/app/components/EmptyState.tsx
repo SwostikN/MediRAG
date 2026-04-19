@@ -95,17 +95,6 @@ export function EmptyState({
     },
   ];
 
-  const stats = [
-    { value: "---", label: "Research Papers" },
-    { value: "---", label: "Accuracy Rate" },
-    { value: "---", label: "Avg Response" },
-   { value: "---", label: "Clinical Queries" },
-    // { value: "2.8M+", label: "Research Papers" },
-    // { value: "98.7%", label: "Accuracy Rate" },
-    // { value: "1.2s", label: "Avg Response" },
-    // { value: "150K+", label: "Clinical Queries" },
-  ];
-
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-12" style={{ marginTop: "-30px" }}>
@@ -184,7 +173,7 @@ export function EmptyState({
           </div>
 
           <h1 className="text-4xl md:text-5xl font-medium mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Medical Intelligence at Your Fingertips
+            Medical Knowledge at Your Fingertips!
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             Harness the power of advanced RAG technology to access evidence-based medical
@@ -204,23 +193,6 @@ export function EmptyState({
             </div>
           )}
 
-          {/* Stats bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-12">
-            {stats.map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 * idx }}
-                className="bg-card border border-border rounded-xl p-4"
-              >
-                <div className="text-2xl font-mono font-medium text-accent mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
 
         {inputElement && (

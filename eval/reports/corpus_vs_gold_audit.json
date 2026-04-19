@@ -1,0 +1,3668 @@
+{
+  "matchable": [
+    {
+      "gold": "EDCD Nepal",
+      "refs": 3,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 1.0
+    },
+    {
+      "gold": "MoHP Nepal National TB Programme",
+      "refs": 1,
+      "best_title": "National Population Policy 2082 (Nepal)",
+      "best_source": "MoHP",
+      "score": 0.6
+    },
+    {
+      "gold": "MoHP Nepal STG",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.67
+    },
+    {
+      "gold": "MoHP environmental health",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.67
+    },
+    {
+      "gold": "MoHP maternal health",
+      "refs": 2,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.67
+    },
+    {
+      "gold": "MoHP mental health",
+      "refs": 3,
+      "best_title": "Clinical depression",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "MoHP pediatric guidelines",
+      "refs": 1,
+      "best_title": "Guidelines for Community-Based Disease Surveillance, 2082",
+      "best_source": "MoHP",
+      "score": 0.67
+    },
+    {
+      "gold": "MoHP snakebite management",
+      "refs": 1,
+      "best_title": "Infertility (Childlessness) Management Service Operations Standards, 2082",
+      "best_source": "MoHP",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS 111 chest pain",
+      "refs": 2,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS COPD patient info",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS FAST",
+      "refs": 1,
+      "best_title": "Stroke \u2014 FAST symptoms and when to act",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS GERD/heartburn",
+      "refs": 1,
+      "best_title": "Heartburn and acid reflux",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS HbA1c test",
+      "refs": 1,
+      "best_title": "Type 2 diabetes \u2014 diagnosis (HbA1c and fasting glucose)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS PCOS patient info",
+      "refs": 1,
+      "best_title": "Polycystic ovary syndrome (PCOS)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS TB patient info",
+      "refs": 1,
+      "best_title": "Tuberculosis \u2014 symptoms and when to see a GP",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS acne patient info",
+      "refs": 1,
+      "best_title": "Acne",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS antenatal care",
+      "refs": 1,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS asthma patient info",
+      "refs": 1,
+      "best_title": "Asthma",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS back pain",
+      "refs": 2,
+      "best_title": "Back pain \u2014 red flags and when to see a GP",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS back pain patient info",
+      "refs": 2,
+      "best_title": "Back pain \u2014 red flags and when to see a GP",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS blood tests",
+      "refs": 2,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS blood tests overview",
+      "refs": 1,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS bowel cancer screening",
+      "refs": 1,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS bowel cancer when-to-see-GP",
+      "refs": 1,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS breast lump when-to-see-GP",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS celiac disease",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS chest pain when-to-see-GP",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS children's blood tests",
+      "refs": 1,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 0.6
+    },
+    {
+      "gold": "NHS cholesterol patient info",
+      "refs": 3,
+      "best_title": "High cholesterol \u2014 diagnosis (total, LDL, HDL, triglycerides)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS common cold",
+      "refs": 1,
+      "best_title": "Common cold",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS common cold patient info",
+      "refs": 2,
+      "best_title": "Common cold",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS cough patient info",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS depression patient info",
+      "refs": 2,
+      "best_title": "Clinical depression",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS depression when-to-see-GP",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.8
+    },
+    {
+      "gold": "NHS diabetes tests",
+      "refs": 1,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS ectopic pregnancy",
+      "refs": 1,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS eczema patient info",
+      "refs": 1,
+      "best_title": "Atopic eczema",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS gastritis patient info",
+      "refs": 1,
+      "best_title": "Gastritis",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS gestational diabetes",
+      "refs": 2,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS gout patient info",
+      "refs": 1,
+      "best_title": "Gout",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS heavy periods",
+      "refs": 1,
+      "best_title": "Heavy periods \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS hepatitis B",
+      "refs": 1,
+      "best_title": "Hepatitis B",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS hypertension",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS hypertension patient info",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS iron deficiency anemia patient info",
+      "refs": 1,
+      "best_title": "Iron deficiency anaemia",
+      "best_source": "NHS",
+      "score": 0.6
+    },
+    {
+      "gold": "NHS iron tests",
+      "refs": 1,
+      "best_title": "Iron deficiency anaemia",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS joint pain",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS kidney disease patient info",
+      "refs": 1,
+      "best_title": "Chronic kidney disease",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS kidney function tests",
+      "refs": 3,
+      "best_title": "Creatinine Test (kidney function)",
+      "best_source": "Testing.com",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS kidney stones",
+      "refs": 1,
+      "best_title": "Chronic kidney disease",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS meningitis",
+      "refs": 2,
+      "best_title": "Meningitis \u2014 symptoms and emergency signs",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS meningitis red flags",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS menopause patient info",
+      "refs": 1,
+      "best_title": "Menopause",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS migraine patient info",
+      "refs": 2,
+      "best_title": "Migraine",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS migraine when-to-see-GP",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.8
+    },
+    {
+      "gold": "NHS osteoarthritis patient info",
+      "refs": 1,
+      "best_title": "Osteoarthritis",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS overactive thyroid",
+      "refs": 1,
+      "best_title": "Overactive thyroid (hyperthyroidism)",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS peptic ulcer",
+      "refs": 1,
+      "best_title": "Stomach ulcer",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS persistent cough",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS pneumonia patient info",
+      "refs": 1,
+      "best_title": "Pneumonia",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS pneumonia recovery",
+      "refs": 1,
+      "best_title": "Pneumonia",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS rheumatoid arthritis patient info",
+      "refs": 1,
+      "best_title": "Rheumatoid arthritis",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS sexual health",
+      "refs": 1,
+      "best_title": "Clinical depression",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS skin infections",
+      "refs": 1,
+      "best_title": "Urinary tract infections (UTIs)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS stroke FAST symptoms",
+      "refs": 1,
+      "best_title": "Stroke \u2014 FAST symptoms and when to act",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS stroke patient info",
+      "refs": 1,
+      "best_title": "Stroke \u2014 FAST symptoms and when to act",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS thyroid tests",
+      "refs": 5,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS type 1 diabetes",
+      "refs": 1,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "NHS type 2 diabetes",
+      "refs": 2,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS type 2 diabetes patient info",
+      "refs": 1,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.8
+    },
+    {
+      "gold": "NHS urine tests",
+      "refs": 1,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS vitamin B12 and folate deficiency",
+      "refs": 1,
+      "best_title": "Vitamin B12 or folate deficiency anaemia",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS vitamin B12 deficiency",
+      "refs": 1,
+      "best_title": "Vitamin B12 or folate deficiency anaemia",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS vitamin D",
+      "refs": 1,
+      "best_title": "Vitamin D",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS vomiting in children",
+      "refs": 1,
+      "best_title": "Diarrhoea and vomiting \u2014 when to get help",
+      "best_source": "NHS",
+      "score": 0.67
+    },
+    {
+      "gold": "NHS when to call 999 chest pain",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NHS when-to-see-GP",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 1.0
+    },
+    {
+      "gold": "NICE type 2 diabetes",
+      "refs": 1,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.75
+    },
+    {
+      "gold": "Nepal EDCD dengue",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 1.0
+    },
+    {
+      "gold": "Nepal NTP guideline",
+      "refs": 1,
+      "best_title": "Nepal National Antimicrobial Stewardship Programme Guideline Workshop (WHO Nepal)",
+      "best_source": "WHO Nepal",
+      "score": 0.67
+    },
+    {
+      "gold": "Nepal communicable disease guideline",
+      "refs": 1,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.75
+    },
+    {
+      "gold": "WHO",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO COPD",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO HIV",
+      "refs": 1,
+      "best_title": "Nepal National HIV Strategic Plan Validation Meeting (WHO Nepal)",
+      "best_source": "WHO Nepal",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO PEN cardiovascular",
+      "refs": 1,
+      "best_title": "Cardiovascular diseases (CVDs)",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO PEN diabetes",
+      "refs": 1,
+      "best_title": "Diabetes",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO PEN hypertension",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO antenatal care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO asthma",
+      "refs": 1,
+      "best_title": "Asthma",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO cholera guidelines",
+      "refs": 1,
+      "best_title": "Cholera",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO dengue",
+      "refs": 2,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO dengue guidelines",
+      "refs": 2,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO diabetes",
+      "refs": 2,
+      "best_title": "Diabetes",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO eye care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO hepatitis",
+      "refs": 1,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO hepatitis A",
+      "refs": 1,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO hepatitis B",
+      "refs": 1,
+      "best_title": "Hepatitis B",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO maternal emergencies",
+      "refs": 1,
+      "best_title": "Maternal mortality",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO palliative care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO postpartum care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO rabies guidelines",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO rabies post-exposure prophylaxis",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO reproductive health",
+      "refs": 2,
+      "best_title": "Nepal's Progress in Advancing the One Health Approach (WHO Nepal)",
+      "best_source": "WHO Nepal",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO snakebite",
+      "refs": 1,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO stroke care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO suicide prevention",
+      "refs": 1,
+      "best_title": "Suicide Prevention Brochure (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO trauma care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO typhoid",
+      "refs": 1,
+      "best_title": "Typhoid",
+      "best_source": "WHO",
+      "score": 1.0
+    },
+    {
+      "gold": "WHO wound care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.67
+    },
+    {
+      "gold": "WHO wound care and tetanus prophylaxis",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.6
+    },
+    {
+      "gold": "patient.info back pain",
+      "refs": 1,
+      "best_title": "Back pain \u2014 red flags and when to see a GP",
+      "best_source": "NHS",
+      "score": 0.67
+    }
+  ],
+  "unmatchable": [
+    {
+      "gold": "AAO patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "AAP febrile infant",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "AASLD patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "AASM patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ACC/AHA HF",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ACC/AHA PAD",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ACC/AHA patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "ACR patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ADA DKA guidance",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ADA criteria patient info",
+      "refs": 2,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "ADA eye care",
+      "refs": 1,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "ADA patient info",
+      "refs": 3,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ADA pregnancy",
+      "refs": 1,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "ADA standards of care",
+      "refs": 1,
+      "best_title": "Infertility (Childlessness) Management Service Operations Standards, 2082",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "AHA atypical MI in diabetics",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "AHA patient info",
+      "refs": 3,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "AHA silent MI",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "AHA stroke patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "AHA women and heart disease",
+      "refs": 2,
+      "best_title": "COPD",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "ARIA patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ATA patient info",
+      "refs": 7,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ATLS principles",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "AUA patient",
+      "refs": 2,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "BAD patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "BMJ Best Practice",
+      "refs": 22,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice ACS",
+      "refs": 2,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice ACS in diabetes",
+      "refs": 1,
+      "best_title": "Diabetes",
+      "best_source": "WHO",
+      "score": 0.2
+    },
+    {
+      "gold": "BMJ Best Practice CO poisoning",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice CRAO / stroke",
+      "refs": 1,
+      "best_title": "Stroke \u2014 FAST symptoms and when to act",
+      "best_source": "NHS",
+      "score": 0.2
+    },
+    {
+      "gold": "BMJ Best Practice SAH",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice acute abdomen",
+      "refs": 1,
+      "best_title": "National Guideline for Sample Collection and Transportation During Acute Public Health Events, 2025",
+      "best_source": "EDCD",
+      "score": 0.2
+    },
+    {
+      "gold": "BMJ Best Practice aortic dissection",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice cauda equina",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice heart failure",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice inflammation markers",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice leptospirosis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice leukocytosis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice rash",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice reference ranges",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice septic arthritis",
+      "refs": 1,
+      "best_title": "Rheumatoid arthritis",
+      "best_source": "NHS",
+      "score": 0.2
+    },
+    {
+      "gold": "BMJ Best Practice upper GI bleed",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BMJ Best Practice vertigo",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BSG UGI bleed",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BSG abnormal LFTs",
+      "refs": 2,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BSG bowel prep patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.25
+    },
+    {
+      "gold": "BSG dyspepsia patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "BSG jaundice",
+      "refs": 2,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BSG upper GI endoscopy patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.2
+    },
+    {
+      "gold": "BSH B12 guideline",
+      "refs": 1,
+      "best_title": "Vitamin B12 or folate deficiency anaemia",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "BSH ferritin guidance",
+      "refs": 1,
+      "best_title": "Ferritin Test",
+      "best_source": "Testing.com",
+      "score": 0.33
+    },
+    {
+      "gold": "BSH guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "BSH macrocytic anemia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BSH thrombocytopenia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "BTS patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "BTS/SIGN asthma",
+      "refs": 2,
+      "best_title": "Asthma",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "CREST cellulitis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "EASL patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "EAU patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ECCO patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "EDCD Nepal AWD protocol",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "ESC AF patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "ESC HF patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "ESC NSTEMI",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ESC PE guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "ESC acute coronary syndromes",
+      "refs": 1,
+      "best_title": "National Guideline for Sample Collection and Transportation During Acute Public Health Events, 2025",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "ESC aortic disease guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "ESC patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ESC vascular",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ESHRE PCOS patient",
+      "refs": 1,
+      "best_title": "Polycystic ovary syndrome (PCOS)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "EULAR patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "Endocrine Society patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "FPAN Nepal",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "GINA patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "GINA pocket guide",
+      "refs": 2,
+      "best_title": "Community-Based Disease Surveillance System Facilitator's Guide 2082",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "GOLD COPD exacerbation",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "GOLD patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "Glasgow-Blatchford framing",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "HRA Nepal altitude guidelines",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "IHS patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ILAE patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "ISPAD DKA",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "ISPAD patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "KDIGO patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "Manchester Triage",
+      "refs": 3,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "Manchester Triage cardiac pain",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP ANC protocol",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP EDCD",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP IMCI",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP IMNCI",
+      "refs": 2,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP NCASC",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP NCD",
+      "refs": 4,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP NCD PEN protocol",
+      "refs": 1,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP NCD protocol",
+      "refs": 7,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP NCD screening",
+      "refs": 1,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP NCD/RHD guidance",
+      "refs": 1,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP National TB Programme STG",
+      "refs": 1,
+      "best_title": "National Population Policy 2082 (Nepal)",
+      "best_source": "MoHP",
+      "score": 0.4
+    },
+    {
+      "gold": "MoHP Nepal TB program",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal cholera SOP",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal dengue SOP",
+      "refs": 2,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal dengue guideline",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal immunization schedule",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal leptospirosis SOP",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal mental health helpline (1166)",
+      "refs": 1,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal rabies SOP",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal safe motherhood",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal snakebite protocol",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP Nepal zoonotic diseases",
+      "refs": 1,
+      "best_title": "Neglected Tropical Diseases (NTD) Fact Sheet 2026 (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP STG",
+      "refs": 2,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP STG UTI",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP STG burns",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP STG dengue",
+      "refs": 1,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP STG diabetes",
+      "refs": 1,
+      "best_title": "Diabetes",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP STG diarrhoea adult",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP STG fracture management",
+      "refs": 1,
+      "best_title": "Infertility (Childlessness) Management Service Operations Standards, 2082",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP STG hypertension",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP TB",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP cervical cancer screening program",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.2
+    },
+    {
+      "gold": "MoHP dengue guideline",
+      "refs": 1,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP maternal health postpartum sepsis",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.4
+    },
+    {
+      "gold": "MoHP micronutrient guidance",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP national immunization schedule",
+      "refs": 1,
+      "best_title": "National Population Policy 2082 (Nepal)",
+      "best_source": "MoHP",
+      "score": 0.5
+    },
+    {
+      "gold": "MoHP nutrition rehabilitation",
+      "refs": 1,
+      "best_title": "Situation Assessment of Rehabilitation in Nepal",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP nutrition/anemia program",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP rabies STG",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP referral pathway patient info",
+      "refs": 2,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.25
+    },
+    {
+      "gold": "MoHP safe motherhood",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP safe motherhood danger signs",
+      "refs": 1,
+      "best_title": "Nepal Health Factsheet 2025 (MoHP)",
+      "best_source": "MoHP",
+      "score": 0.2
+    },
+    {
+      "gold": "MoHP snakebite guideline",
+      "refs": 1,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "MoHP viral hepatitis",
+      "refs": 1,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NCI patient",
+      "refs": 2,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS ADHD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS AF patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS Addison's patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS BPH patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS CAD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS CKD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS CRP test",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS DVT patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS ESR test",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS GAD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS GI patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS HIV patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS IBS patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS NAFLD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS OSA patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS PAD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS PTSD patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS Parkinson's patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS RA patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS UTI",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS allergic reaction",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS allergic rhinitis",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS altitude sickness",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS anemia patient info",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS angina patient info",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS appointments for older people",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS autism patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS bedwetting patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS bipolar patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS bleeding in the digestive tract",
+      "refs": 1,
+      "best_title": "Urinary tract infections (UTIs)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS breast cancer patient info",
+      "refs": 1,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS breathlessness",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS carbon monoxide poisoning",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS cataract patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS child development",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS colonoscopy patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS cuts and grazes",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS diabetes annual review",
+      "refs": 1,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS diabetic eye screening",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS dizziness",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS ear infection patient info",
+      "refs": 1,
+      "best_title": "Ear infections",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS endometriosis patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS endoscopy patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS epilepsy patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS fibroids patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS floaters and flashes",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS full blood count",
+      "refs": 2,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS getting a second opinion",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS glaucoma patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS having an operation",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS hearing loss patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS heart attack",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS heart failure patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS heart murmur patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS hepatitis A",
+      "refs": 1,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS indigestion patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS insomnia patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS liver function tests",
+      "refs": 3,
+      "best_title": "Underactive thyroid (hypothyroidism) \u2014 diagnosis and blood tests (TSH, FT4)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS lung cancer patient info",
+      "refs": 1,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS medicines review patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS menstrual irregularity patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS neck lump patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS osteoporosis patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS pre-appointment prep",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS preparing for a specialist appointment",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS preparing for an appointment",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS psoriasis patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS rashes in adults",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS reduced fetal movements",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS refusing treatment",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS rheumatic heart disease",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS school avoidance patient info",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS skin cancer patient info",
+      "refs": 1,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS sprains",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS talking to your oncologist",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NHS thunderclap headache",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS trigeminal neuralgia",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS typhoid",
+      "refs": 1,
+      "best_title": "Typhoid",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "NHS ulcerative colitis",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS vaccinations for children",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHS vision loss",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NHTC Nepal",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "NICE AAA guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CG128",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CG160 fever in under 5s",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CG176",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKD",
+      "refs": 3,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKD proteinuria",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS ADHD",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS AF",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS DKA",
+      "refs": 2,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS DVT",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS IBS",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS LUTS",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS OA",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS PAD",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS PCOS",
+      "refs": 1,
+      "best_title": "Polycystic ovary syndrome (PCOS)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS PE",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS PTSD",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS Parkinson's",
+      "refs": 1,
+      "best_title": "Community-Based Disease Surveillance System Facilitator's Guide 2082",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS RA",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS UTI (lower)",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS abdominal pain",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS acute glaucoma",
+      "refs": 1,
+      "best_title": "National Guideline for Sample Collection and Transportation During Acute Public Health Events, 2025",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS acute hot swollen joint",
+      "refs": 1,
+      "best_title": "National Guideline for Sample Collection and Transportation During Acute Public Health Events, 2025",
+      "best_source": "EDCD",
+      "score": 0.17
+    },
+    {
+      "gold": "NICE CKS anaphylaxis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS antepartum hemorrhage",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS asthma",
+      "refs": 1,
+      "best_title": "Asthma",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS asthma acute",
+      "refs": 1,
+      "best_title": "Asthma",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS bipolar",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS bites and stings / wound infection",
+      "refs": 1,
+      "best_title": "Sinusitis (sinus infection)",
+      "best_source": "NHS",
+      "score": 0.17
+    },
+    {
+      "gold": "NICE CKS bleeding in early pregnancy",
+      "refs": 1,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.4
+    },
+    {
+      "gold": "NICE CKS carbon monoxide",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS cellulitis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS chest pain",
+      "refs": 10,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NICE CKS coeliac",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS community-acquired pneumonia",
+      "refs": 1,
+      "best_title": "Pneumonia",
+      "best_source": "NHS",
+      "score": 0.2
+    },
+    {
+      "gold": "NICE CKS cough",
+      "refs": 1,
+      "best_title": "Cough \u2014 when to see a GP and red flags",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS depression",
+      "refs": 3,
+      "best_title": "Depressive disorder (depression)",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS depression in children",
+      "refs": 1,
+      "best_title": "Depressive disorder (depression)",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS dyspepsia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS dyspepsia and GORD",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS ectopic pregnancy",
+      "refs": 2,
+      "best_title": "Vaginal bleeding in pregnancy \u2014 when to seek urgent care",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS eczema",
+      "refs": 1,
+      "best_title": "Atopic eczema",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS epilepsy",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS gastroenteritis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS gastroenteritis in children",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS gout",
+      "refs": 1,
+      "best_title": "Gout",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS head injury",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS headache",
+      "refs": 3,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS hearing loss",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS heart failure",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS hematuria",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS hypertension",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS hyponatremia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS hypothyroidism",
+      "refs": 3,
+      "best_title": "Underactive thyroid (hypothyroidism)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS influenza",
+      "refs": 1,
+      "best_title": "Influenza (seasonal)",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS insomnia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS jaundice",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS knee pain",
+      "refs": 1,
+      "best_title": "Chest pain \u2014 when to call 999 vs see GP",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS lacerations",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS low back pain",
+      "refs": 1,
+      "best_title": "Back pain \u2014 red flags and when to see a GP",
+      "best_source": "NHS",
+      "score": 0.4
+    },
+    {
+      "gold": "NICE CKS meningitis",
+      "refs": 2,
+      "best_title": "Meningitis \u2014 symptoms and emergency signs",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS migraine",
+      "refs": 1,
+      "best_title": "Migraine",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS neck lump",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS nocturnal enuresis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS pyelonephritis",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS recurrent UTI",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS retinal detachment",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS sepsis",
+      "refs": 1,
+      "best_title": "Sepsis \u2014 symptoms and when to call 999",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS sore throat",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS sprains and strains",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS stroke and TIA",
+      "refs": 1,
+      "best_title": "Stroke \u2014 FAST symptoms and when to act",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE CKS sudden loss of vision",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS suspected melanoma",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS trigeminal neuralgia",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS tuberculosis",
+      "refs": 1,
+      "best_title": "Tuberculosis",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE CKS unexplained weight loss",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS upper GI bleed",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS urticaria",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS vertigo",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE CKS vitamin D",
+      "refs": 1,
+      "best_title": "Vitamin D",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "NICE NG12 suspected cancer",
+      "refs": 2,
+      "best_title": "Bowel cancer red flags \u2014 when to see a GP",
+      "best_source": "NHS",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE NG23",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE NG3",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE NG59",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE NG73",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE NG81",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE chronic pain",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE diabetes in pregnancy",
+      "refs": 1,
+      "best_title": "Diabetes",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "NICE major trauma",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE multimorbidity",
+      "refs": 2,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NICE self-harm guidelines",
+      "refs": 2,
+      "best_title": "Self Audit of National Malaria Program 2021 (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.25
+    },
+    {
+      "gold": "NICE shared-decision-making",
+      "refs": 8,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NIDDK",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "NIDDK patient info",
+      "refs": 4,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "NOF patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "Nepal NCASC",
+      "refs": 1,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "Ottawa ankle rules patient framing",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.2
+    },
+    {
+      "gold": "RCOG early pregnancy",
+      "refs": 1,
+      "best_title": "National SOP for Early Warning, Alert and Response System (EWARS), 2025",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "RCOG ectopic",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "RCOG reduced fetal movements patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.2
+    },
+    {
+      "gold": "RCOphth emergency",
+      "refs": 1,
+      "best_title": "Meningitis \u2014 symptoms and emergency signs",
+      "best_source": "NHS",
+      "score": 0.5
+    },
+    {
+      "gold": "Resuscitation Council UK",
+      "refs": 1,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "Royal College of Anaesthetists patient info",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.25
+    },
+    {
+      "gold": "SIGN headache",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "SOCRATES framework",
+      "refs": 1,
+      "best_title": "Alert and Response Framework",
+      "best_source": "EDCD",
+      "score": 0.5
+    },
+    {
+      "gold": "Surviving Sepsis patient-facing",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.25
+    },
+    {
+      "gold": "UIAA MedCom patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "UKKA hyperkalemia guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "USPSTF patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO ANC",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO ANC recommendations",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO COPD primary care",
+      "refs": 1,
+      "best_title": "COPD",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO CVD",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO GDM",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO HEARTS",
+      "refs": 3,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO IMAI",
+      "refs": 6,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO IMAI GI",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI TB",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI UTI",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI adult history",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO IMAI allergy",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI anaphylaxis",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI diarrhoea",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI fever",
+      "refs": 3,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI fever workup",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO IMAI obstetric",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMAI respiratory",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMCI",
+      "refs": 3,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO IMCI danger signs",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO IMCI diarrhoea",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMCI ear",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO IMCI growth monitoring",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO IMCI young infant",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO MSK",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO ORS guidelines",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO PEN",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO PEN package",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO RHD",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO SEARO snakebite guidelines",
+      "refs": 1,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO STI guidelines",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO TB",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO TB screening",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO URI",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO UTI",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO anemia",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO anemia in children",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO anemia thresholds",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO antenatal care guidelines",
+      "refs": 3,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO breast cancer early detection",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.2
+    },
+    {
+      "gold": "WHO burns management",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO catch-up vaccination",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO cervical cancer",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO child development milestones",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO dengue case management",
+      "refs": 1,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO emergency trauma care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO fatigue workup",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO headache primary care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO indoor air quality",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO leptospirosis",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO meningitis guidance",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO mhGAP",
+      "refs": 5,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO musculoskeletal primary care",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO pediatric anemia thresholds",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO primary care GI",
+      "refs": 1,
+      "best_title": "Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO scrub typhus",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO sepsis",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO snakebite guidelines South-East Asia",
+      "refs": 1,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO stroke guidance",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO traditional medicine guidance",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.25
+    },
+    {
+      "gold": "WHO trauma",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.5
+    },
+    {
+      "gold": "WHO travel medicine",
+      "refs": 2,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.33
+    },
+    {
+      "gold": "WHO upper respiratory infection guidance",
+      "refs": 1,
+      "best_title": "Hypertension",
+      "best_source": "WHO",
+      "score": 0.2
+    },
+    {
+      "gold": "Wells score patient framing",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.25
+    },
+    {
+      "gold": "Wilderness Medical Society altitude",
+      "refs": 1,
+      "best_title": null,
+      "best_source": null,
+      "score": 0.0
+    },
+    {
+      "gold": "Wilderness Medical Society altitude guideline",
+      "refs": 1,
+      "best_title": "Community Based Disease Surveillance Guideline, 2082",
+      "best_source": "EDCD",
+      "score": 0.2
+    },
+    {
+      "gold": "Wilderness Medical Society patient",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.25
+    },
+    {
+      "gold": "patient education",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info RA",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info caregiver tips",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info colonoscopy",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info floaters",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info headache diary",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info hearing",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info lymphadenopathy",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info moles",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info murmur",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info pneumonia recovery",
+      "refs": 1,
+      "best_title": "Pneumonia",
+      "best_source": "NHS",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info polypharmacy",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.5
+    },
+    {
+      "gold": "patient.info pre-op",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info prognosis conversations",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info school refusal",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info second opinion",
+      "refs": 1,
+      "best_title": "Second Round Seroprevalence Survey for SARS-CoV-2 (Nepal)",
+      "best_source": "EDCD",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info sleep hygiene",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info speech delay",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    },
+    {
+      "gold": "patient.info treatment refusal",
+      "refs": 1,
+      "best_title": "NPHL Patient Frequently Asked Questions (Nepal)",
+      "best_source": "NPHL",
+      "score": 0.33
+    }
+  ],
+  "per_stage": {
+    "navigation_stage2": {
+      "gradable": 20,
+      "total": 60,
+      "pct": 0.333
+    },
+    "navigation": {
+      "gradable": 24,
+      "total": 126,
+      "pct": 0.19
+    },
+    "visit_prep": {
+      "gradable": 16,
+      "total": 96,
+      "pct": 0.167
+    },
+    "results": {
+      "gradable": 15,
+      "total": 47,
+      "pct": 0.319
+    },
+    "condition": {
+      "gradable": 40,
+      "total": 162,
+      "pct": 0.247
+    },
+    "intake": {
+      "gradable": 9,
+      "total": 73,
+      "pct": 0.123
+    }
+  },
+  "corpus_size": 131,
+  "unique_expected": 518,
+  "matchable_count": 111,
+  "unmatchable_count": 407
+}
