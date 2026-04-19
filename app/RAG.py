@@ -29,6 +29,7 @@ try:
         insert_chunk,
         insert_document,
         match_chunks_hybrid_filtered,
+        create_chat_session,
         get_chat_session,
         update_chat_session,
         insert_session_document,
@@ -67,6 +68,7 @@ except ImportError:
         insert_chunk,
         insert_document,
         match_chunks_hybrid_filtered,
+        create_chat_session,
         get_chat_session,
         update_chat_session,
         insert_session_document,
@@ -229,6 +231,41 @@ async def serve_frontend():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# --------------------------------------------------
+# Session start — creates a chat_sessions row so the caller can pass
+# session_id into /query and exercise the stage state machine (intake
+# template → navigation → routine retrieval). Before this endpoint
+# existed, sessions were only created implicitly by the upload flow,
+# which meant the eval scorer could never drive Stage 1 intake.
+# --------------------------------------------------
+class SessionStartRequest(BaseModel):
+    user_id: Optional[str] = None
+    current_stage: Optional[str] = "intake"
+
+
+@app.post("/session/start")
+def session_start(req: SessionStartRequest) -> dict:
+    # chat_sessions.user_id is NOT NULL. Accept from request; fall back to
+    # EVAL_USER_ID env var for the eval scorer / local smoke-tests.
+    user_id = req.user_id or os.getenv("EVAL_USER_ID")
+    if not user_id:
+        raise HTTPException(
+            status_code=400,
+            detail="user_id is required (or set EVAL_USER_ID in server env)",
+        )
+    row = create_chat_session(
+        user_id=user_id,
+        current_stage=req.current_stage or "intake",
+    )
+    if not row or not row.get("id"):
+        raise HTTPException(status_code=500, detail="failed to create chat session")
+    return {
+        "session_id": row["id"],
+        "current_stage": row.get("current_stage") or req.current_stage,
+        "user_id": row.get("user_id"),
+    }
 
 
 # --------------------------------------------------
@@ -940,9 +977,27 @@ DEFAULT_WEIGHTS = (0.7, 0.2, 0.1)
 def _rerank_rows(question: str, rows: list) -> list:
     """Rerank retrieved chunks with Cohere Rerank. Returns every candidate
     with rerank_score attached so downstream weighted scoring can reorder
-    the full set. Falls back to original order if the API call fails."""
+    the full set. Falls back to original order if the API call fails.
+
+    COHERE_DISABLED=1 short-circuits to the same fallback without touching
+    the API — for eval / CI runs that must not burn trial quota."""
     if not rows:
         return rows
+    if os.getenv("COHERE_DISABLED") == "1":
+        # Synthetic rank-derived scores so the no-coverage gate and the
+        # weighted-final-score path still work. Top RRF row → 0.80 (clears
+        # RERANK_REFUSAL_THRESHOLD=0.4); scores decay linearly so the tail
+        # gets pruned by RERANK_CONTEXT_MIN=0.2 like a real rerank pass.
+        # NOT a quality-equivalent substitute — it trusts hybrid retrieval's
+        # RRF order completely. Use only when COHERE_DISABLED is set.
+        n = len(rows)
+        out = []
+        for i, row in enumerate(rows):
+            synth = max(0.0, 0.80 - (0.65 * i / max(1, n - 1))) if n > 1 else 0.80
+            new_row = dict(row)
+            new_row["rerank_score"] = synth
+            out.append(new_row)
+        return out
     docs = [r.get("content") or "" for r in rows]
     try:
         resp = co.rerank(

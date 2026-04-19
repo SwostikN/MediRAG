@@ -298,6 +298,30 @@ def get_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def create_chat_session(
+    *,
+    user_id: Optional[str] = None,
+    current_stage: str = "intake",
+) -> Optional[Dict[str, Any]]:
+    """Insert a new chat_sessions row and return {id, current_stage, user_id}
+    on success, or None on failure. user_id is optional — the session can
+    be anonymous until an auth header is threaded through."""
+    payload: Dict[str, Any] = {
+        "current_stage": current_stage,
+        "title": "New chat",  # NOT NULL; frontend renames on first message
+    }
+    if user_id:
+        payload["user_id"] = user_id
+    res = _post_table("chat_sessions", payload)
+    if isinstance(res, dict) and res.get("error"):
+        return None
+    if isinstance(res, list) and res:
+        return res[0]
+    if isinstance(res, dict) and res.get("id"):
+        return res
+    return None
+
+
 def update_chat_session(session_id: str, **fields: Any) -> bool:
     """Patch selected fields on one chat_sessions row. Returns True on
     success, False on any failure."""

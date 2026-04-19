@@ -103,3 +103,6 @@ service-account*.json
 scratch/
 tmp/
 *.tmp
+
+# Claude Code local config (personal, not project)
+.claude/

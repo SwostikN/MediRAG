@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-04-19T03:48:39.791335+00:00",
+  "total_pairs": 309,
+  "gold_file_counts": {
+    "redflag": 111,
+    "intake": 30,
+    "navigation": 50,
+    "visit_prep": 38,
+    "results": 30,
+    "condition": 50
+  },
+  "validation_errors": [],
+  "pipeline": {
+    "server_url": null,
+    "available": false
+  },
+  "per_stage": {
+    "redflag": {
+      "n": 111,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    },
+    "intake": {
+      "n": 30,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    },
+    "navigation": {
+      "n": 50,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    },
+    "visit_prep": {
+      "n": 38,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    },
+    "results": {
+      "n": 30,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    },
+    "condition": {
+      "n": 50,
+      "recall_at_5": null,
+      "faithfulness_proxy": null,
+      "retrieval_attempted": 0,
+      "generation_attempted": 0,
+      "pipeline_errors": []
+    }
+  },
+  "notes": "Week 2 baseline. Corpus not yet ingested (Week 3 task); retrieval metrics are '\u2014' until then. Red-flag engine is deterministic YAML and lands in Week 6 \u2014 its gold items are validated but not run. Faithfulness proxy is hint-keyword-overlap; RAGAS entailment is Week 10 work."
+}

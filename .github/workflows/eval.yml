@@ -1,0 +1,60 @@
+name: eval
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "eval/**"
+      - "supabase/**"
+      - ".github/workflows/eval.yml"
+  push:
+    branches: [main]
+
+# Why this workflow is "static" (no live /query):
+# The pipeline requires pgvector + MedCPT (~400MB) + Cohere + Groq API
+# keys to run a single query. Running that in CI would cost money per PR
+# and leak API keys into GitHub's infrastructure. Instead, CI enforces
+# the things that DON'T need a live pipeline: gold-set schema, regex
+# validity, deterministic unit tests for guardrails, red-flag rules, and
+# document classifier. The live harness (score_ragas_lite.py,
+# score_must_refuse.py) is run locally by the developer before merge
+# and the JSON result file is committed under eval/results/.
+
+jobs:
+  gold-schema:
+    name: gold schema + regex validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate gold JSONL schema
+        # harness.py exits 1 if any validation error is found.
+        run: python eval/harness.py
+      - name: Validate must_refuse regex
+        run: python eval/validate_must_refuse.py
+
+  unit-tests:
+    name: guardrail unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install minimal deps for unit tests
+        # We deliberately do NOT install torch/transformers here — the
+        # NLI-dependent tests (test_nli_verifier, test_claim_classifier)
+        # are skipped if transformers is missing. CI runs the pure-Python
+        # rule-engine and classifier tests only; NLI is exercised locally.
+        run: |
+          pip install pytest PyYAML
+      - name: Run deterministic guardrail tests
+        run: |
+          pytest eval/test_redflag.py \
+                 eval/test_document_classifier.py \
+                 eval/test_scope_guard.py \
+                 eval/test_apply_guardrails.py \
+                 eval/test_streaming_guardrails.py \
+                 -v

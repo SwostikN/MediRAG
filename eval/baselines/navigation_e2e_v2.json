@@ -1,0 +1,414 @@
+{
+  "n": 50,
+  "errors": 0,
+  "hint_recall_mean": 0.08266666666666668,
+  "hint_recall_count": 50,
+  "redflag_terminated": 18,
+  "two_turn_completed": 32,
+  "error_detail": [],
+  "timestamp": "2026-04-19T17:11:52.897489+00:00",
+  "label": "v2_prompt_fix",
+  "server_url": "http://127.0.0.1:8000",
+  "per_case": [
+    {
+      "id": "nv-001",
+      "query": "I have a persistent cough with some blood in the sputum for two weeks. Where should I go?",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "\u00b7 Persistent cough \u00b7 2-week onset \u00b7 Blood in sputum \u00b7 No triggers mentioned \u00b7 Red-flag features: hemoptysis\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A persistent cough with blood in the sputum requires a medical officer's assessment and laboratory investigations, which are available at this ti"
+    },
+    {
+      "id": "nv-002",
+      "query": "My 6-month-old has a fever of 39.5\u00b0C and is very sleepy, won't feed.",
+      "path": "redflag",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer_head": "This combination of symptoms in an infant or young child is a medical emergency. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nYoung babies can deteriorate very quickly. Do not wait to see if it improves.\nThis is not a diagnosis \u2014 urgent in-person evaluation is essential."
+    },
+    {
+      "id": "nv-003",
+      "query": "I've been feeling tired and a bit down for a few weeks. Should I see someone?",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've experienced persistent fatigue and a low mood for several weeks, impacting my daily activities. I've noticed no significant changes in sleep patterns, appetite, or weight. My energy levels remain consistently low throughout the day. I have no family history of similar issues. I'm concerned and would appreciate your guidance on the next steps.\"\n\n---\n\n**Where to go:** Primary Health Ca"
+    },
+    {
+      "id": "nv-004",
+      "query": "I have a mild cold \u2014 runny nose and sneezing for two days. Do I need to see a doctor?",
+      "path": "intake->intake",
+      "hint_recall": 0.2,
+      "error": null,
+      "answer_head": "- Predominant symptom: Runny nose and sneezing.\n- Onset & pattern: Sudden onset, lasting two days.\n- Triggers: None reported.\n- Red-flag features: None mentioned.\n\n---\n\n**Where to go:** Self-care at home\n**When:** Monitor for 24\u201348 hours\n**Why this tier, not others:** Your symptoms suggest a mild viral upper respiratory tract infection. You can manage this at home with rest, fluids, and over-the-c"
+    },
+    {
+      "id": "nv-005",
+      "query": "I'm pregnant, about 14 weeks, and I have some spotting. Is this urgent?",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "In pregnancy, new or severe symptoms should be checked today. Pregnancy changes how symptoms should be read, so please don't wait to see if it settles on its own.\n\nWhile you arrange care:\n- Lie down on your left side \u2014 this improves blood flow to you and the baby\n- Bring your antenatal record (blue book) so the team knows your history\n- Do not take any medicines, including painkillers, until you h"
+    },
+    {
+      "id": "nv-006",
+      "query": "I'm 58, having crushing chest pain for 30 minutes, sweating and feeling sick. My left arm aches too.",
+      "path": "redflag",
+      "hint_recall": 0.4,
+      "error": null,
+      "answer_head": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-007",
+      "query": "My husband's face is drooping on one side, his speech is slurred and his right arm is weak. It started 20 minutes ago.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "These symptoms could be a stroke. Every minute matters. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nNote the exact time the symptoms started \u2014 the emergency team will need it to decide on treatment.\nDo not eat, drink, or take any medicine while waiting. This is not a diagnosis; urgent in-person evaluation is essential."
+    },
+    {
+      "id": "nv-008",
+      "query": "My 7-year-old ate peanuts and now her face is swelling, she's wheezing, and she says her throat feels tight.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "This sounds like a severe allergic reaction. Call 102 immediately or go to the nearest hospital emergency department.\nIf you have an adrenaline auto-injector (EpiPen) prescribed for you, use it now and then still go to hospital.\nDo not stay alone. This is not a diagnosis \u2014 get emergency help now."
+    },
+    {
+      "id": "nv-009",
+      "query": "My asthma inhaler isn't helping, I can barely finish a sentence and my lips feel bluish.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "\u2022 Predominant symptom: Shortness of breath, with bluish lips.\n\u2022 Onset & pattern: Sudden, persistent.\n\u2022 Sputum character: Not mentioned.\n\u2022 Triggers: Asthma exacerbation.\n\u2022 Red-flag features: None reported.\n\n---\n\n**Where to go:** Nearest Emergency Department \u2014 call 102 for ambulance\n**When:** Go NOW. Do not wait.\n**Why this tier, not others:** Shortness of breath with bluish lips is a medical emerge"
+    },
+    {
+      "id": "nv-010",
+      "query": "I have type 1 diabetes, I've been vomiting all day, my breathing is fast and deep, my blood sugar is 420 mg/dL.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Predominant symptom: Diabetic ketoacidosis (DKA)\n- Onset & trajectory: Sudden onset, with persistent vomiting and rapid breathing.\n- Character: Abdominal pain, deep and rapid breathing, elevated blood sugar (420 mg/dL), and ketones in the urine.\n- Dietary/exposure history: Type 1 diabetes, with poor glucose control.\n- Red-flag features: Dehydration, weight loss, and elevated blood sugar.\n\n---\n\n*"
+    },
+    {
+      "id": "nv-011",
+      "query": "My 19-year-old son has fever, severe headache, a stiff neck and a new purple rash that doesn't fade when I press a glass on it.",
+      "path": "redflag",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "These signs can indicate a serious infection of the brain or its lining (meningitis) and must be evaluated urgently. Go to the nearest hospital emergency department now, or call 102.\nDo not wait until morning. This is not a diagnosis \u2014 early treatment makes a large difference."
+    },
+    {
+      "id": "nv-012",
+      "query": "I'm vomiting bright red blood and passing black tarry stools. I've felt faint twice.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Vomiting blood or coughing up blood is a medical emergency. Go to the nearest hospital emergency department now, or call 102.\nDo not eat or drink anything. This is not a diagnosis \u2014 urgent evaluation is required."
+    },
+    {
+      "id": "nv-013",
+      "query": "My period is 8 weeks late, I had a positive home test, and now I have severe one-sided pelvic pain and shoulder tip pain. I feel faint.",
+      "path": "redflag",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "In pregnancy, this combination of symptoms is a medical emergency. Go to the nearest hospital with an obstetric or maternity ward immediately, or call 102.\nDo not wait until morning or a regular appointment. Take any antenatal records with you if possible.\nThis is not a diagnosis \u2014 only in-person evaluation can determine what is happening."
+    },
+    {
+      "id": "nv-014",
+      "query": "I'm 68, suddenly have a tearing pain in my back and chest that moves, and my left leg feels cold and numb.",
+      "path": "intake->intake",
+      "hint_recall": 0.3333333333333333,
+      "error": null,
+      "answer_head": "\"Doctor, I'm experiencing a sudden onset of severe, tearing pain in my back and chest, which radiates. The pain moves, and my left leg feels cold and numb. This started suddenly, and the severity is concerning. I'd appreciate your guidance on the next steps.\"\n\n---\n\n**Where to go:** Nearest Emergency Department \u2014 call 102 for ambulance\n**When:** Go NOW. Do not wait.\n**Why this tier, not others:** Y"
+    },
+    {
+      "id": "nv-015",
+      "query": "My 22-year-old brother had a road accident, now he has sudden severe breathlessness, one side of his chest doesn't move, and his neck veins are bulging.",
+      "path": "intake->intake",
+      "hint_recall": 0.3333333333333333,
+      "error": null,
+      "answer_head": "Breathlessness \u00b7 Sudden onset, severe \u00b7 Chest movement asymmetry\n\nI read to the doctor that my brother, aged 22, experienced a road accident and now presents with sudden and severe breathlessness. One side of his chest appears to have reduced movement, and his neck veins are visibly bulging.\n\n---\n\n**Where to go:** Nearest Emergency Department \u2014 call 102 for ambulance\n**When:** Go NOW. Do not wait."
+    },
+    {
+      "id": "nv-016",
+      "query": "My father fell down stairs, hit his head, was briefly unconscious, and is now vomiting repeatedly and increasingly drowsy.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "This injury needs emergency care. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nKeep the person still, apply firm direct pressure to bleeding wounds with a clean cloth, and do not remove anything stuck in a wound.\nThis is not a diagnosis \u2014 in-person assessment is required urgently."
+    },
+    {
+      "id": "nv-017",
+      "query": "I've been thinking about ending my life and I have pills saved up. I don't want to be here tomorrow.",
+      "path": "redflag",
+      "hint_recall": 0.2,
+      "error": null,
+      "answer_head": "You matter, and what you're describing is a mental health emergency. Please reach out now \u2014 in Nepal, the TUTH Suicide Hotline is 9840021600, and the Mental Health Helpline Nepal is 1166. You can also go to the nearest hospital emergency department.\nIf you can, tell someone you trust right now and stay with them. Move any medicines, weapons, or other means of harm out of reach.\nThis is not a subst"
+    },
+    {
+      "id": "nv-018",
+      "query": "Three people in my house are dizzy, have headaches, and feel nauseous since we lit the gas heater overnight in a closed room.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I'd like to report symptoms affecting three individuals in my household. Since using the gas heater overnight in a closed room, we've experienced dizziness, headaches, and nausea. The symptoms began suddenly and are ongoing. We suspect the heater as the trigger. No specific relieving or exacerbating factors identified. The severity is moderate, impacting daily activities.\"\n\n---\n\n**Where t"
+    },
+    {
+      "id": "nv-019",
+      "query": "I'm 72, I have a cough and fever for 3 days, now I'm shivering, confused, my BP at home read 88/52 and I'm breathing fast.",
+      "path": "redflag",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "This pattern can be sepsis \u2014 a life-threatening response to infection. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nSepsis gets worse quickly. This is not a diagnosis \u2014 urgent in-person assessment is critical."
+    },
+    {
+      "id": "nv-020",
+      "query": "I'm a 62-year-old diabetic. I don't have chest pain, but for two days I've felt extremely tired, short of breath climbing stairs, and a bit nauseous. I'm sweating more than usual.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-021",
+      "query": "I'm a 54-year-old woman with jaw pain and left shoulder ache for an hour, a bit breathless, feeling anxious and sweaty. No chest pain though.",
+      "path": "redflag",
+      "hint_recall": 0.3333333333333333,
+      "error": null,
+      "answer_head": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-022",
+      "query": "I'm 70, I've had sudden severe lower back and flank pain, feel faint, and my abdomen feels like it's pulsating.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "A 70-year-old patient presents with sudden-onset, severe lower back and flank pain, accompanied by a feeling of faintness and a pulsating sensation in the abdomen. The pain is localized to the lower back and flank region, with no radiation to other areas. The patient reports no associated symptoms or aggravating factors. The severity of the pain is described as intense, and it has been persistent "
+    },
+    {
+      "id": "nv-023",
+      "query": "I feel like I can't catch my breath and my heart is racing. I had a long flight yesterday and my calf is a bit sore. I think it's a panic attack.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Serious breathing trouble is a medical emergency. Call 102 for an ambulance now, or go to the nearest hospital emergency department.\nSit the person upright; do not try to give food, water, or medicine if they are struggling to breathe.\nThis is not a diagnosis \u2014 get emergency help immediately."
+    },
+    {
+      "id": "nv-024",
+      "query": "My 9-year-old son has had belly pain and vomiting all day, he's breathing fast and smells a bit fruity. He's been drinking and peeing a lot the past week.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I'm concerned about my 9-year-old son. He's been experiencing abdominal pain and vomiting, with rapid breathing and a fruity odor. These symptoms started today. Over the past week, he's been drinking and urinating frequently. The pain is constant, and nothing seems to relieve it. The onset was sudden, and it's been worsening. Please advise on the next steps.\"\n\n---\n\n**Where to go:** Health"
+    },
+    {
+      "id": "nv-025",
+      "query": "My 2-month-old has a rectal temperature of 38.2\u00b0C. She's feeding okay and looks fine otherwise.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Temperature: 38.2\u00b0C, mild fever, short duration.\n- Pattern: No specific pattern, sudden onset.\n- Symptoms: None reported, feeding well, no visible distress.\n- Exposure: No recent travel, no known contacts with illness, no vector exposure.\n- Hydration: Adequate oral intake, no concerns.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not other"
+    },
+    {
+      "id": "nv-026",
+      "query": "I'm in Kathmandu, 4 days into a fever, today I have severe abdominal pain, vomiting, and my gums are bleeding when I brush. It's dengue season.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Severe stomach pain should be seen today \u2014 it has many possible causes, and some need surgery.\n\nWhile you arrange care, do this now:\n- Do not eat, drink, or take painkillers until you are seen \u2014 if surgery is needed, your stomach must be empty\n- Rest in whichever position hurts least; often that is lying on your side with your knees pulled up toward your chest\n- Note when the pain started, where i"
+    },
+    {
+      "id": "nv-027",
+      "query": "I'm a farmer in Chitwan, post-monsoon, I have high fever, severe calf muscle pain, red eyes, and yellowish skin for 4 days.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've had a high fever, severe calf muscle pain, red eyes, and yellowish skin for four days. The symptoms started post-monsoon, and the pain is localized to my calves. I work as a farmer in Chitwan. The pain is constant and severe, and I have not identified any specific triggers or relieving factors. I would appreciate your guidance on the next steps.\"\n\n---\n\n**Where to go:** District Hospi"
+    },
+    {
+      "id": "nv-028",
+      "query": "We're trekking at 4700m in Manang, my friend has severe headache, is very breathless even at rest, coughing pink frothy sputum, confused.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "A severe headache should be checked today \u2014 don't try to push through it. It is okay to be worried; most severe headaches are not dangerous, but a few are, and the only way to know is to be seen.\n\nWhile you arrange care:\n- Lie down in a dark, quiet room; turn off screens and bright lights\n- Sip water slowly \u2014 dehydration makes headaches worse\n- Don't take high doses of painkillers on your own befo"
+    },
+    {
+      "id": "nv-029",
+      "query": "I was bitten by a snake in my field in Terai 40 minutes ago, my arm is swelling fast and my eyelids feel heavy.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "A suspected snake bite is a medical emergency in Nepal. Go to the nearest hospital with antivenom immediately, or call 102.\nKeep the bitten limb still and below heart level. Do not cut the wound, suck out venom, apply a tight tourniquet, or use home remedies.\nThis is not a diagnosis \u2014 antivenom decisions require a hospital."
+    },
+    {
+      "id": "nv-030",
+      "query": "A street dog bit my child's hand 2 hours ago and broke the skin. The dog ran away. What do we do?",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Location & extent: Left hand, puncture wound with bleeding.\nOnset & evolution: Sudden, 2 hours ago.\nMorphology: Puncture wound, bleeding, no signs of infection yet.\nSymptoms: Pain, mild swelling.\nExposure history: Street dog bite, unknown vaccination status.\nSystemic features: None reported.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not o"
+    },
+    {
+      "id": "nv-031",
+      "query": "Our village has several people with sudden profuse watery diarrhea like rice water and vomiting since yesterday. My uncle looks very dehydrated.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Predominant symptom: Profuse, watery diarrhea and vomiting.\n- Onset & trajectory: Sudden onset, with symptoms persisting since yesterday.\n- Character (location, appearance, blood): Diarrhea is described as watery, resembling rice water, with no mention of blood.\n- Dietary/exposure history: None provided.\n- Red-flag features: Dehydration is a concern, as is the sudden onset and persistence of sym"
+    },
+    {
+      "id": "nv-032",
+      "query": "I've had a moderate asthma flare for 2 days, using my reliever every 3-4 hours but still wheezy. I can talk in sentences.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Persistent wheezing \u00b7 Onset 2 days ago, persistent \u00b7 Sputum character not mentioned \u00b7 Triggers: asthma flare \u00b7 Red-flag features: none mentioned\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Wheezing with a known trigger is a common acute respiratory complaint that can be assessed and managed at this tier. Health Posts can provi"
+    },
+    {
+      "id": "nv-033",
+      "query": "I'm a 32-year-old woman with burning when I pee, peeing often, and now I have a fever of 38.5\u00b0C and back pain.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've been experiencing a burning sensation during urination and an increased frequency of urination for a few days. Today, I developed a fever of 38.5\u00b0C and am now experiencing back pain. The symptoms started suddenly and have been persistent. I would appreciate your guidance on the next steps to take.\"\n\n---\n\n**Where to go:** Primary Health Care Centre (PHCC)\n**When:** Same-day walk-in\n**"
+    },
+    {
+      "id": "nv-034",
+      "query": "My calf is red, hot, swollen, and painful with a small cut from two days ago. I feel a bit feverish.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "* Site: calf\n* Onset: 2 days ago\n* Character: red, hot, swollen, painful\n* Radiation: none\n* Associations: small cut, feverish\n* Timing: constant\n* Exacerbating/relieving: none\n* Severity: significant\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Your symptoms suggest a possible infection, and a Health Post can assess and treat "
+    },
+    {
+      "id": "nv-035",
+      "query": "I've had vomiting and diarrhea for 2 days, haven't kept fluids down, my mouth is dry and I haven't urinated for 10 hours.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Predominant symptom: Vomiting and diarrhea.\n- Onset & trajectory: Started 2 days ago, persistent.\n- Character: Dry mouth, no urination for 10 hours, unable to retain fluids.\n- Dietary/exposure history: None provided.\n- Red-flag features: Dehydration, inability to retain fluids.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** You"
+    },
+    {
+      "id": "nv-036",
+      "query": "My eyes and skin have turned yellow over the past 3 days, my urine is dark and I feel itchy and tired.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"I've noticed changes over the last 3 days: my eyes and skin have a yellow tinge, urine is darker, and I feel itchy and fatigued. These symptoms impact my daily activities and sleep. I also experience weight loss, decreased appetite, and mood changes. There's no family history of similar issues. I'd appreciate further guidance and tests to understand this better.\"\n\n---\n\n**Where to go:** Primary He"
+    },
+    {
+      "id": "nv-037",
+      "query": "I cut my hand on glass while cooking, the cut is gaping open about 3 cm and still bleeding after 20 minutes of pressure.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "Location & extent: Left hand, a 3 cm gaping wound on the palm.\nOnset & evolution: Sudden onset, sustained bleeding despite pressure for 20 minutes.\nMorphology: Gaping, bleeding wound.\nSymptoms: Pain.\nExposure history: Cut by glass while cooking.\nSystemic features: None reported.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** This"
+    },
+    {
+      "id": "nv-038",
+      "query": "I suddenly have severe pain in my right eye with blurred vision and I'm seeing halos around lights. There's nausea too.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"I have experienced a sudden onset of severe pain in my right eye, accompanied by blurred vision and the perception of halos around lights. Additionally, I am feeling nauseous. The symptoms appeared abruptly and are persistent. There are no known triggers or associations, and the severity is such that it is affecting my daily activities.\"\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n*"
+    },
+    {
+      "id": "nv-039",
+      "query": "I'm 6 weeks pregnant and having light pink spotting with mild cramping. No heavy bleeding, not faint.",
+      "path": "redflag",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "In pregnancy, this combination of symptoms is a medical emergency. Go to the nearest hospital with an obstetric or maternity ward immediately, or call 102.\nDo not wait until morning or a regular appointment. Take any antenatal records with you if possible.\nThis is not a diagnosis \u2014 only in-person evaluation can determine what is happening."
+    },
+    {
+      "id": "nv-040",
+      "query": "I've been feeling hopeless and low for a month, some fleeting thoughts of not wanting to be here but no plan and no means. I haven't told anyone.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "I've been experiencing persistent feelings of hopelessness and low mood for the past month. This has impacted my sleep and appetite, and I've noticed a lack of motivation at work and in my relationships. Certain situations or triggers, such as work stress or personal conflicts, seem to worsen these feelings. I've tried to cope by distracting myself with activities and spending time alone, but I ha"
+    },
+    {
+      "id": "nv-041",
+      "query": "I've had a dry cough for about 4 weeks now. No blood, no weight loss, no fever. I'm 38 and otherwise well.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Persistent dry cough, lasting 4 weeks, with no other significant symptoms.\n- No recent travel or known exposures to respiratory illnesses.\n- Patient is well-hydrated and maintains a good oral intake.\n- No history of fever, weight loss, or blood in cough.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others"
+    },
+    {
+      "id": "nv-042",
+      "query": "I've lost 6 kg in the last 3 months without trying. I'm 45. Appetite okay-ish.",
+      "path": "intake->intake",
+      "hint_recall": 0.3333333333333333,
+      "error": null,
+      "answer_head": "- Predominant symptom: Unintentional weight loss.\n- Onset & trajectory: Gradual, over 3 months.\n- Character: 6 kg weight loss, appetite relatively unaffected.\n- Dietary/exposure history: None reported.\n- Red-flag features: None mentioned.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** Unintentional "
+    },
+    {
+      "id": "nv-043",
+      "query": "I'm 66, I have a new persistent headache for 3 weeks, different from my usual ones, worse in the morning. No weakness.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "I am a 66-year-old patient presenting with a new-onset headache for the past three weeks. The headache is persistent and differs from my usual headaches, particularly worsening in the morning. I have not experienced any associated weakness. The pain has been consistent, with no specific radiation or exacerbating factors identified. I would like to discuss further and explore potential causes and m"
+    },
+    {
+      "id": "nv-044",
+      "query": "I've had mild right-knee pain for 2 months, worse after walking. No swelling, no injury, no locking.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've been experiencing mild pain in my right knee for the past two months. The pain intensifies after walking, but there's no swelling or injury. I haven't noticed any locking of the joint. The onset was gradual, and the pain is localized to the knee, with no radiation. The severity is mild, and I haven't identified any specific exacerbating factors.\"\n\n---\n\n**Where to go:** Health Post or"
+    },
+    {
+      "id": "nv-045",
+      "query": "I have type 2 diabetes, on metformin, and I'd like to book my 3-monthly HbA1c and BP check.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Onset: Gradual, long-term management of type 2 diabetes.\n- Provocation/Exacerbating Factors: Medication (metformin) and lifestyle management.\n- Quality: Stable, ongoing condition with regular monitoring required.\n- Region: No specific new symptoms, but monitoring HbA1c and BP as per routine care.\n- Severity: Well-controlled, seeking routine check-up.\n- Time: 3-monthly review as per diabetes mana"
+    },
+    {
+      "id": "nv-046",
+      "query": "I had unprotected sex 4 days ago with a new partner. I feel fine but I'd like to be checked discreetly.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "I am experiencing no symptoms, but I would like to be tested for STIs as I had unprotected sex with a new partner four days ago. I am concerned about the potential risk and would appreciate a discreet assessment and any necessary tests to ensure my sexual health.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Health Posts can pro"
+    },
+    {
+      "id": "nv-047",
+      "query": "I've had a sore throat, stuffy nose, and mild cough for 3 days. No high fever, eating and drinking fine.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've had a sore throat, nasal congestion, and a mild cough for the past three days. The symptoms started suddenly and have remained consistent. I have no significant fever and am able to maintain my regular diet and hydration. There are no associated symptoms, and the severity is mild.\"\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, n"
+    },
+    {
+      "id": "nv-048",
+      "query": "I twisted my ankle walking, it's a bit swollen and sore but I can still bear weight. No deformity.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"I experienced a twisted ankle while walking, with mild swelling and soreness. The pain is bearable, and I can still put weight on it. There's no visible deformity. The onset was sudden, and the pain is localized to the ankle. No associated symptoms or exacerbating factors. The severity is mild, and I'm able to walk with some discomfort.\"\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n*"
+    },
+    {
+      "id": "nv-049",
+      "query": "I have a headache and body aches for 2 days. Can you tell me if this is dengue or just flu, and what medicine I should take?",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "* Site: Head and body\n* Onset: 2 days ago\n* Character: Ache\n* Radiation: None\n* Associations: None\n* Timing: Constant\n* Exacerbating/relieving: Not specified\n* Severity: Not specified\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Your symptoms suggest a common acute illness that can be assessed by a health assistant or auxiliary"
+    },
+    {
+      "id": "nv-050",
+      "query": "I have chest pain on the left side. It's sharp, worse when I press on it or take deep breaths, came on after lifting boxes yesterday. I'm 28, otherwise healthy. Is this just muscle strain?",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "I wasn't able to compose a safe summary for this complaint. Please describe your symptoms directly to your doctor.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Your symptoms suggest a common acute illness that requires a basic examination and potentially simple wound care or first-line antibiotics. Health Posts and Urban Health"
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+{
+  "timestamp": "2026-04-19T15:59:41.236959+00:00",
+  "server_url": "http://127.0.0.1:8000",
+  "stages": [
+    "intake"
+  ],
+  "no_nli": true,
+  "thresholds": {
+    "answer_relevancy": 0.35,
+    "context_recall": 0.5,
+    "faithfulness": 0.6
+  },
+  "per_stage": {
+    "intake": {
+      "n": 30,
+      "answer_relevancy": 0.0744047619047619,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    }
+  },
+  "per_row": [
+    {
+      "id": "in-001",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-002",
+      "stage": "intake",
+      "answer_relevancy": 0.42857142857142855,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-003",
+      "stage": "intake",
+      "answer_relevancy": 0.5,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-004",
+      "stage": "intake",
+      "answer_relevancy": 0.25,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-005",
+      "stage": "intake",
+      "answer_relevancy": 0.16666666666666666,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-006",
+      "stage": "intake",
+      "answer_relevancy": 0.14285714285714285,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-007",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-008",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-009",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-010",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-011",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-012",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-013",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-014",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-015",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-016",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-017",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-018",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-019",
+      "stage": "intake",
+      "answer_relevancy": 0.2857142857142857,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-020",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-021",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-022",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-023",
+      "stage": "intake",
+      "answer_relevancy": 0.16666666666666666,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-024",
+      "stage": "intake",
+      "answer_relevancy": 0.125,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-025",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-026",
+      "stage": "intake",
+      "answer_relevancy": 0.16666666666666666,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-027",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-028",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-029",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-030",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    }
+  ],
+  "threshold_failures": []
+}

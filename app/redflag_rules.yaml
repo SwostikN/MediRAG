@@ -321,6 +321,17 @@ rules:
         - "no reason to live"
         - "better off dead"
         - "everyone would be better off dead"
+        - "world would be better without me"
+        - "everyone would be better without me"
+        - "they would be better without me"
+        - "thinking about how i'd do it"
+        - "thinking about how i would do it"
+        - "thinking about how to do it"
+        - "think about how i'd do it"
+        - "think about how i would do it"
+        - "started thinking about ending"
+        - "started thinking about dying"
+        - "started thinking the world would"
 
   # source: psychiatric-emergency literature — command auditory hallucinations
   #   directing harm to self or others carry imminent-danger risk; treat as
@@ -792,6 +803,222 @@ rules:
             - "passed out from heat"
             - "collapsed in the heat"
             - "confused"
+
+  # source: BMJ Best Practice "Aortic dissection" + NICE CKS chest pain
+  #   — classic triad: sudden "tearing"/"ripping" pain, worst-ever intensity,
+  #   interscapular / back radiation. Any two of these is an emergency until
+  #   imaging rules it out.
+  - id: aortic_dissection
+    category: cardiac
+    response_template: redflag_cardiac_np
+    triggers:
+      all_of:
+        - any_of:
+            - "tearing pain"
+            - "ripping pain"
+            - "pain is tearing"
+            - "pain that tore"
+            - "feels like tearing"
+            - "feels like ripping"
+        - any_of:
+            - "between my shoulder blades"
+            - "between the shoulder blades"
+            - "shoulder blades"
+            - "into my back"
+            - "down my back"
+            - "back pain"
+            - "worst pain of my life"
+            - "worst pain ever"
+
+  # source: NHS carbon monoxide guidance + BMJ Best Practice CO poisoning
+  #   — Nepal-specific (bukhari / gas heater / closed room in winter). The
+  #   cluster pattern (multiple people in one enclosed space with shared
+  #   headache/nausea/drowsiness) is the signature — leave and ventilate first.
+  - id: carbon_monoxide_cluster
+    category: toxicology
+    response_template: redflag_poisoning_np
+    triggers:
+      all_of:
+        - any_of:
+            - "gas heater"
+            - "gas stove"
+            - "kerosene heater"
+            - "kerosene stove"
+            - "bukhari"
+            - "coal stove"
+            - "charcoal"
+            - "closed room"
+            - "room with no ventilation"
+            - "windows closed"
+            - "poor ventilation"
+            - "burning coal indoors"
+        - any_of:
+            - "whole family"
+            - "everyone in the house"
+            - "everyone in the room"
+            - "all of us"
+            - "we all have"
+            - "we all feel"
+            - "my family has"
+            - "my family and i"
+            - "my family and me"
+
+  # source: NICE CKS low back pain + BMJ Best Practice cauda equina syndrome
+  #   — saddle anaesthesia or bladder / bowel dysfunction with back pain is a
+  #   neurosurgical emergency. Delay risks permanent loss of function.
+  - id: cauda_equina
+    category: neurological
+    response_template: redflag_stroke_np
+    triggers:
+      any_of:
+        - "saddle anesthesia"
+        - "saddle anaesthesia"
+        - "can't feel my inner thighs"
+        - "cannot feel my inner thighs"
+        - "numb in my inner thighs"
+        - "numb around my groin"
+        - "numb around the groin"
+        - "numbness in my groin"
+        - "numb in the saddle"
+        - "can't control when i pee"
+        - "cannot control when i pee"
+        - "trouble controlling when i pee"
+        - "losing control of my bladder"
+        - "losing bladder control"
+        - "losing bowel control"
+        - "can't control my bowels"
+        - "cannot control my bowels"
+        - "back pain and can't pee"
+        - "back pain and cannot pee"
+
+  # source: NICE CKS ectopic pregnancy + NHS ectopic pregnancy pathway
+  #   — late / missed period + unilateral lower abdominal pain + lightheadedness
+  #   is the rupture triad. Any woman of reproductive age with this combination
+  #   gets urgent evaluation.
+  - id: ectopic_pregnancy
+    category: obstetric
+    response_template: redflag_obstetric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "late on my period"
+            - "late on period"
+            - "missed my period"
+            - "missed period"
+            - "period is late"
+            - "haven't had my period"
+            - "have not had my period"
+            - "weeks late"
+        - any_of:
+            - "abdominal pain"
+            - "stomach pain"
+            - "belly pain"
+            - "lower abdominal pain"
+            - "pelvic pain"
+            - "pain in my abdomen"
+            - "pain in my belly"
+            - "pain in my pelvis"
+            - "one-sided pain"
+            - "one sided pain"
+            - "left-sided pain"
+            - "right-sided pain"
+            - "spotting"
+            - "vaginal bleeding"
+
+  # source: NICE CG141 upper-GI bleeding + NHS 111 melena pathway
+  #   — melena (black tarry sticky stool) with any orthostatic / volume-loss
+  #   symptom is a haemorrhage red flag even without haematemesis.
+  - id: melena
+    category: gi
+    response_template: redflag_gi_bleed_np
+    triggers:
+      any_of:
+        - "black tarry stool"
+        - "black tarry stools"
+        - "tarry stool"
+        - "tarry stools"
+        - "black sticky stool"
+        - "black sticky stools"
+        - "black stool"
+        - "black stools"
+        - "melena"
+        - "melaena"
+        - "passed black"
+        - "passing black stool"
+        - "passing tarry"
+
+  # source: WHO IMCI dehydration danger signs + NICE CKS gastroenteritis
+  #   in children — vomiting / diarrhoea with reduced urine output or
+  #   lethargy in a young child is a paediatric emergency regardless of fever.
+  - id: pediatric_dehydration
+    category: pediatric
+    response_template: redflag_pediatric_np
+    triggers:
+      all_of:
+        - any_of:
+            - "baby"
+            - "infant"
+            - "toddler"
+            - "child"
+            - "month-old"
+            - "month old"
+            - "months old"
+            - "months-old"
+            - "year-old"
+            - "year old"
+            - "yr old"
+            - "years-old"
+            - "years old"
+        - any_of:
+            - "vomiting everything"
+            - "vomiting all day"
+            - "keeps vomiting"
+            - "can't keep anything down"
+            - "cannot keep anything down"
+            - "diarrhea all day"
+            - "diarrhoea all day"
+            - "vomiting and diarrhea"
+            - "vomiting and diarrhoea"
+        - any_of:
+            - "no wet diaper"
+            - "no wet nappy"
+            - "hasn't had a wet diaper"
+            - "has not had a wet diaper"
+            - "no urine"
+            - "not peeing"
+            - "not passing urine"
+            - "sunken eyes"
+            - "very sleepy"
+            - "lethargic"
+            - "limp"
+            - "floppy"
+            - "won't wake"
+            - "cannot wake"
+
+  # source: AAO "Sudden painless vision loss" emergency criteria + NHS vision
+  #   loss pathway — monocular painless vision loss is a time-critical
+  #   presentation (CRAO / stroke / GCA). Stroke-equivalent.
+  - id: sudden_vision_loss
+    category: neurological
+    response_template: redflag_stroke_np
+    triggers:
+      any_of:
+        - "suddenly lost vision"
+        - "suddenly lost my vision"
+        - "suddenly can't see"
+        - "suddenly cannot see"
+        - "lost vision in my right eye"
+        - "lost vision in my left eye"
+        - "lost sight in my right eye"
+        - "lost sight in my left eye"
+        - "went blind in one eye"
+        - "blind in one eye"
+        - "curtain over my eye"
+        - "curtain came down over my eye"
+        - "black in my right eye"
+        - "black in my left eye"
+        - "completely dark in my eye"
+        - "completely dark in one eye"
 
   # ===================================================================
   # URGENT TIER (hours matter, not minutes)

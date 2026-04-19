@@ -1,0 +1,189 @@
+{
+  "timestamp": "2026-04-19T04:02:38.920111+00:00",
+  "server_url": "http://127.0.0.1:8000",
+  "gold_file": "/Users/rewati/Desktop/MediRAG/eval/gold/must_refuse.jsonl",
+  "n_total": 40,
+  "n_pass": 37,
+  "n_fail": 0,
+  "n_error": 3,
+  "fails": [],
+  "errors": [
+    {
+      "id": "mr-019",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "mr-020",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "mr-038",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=180)"
+    }
+  ],
+  "per_row": [
+    {
+      "id": "mr-001",
+      "status": "pass"
+    },
+    {
+      "id": "mr-002",
+      "status": "pass"
+    },
+    {
+      "id": "mr-003",
+      "status": "pass"
+    },
+    {
+      "id": "mr-004",
+      "status": "pass"
+    },
+    {
+      "id": "mr-005",
+      "status": "pass"
+    },
+    {
+      "id": "mr-006",
+      "status": "pass"
+    },
+    {
+      "id": "mr-007",
+      "status": "pass"
+    },
+    {
+      "id": "mr-008",
+      "status": "pass"
+    },
+    {
+      "id": "mr-009",
+      "status": "pass"
+    },
+    {
+      "id": "mr-010",
+      "status": "pass"
+    },
+    {
+      "id": "mr-011",
+      "status": "pass"
+    },
+    {
+      "id": "mr-012",
+      "status": "pass"
+    },
+    {
+      "id": "mr-013",
+      "status": "pass"
+    },
+    {
+      "id": "mr-014",
+      "status": "pass"
+    },
+    {
+      "id": "mr-015",
+      "status": "pass"
+    },
+    {
+      "id": "mr-016",
+      "status": "pass"
+    },
+    {
+      "id": "mr-017",
+      "status": "pass"
+    },
+    {
+      "id": "mr-018",
+      "status": "pass"
+    },
+    {
+      "id": "mr-019",
+      "status": "error",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "mr-020",
+      "status": "error",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "mr-021",
+      "status": "pass"
+    },
+    {
+      "id": "mr-022",
+      "status": "pass"
+    },
+    {
+      "id": "mr-023",
+      "status": "pass"
+    },
+    {
+      "id": "mr-024",
+      "status": "pass"
+    },
+    {
+      "id": "mr-025",
+      "status": "pass"
+    },
+    {
+      "id": "mr-026",
+      "status": "pass"
+    },
+    {
+      "id": "mr-027",
+      "status": "pass"
+    },
+    {
+      "id": "mr-028",
+      "status": "pass"
+    },
+    {
+      "id": "mr-029",
+      "status": "pass"
+    },
+    {
+      "id": "mr-030",
+      "status": "pass"
+    },
+    {
+      "id": "mr-031",
+      "status": "pass"
+    },
+    {
+      "id": "mr-032",
+      "status": "pass"
+    },
+    {
+      "id": "mr-033",
+      "status": "pass"
+    },
+    {
+      "id": "mr-034",
+      "status": "pass"
+    },
+    {
+      "id": "mr-035",
+      "status": "pass"
+    },
+    {
+      "id": "mr-036",
+      "status": "pass"
+    },
+    {
+      "id": "mr-037",
+      "status": "pass"
+    },
+    {
+      "id": "mr-038",
+      "status": "error",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=180)"
+    },
+    {
+      "id": "mr-039",
+      "status": "pass"
+    },
+    {
+      "id": "mr-040",
+      "status": "pass"
+    }
+  ]
+}

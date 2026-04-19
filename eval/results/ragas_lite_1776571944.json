@@ -1,0 +1,1557 @@
+{
+  "timestamp": "2026-04-19T04:59:02.878876+00:00",
+  "server_url": "http://127.0.0.1:8000",
+  "stages": [
+    "intake",
+    "navigation",
+    "visit_prep",
+    "results",
+    "condition"
+  ],
+  "no_nli": true,
+  "thresholds": {
+    "answer_relevancy": 0.35,
+    "context_recall": 0.5,
+    "faithfulness": 0.6
+  },
+  "per_stage": {
+    "intake": {
+      "n": 30,
+      "answer_relevancy": 0.0,
+      "context_recall": 0.012345679012345678,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    "navigation": {
+      "n": 50,
+      "answer_relevancy": 0.04962121212121213,
+      "context_recall": 0.018939393939393936,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    "visit_prep": {
+      "n": 38,
+      "answer_relevancy": 0.003289473684210526,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    "results": {
+      "n": 30,
+      "answer_relevancy": 0.0,
+      "context_recall": 0.21666666666666667,
+      "faithfulness": null,
+      "marker_coverage": 0.03333333333333333
+    },
+    "condition": {
+      "n": 50,
+      "answer_relevancy": 0.0,
+      "context_recall": 0.026881720430107524,
+      "faithfulness": null,
+      "marker_coverage": null
+    }
+  },
+  "per_row": [
+    {
+      "id": "in-001",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-002",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-003",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-004",
+      "stage": "intake",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=120)"
+    },
+    {
+      "id": "in-005",
+      "stage": "intake",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=120)"
+    },
+    {
+      "id": "in-006",
+      "stage": "intake",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=120)"
+    },
+    {
+      "id": "in-007",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-008",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-009",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-010",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-011",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-012",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-013",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-014",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-015",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-016",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-017",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-018",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-019",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-020",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-021",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-022",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-023",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-024",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-025",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-026",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-027",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-028",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-029",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "in-030",
+      "stage": "intake",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-001",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-002",
+      "stage": "navigation",
+      "answer_relevancy": 0.75,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-003",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-004",
+      "stage": "navigation",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=120)"
+    },
+    {
+      "id": "nv-005",
+      "stage": "navigation",
+      "error": "request failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Read timed out. (read timeout=120)"
+    },
+    {
+      "id": "nv-006",
+      "stage": "navigation",
+      "answer_relevancy": 0.4,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-007",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-008",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-009",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-010",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-011",
+      "stage": "navigation",
+      "answer_relevancy": 0.25,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-012",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-013",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-014",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-015",
+      "stage": "navigation",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "nv-016",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-017",
+      "stage": "navigation",
+      "answer_relevancy": 0.2,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-018",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-019",
+      "stage": "navigation",
+      "answer_relevancy": 0.25,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-020",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-021",
+      "stage": "navigation",
+      "answer_relevancy": 0.3333333333333333,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-022",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-023",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-024",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-025",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-026",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-027",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-028",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-029",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-030",
+      "stage": "navigation",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "nv-031",
+      "stage": "navigation",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "nv-032",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-033",
+      "stage": "navigation",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "nv-034",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-035",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-036",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-037",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-038",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-039",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-040",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-041",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-042",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-043",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-044",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-045",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-046",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-047",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-048",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-049",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "nv-050",
+      "stage": "navigation",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-001",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.125,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-002",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-003",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-004",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-005",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-006",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-007",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-008",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-009",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-010",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-011",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-012",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-013",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-014",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-015",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-016",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-017",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-018",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-019",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-020",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-021",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-022",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-023",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-024",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-025",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-026",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-027",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-028",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-029",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-030",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-031",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-032",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-033",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-034",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-035",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-036",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-037",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "vp-038",
+      "stage": "visit_prep",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "rs-001",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-002",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-003",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-004",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-005",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-006",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-007",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-008",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-009",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-010",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 1.0
+    },
+    {
+      "id": "rs-011",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-012",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-013",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-014",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-015",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-016",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-017",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-018",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-019",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-020",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-021",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-022",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-023",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-024",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-025",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-026",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-027",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-028",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-029",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "rs-030",
+      "stage": "results",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": 0.0
+    },
+    {
+      "id": "cd-001",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-002",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.5,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-003",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-004",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-005",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-006",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-007",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-008",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-009",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-010",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-011",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-012",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.3333333333333333,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-013",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-014",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-015",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-016",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-017",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-018",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-019",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-020",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-021",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-022",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-023",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-024",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-025",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-026",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-027",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-028",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-029",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-030",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-031",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-032",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-033",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-034",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-035",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-036",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-037",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-038",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-039",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-040",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-041",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-042",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-043",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-044",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-045",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-046",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-047",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-048",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    },
+    {
+      "id": "cd-049",
+      "stage": "condition",
+      "error": "http 500: Internal Server Error"
+    },
+    {
+      "id": "cd-050",
+      "stage": "condition",
+      "answer_relevancy": 0.0,
+      "context_recall": 0.0,
+      "faithfulness": null,
+      "marker_coverage": null
+    }
+  ],
+  "threshold_failures": []
+}
