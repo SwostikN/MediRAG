@@ -429,7 +429,10 @@ rules:
 
   # source: AAP "Fever in infants <90 days" + WHO IMCI general danger signs
   #   — any temperature ≥38°C in an infant under 3 months requires ED-level
-  #   evaluation; serious bacterial infection must be excluded.
+  #   evaluation; serious bacterial infection must be excluded. Age triggers
+  #   cover every week up to 12 weeks (= 3 months) to avoid coverage holes
+  #   like "10 weeks old" or "2 weeks old" slipping through to the lethargy
+  #   rule which requires additional danger signs.
   - id: infant_fever_under3mo
     category: pediatric
     response_template: redflag_pediatric_np
@@ -443,10 +446,19 @@ rules:
             - "one month old"
             - "2 months old"
             - "two months old"
-            - "6 weeks old"
-            - "few weeks old"
-            - "8 weeks old"
+            - "1 week old"
+            - "2 weeks old"
             - "3 weeks old"
+            - "4 weeks old"
+            - "5 weeks old"
+            - "6 weeks old"
+            - "7 weeks old"
+            - "8 weeks old"
+            - "9 weeks old"
+            - "10 weeks old"
+            - "11 weeks old"
+            - "12 weeks old"
+            - "few weeks old"
         - any_of:
             - "fever"
             - "high temperature"
@@ -632,6 +644,53 @@ rules:
             - "heavy breathing and fruity"
             - "deep heavy breathing"
 
+  # source: ISPAD / ADA DKA consensus + NICE NG17 — DKA can present in
+  #   *undiagnosed* diabetes (especially new-onset T1DM in children/young
+  #   adults) and the diabetic_emergency rule misses these cases because
+  #   it requires a known-diabetes keyword. Cardinal triad: polyuria +
+  #   polydipsia + Kussmaul (deep-fast) breathing, often with vomiting or
+  #   fruity (ketotic) breath. Fires on polyuria/polydipsia PLUS one
+  #   metabolic/respiratory cardinal — tight enough to be specific.
+  - id: dka_classic
+    category: endocrine
+    response_template: redflag_dka_np
+    triggers:
+      all_of:
+        - any_of:
+            - "peeing constantly"
+            - "peeing a lot"
+            - "urinating constantly"
+            - "urinating a lot"
+            - "urinating all the time"
+            - "peeing all the time"
+            - "going to the toilet constantly"
+            - "constantly thirsty"
+            - "very thirsty"
+            - "extremely thirsty"
+            - "thirsty all the time"
+            - "can't stop drinking water"
+            - "cannot stop drinking water"
+            - "drinking water constantly"
+            - "drinking so much water"
+            - "drinking a lot of water"
+            - "polyuria"
+            - "polydipsia"
+        - any_of:
+            - "deep heavy breathing"
+            - "deep rapid breathing"
+            - "deep fast breathing"
+            - "rapid deep breathing"
+            - "fast deep breathing"
+            - "breathing deeply and quickly"
+            - "breathing deeply and fast"
+            - "breathing feels deep and fast"
+            - "kussmaul"
+            - "fruity breath"
+            - "breath smells fruity"
+            - "smells fruity"
+            - "acetone breath"
+            - "breath smells of acetone"
+
   # source: AUA / EAU testicular torsion guideline
   #   — sudden severe testicular pain with swelling. Testicle salvageable
   #   within roughly 6 hours; time-critical surgical emergency.
@@ -804,6 +863,82 @@ rules:
             - "collapsed in the heat"
             - "confused"
 
+  # source: Himalayan Rescue Association (HRA Nepal) altitude illness
+  #   protocols + Wilderness Medical Society HAPE/HACE criteria. Nepal
+  #   grounding: trekking-corridor exposure is a locally load-bearing
+  #   presentation, and descent is time-critical (hours, not days).
+  #   Triggers: any altitude signal (>=2500m elevation, trek place names,
+  #   explicit "altitude") AND a severe pulmonary sign (breathless at
+  #   rest, pink frothy sputum) or cerebral sign (ataxia, confusion,
+  #   stumbling). Plain AMS (mild headache alone) should NOT fire — this
+  #   rule targets HAPE/HACE, not AMS.
+  - id: altitude_illness_severe
+    category: environmental
+    response_template: redflag_altitude_np
+    triggers:
+      all_of:
+        - any_of:
+            - "at altitude"
+            - "high altitude"
+            - "altitude sickness"
+            - "2500m"
+            - "2800m"
+            - "3000m"
+            - "3200m"
+            - "3500m"
+            - "3700m"
+            - "4000m"
+            - "4200m"
+            - "4500m"
+            - "4800m"
+            - "5000m"
+            - "5100m"
+            - "5300m"
+            - "5500m"
+            - "5800m"
+            - "6000m"
+            - "namche"
+            - "lukla"
+            - "manang"
+            - "gorak shep"
+            - "gorakshep"
+            - "lobuche"
+            - "dingboche"
+            - "pheriche"
+            - "everest base"
+            - "kala patthar"
+            - "kala pathar"
+            - "annapurna base"
+            - "thorong la"
+            - "thorung la"
+            - "mera peak"
+            - "island peak"
+            - "mustang"
+        - any_of:
+            - "short of breath even sitting"
+            - "short of breath sitting still"
+            - "breathless at rest"
+            - "breathless even sitting"
+            - "can't catch my breath"
+            - "cannot catch my breath"
+            - "very short of breath even sitting"
+            - "very short of breath even resting"
+            - "pink frothy"
+            - "frothy cough"
+            - "frothy sputum"
+            - "coughing up froth"
+            - "cough up froth"
+            - "stumbling"
+            - "can't walk straight"
+            - "cannot walk straight"
+            - "walk in a straight line"
+            - "unsteady on my feet"
+            - "unsteady on his feet"
+            - "unsteady on her feet"
+            - "ataxia"
+            - "confused and stumbling"
+            - "drowsy and confused"
+
   # source: BMJ Best Practice "Aortic dissection" + NICE CKS chest pain
   #   — classic triad: sudden "tearing"/"ripping" pain, worst-ever intensity,
   #   interscapular / back radiation. Any two of these is an emergency until
@@ -846,12 +981,22 @@ rules:
             - "kerosene stove"
             - "bukhari"
             - "coal stove"
+            - "coal heater"
+            - "coal fire"
             - "charcoal"
+            - "wood stove"
+            - "room heater"
+            - "propane heater"
+            - "lpg heater"
             - "closed room"
             - "room with no ventilation"
             - "windows closed"
             - "poor ventilation"
+            - "no ventilation"
+            - "without ventilation"
             - "burning coal indoors"
+            - "heater on all night"
+            - "stove on all night"
         - any_of:
             - "whole family"
             - "everyone in the house"
@@ -859,9 +1004,29 @@ rules:
             - "all of us"
             - "we all have"
             - "we all feel"
+            - "we both feel"
+            - "we both have"
+            - "we all got"
+            - "we both got"
             - "my family has"
             - "my family and i"
             - "my family and me"
+            - "my wife and i"
+            - "my wife and me"
+            - "my husband and i"
+            - "my husband and me"
+            - "my kids and i"
+            - "my kids and me"
+            - "my children and i"
+            - "my partner and i"
+            - "both of us"
+            - "two of us"
+            - "everyone at home"
+            - "everyone in our house"
+            - "me and my family"
+            - "me and my wife"
+            - "me and my husband"
+            - "me and my kids"
 
   # source: NICE CKS low back pain + BMJ Best Practice cauda equina syndrome
   #   — saddle anaesthesia or bladder / bowel dysfunction with back pain is a

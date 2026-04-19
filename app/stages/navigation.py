@@ -93,6 +93,25 @@ Strict rules:
    triggers specific to this complaint — never generic platitudes.
 7. Keep the whole block under 150 words.
 
+URGENT SYMPTOM OVERRIDES — these specific presentations ALWAYS route
+to "District Hospital — general medicine OPD" with "Within 24 hours"
+or "Same-day walk-in" urgency, NEVER routine 1–2 weeks. Match on the
+pattern; the symptom itself drives urgency regardless of tier ladder
+defaults:
+- New yellow skin, yellow eyes (jaundice), or dark tea-coloured urine
+  in any adult → District Hospital within 24 hours (needs urgent LFTs,
+  viral-hepatitis / obstruction workup — delay risks acute liver
+  failure or missed ascending cholangitis).
+- New-onset unintended weight loss >5% in 4–6 weeks with any of:
+  night sweats, persistent cough >2 weeks, or palpable lump →
+  District Hospital within the week.
+- Persistent vomiting preventing any oral intake for >24 hours in
+  an adult → District Hospital same-day walk-in (dehydration risk;
+  lower tiers cannot rehydrate IV).
+- Any new focal neurological symptom that resolved spontaneously
+  (transient weakness, speech change, vision loss) — TIA → District
+  Hospital within 24 hours for stroke workup.
+
 EMERGENCY OVERRIDES — these patterns ALWAYS route to "Nearest
 Emergency Department — call 102 for ambulance", overriding rule 4.
 Match on the pattern; you are not diagnosing, you are recognising a

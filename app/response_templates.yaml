@@ -137,6 +137,22 @@ templates:
       This can be heat stroke, which is life-threatening. Move the person to a cool, shaded place, remove excess clothing, and cool the skin with cool water or wet cloths. Call 102 or go to the nearest hospital emergency department immediately.
       This is not a diagnosis — urgent medical care is needed.
 
+  redflag_altitude_np:
+    urgency: emergency
+    message: |
+      This pattern can be HAPE (fluid in the lungs) or HACE (brain swelling) — severe altitude illness, both life-threatening within hours if altitude is not lost.
+      Descend immediately — lose at least 500–1000m of altitude if at all physically possible, and do not continue ascending for any reason. Arrange rescue: HRA / Himalayan Rescue Association posts at Pheriche / Manang / Lukla, or call the TAAN rescue line. A helicopter evacuation may be needed.
+      If available, give bottled or portable oxygen and keep the person warm. Do not rely on medication alone (dexamethasone / nifedipine / acetazolamide help buy time — they do not replace descent).
+      This is not a diagnosis — only descent and hospital-level evaluation can be trusted.
+
+  redflag_dka_np:
+    urgency: emergency
+    message: |
+      A pattern of constant thirst, constant urination, and deep / fast / fruity-smelling breathing is diabetic ketoacidosis (DKA) until proven otherwise — even without a prior diagnosis of diabetes. DKA can kill within hours if untreated.
+      Go to the nearest hospital emergency department now, or call 102 for an ambulance. Do not eat or take anything by mouth beyond small sips of water, in case surgery or IV fluids are needed on arrival.
+      Bring any insulin or diabetic medication with you.
+      This is not a diagnosis — urgent in-person blood-sugar and ketone testing is essential.
+
   # ----- Urgent tier (hours matter, not minutes) -----
   # Fires when a severity modifier ("severe", "serious", "worst", "unbearable", ...)
   # co-occurs with a concerning symptom but the classic emergency combo is absent.
