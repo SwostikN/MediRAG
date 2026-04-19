@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink, Phone } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -9,7 +9,40 @@ export interface ChatMessageSource {
   source?: string | null;
   source_url?: string | null;
   authority_tier?: number | null;
+  publication_date?: string | null;
 }
+
+type FreshnessTier = "current" | "recent" | "older" | "unknown";
+
+function classifyFreshness(publication_date: string | null | undefined): {
+  tier: FreshnessTier;
+  label: string;
+} {
+  if (!publication_date) {
+    return { tier: "unknown", label: "undated" };
+  }
+  const match = /^(\d{4})/.exec(publication_date);
+  if (!match) {
+    return { tier: "unknown", label: "undated" };
+  }
+  const year = parseInt(match[1], 10);
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - year;
+  if (age <= 1) return { tier: "current", label: `${year}` };
+  if (age <= 3) return { tier: "recent", label: `${year}` };
+  return { tier: "older", label: `${year}` };
+}
+
+const FRESHNESS_STYLES: Record<FreshnessTier, string> = {
+  current:
+    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800/60",
+  recent:
+    "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800/60",
+  older:
+    "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800/60",
+  unknown:
+    "bg-muted text-muted-foreground border-border",
+};
 
 export interface ChatMessageMarker {
   name: string;
@@ -158,6 +191,60 @@ function MarkersTable({ markers }: { markers: ChatMessageMarker[] }) {
   );
 }
 
+function SourceChip({ source, index }: { source: ChatMessageSource; index: number }) {
+  const title = source.title || source.source || "source";
+  const domain = source.source || null;
+  const freshness = classifyFreshness(source.publication_date);
+  const hasUrl = Boolean(source.source_url);
+
+  const Wrapper: React.ElementType = hasUrl ? "a" : "div";
+  const wrapperProps = hasUrl
+    ? {
+        href: source.source_url as string,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      }
+    : {};
+
+  return (
+    <Wrapper
+      {...wrapperProps}
+      className={`group inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1.5 text-[12px] leading-5 transition-colors ${
+        hasUrl ? "hover:border-accent/60 hover:bg-accent/5" : ""
+      }`}
+    >
+      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+        [{index + 1}]
+      </span>
+      {domain && (
+        <span className="shrink-0 font-semibold uppercase tracking-wide text-[10px] text-accent">
+          {domain}
+        </span>
+      )}
+      <span className="truncate text-foreground/90" title={title}>
+        {title}
+      </span>
+      <span
+        className={`shrink-0 rounded-full border px-2 py-[1px] font-mono text-[10px] ${FRESHNESS_STYLES[freshness.tier]}`}
+        title={
+          freshness.tier === "current"
+            ? "Recent guidance"
+            : freshness.tier === "recent"
+              ? "A few years old — still likely current"
+              : freshness.tier === "older"
+                ? "Older source — check for newer guidance"
+                : "Publication date unknown"
+        }
+      >
+        {freshness.label}
+      </span>
+      {hasUrl && (
+        <ExternalLink className="h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
+      )}
+    </Wrapper>
+  );
+}
+
 function SourcesFooter({ sources }: { sources: ChatMessageSource[] }) {
   const visible = sources.filter((s) => (s.title || s.source_url) != null);
   if (visible.length === 0) return null;
@@ -167,39 +254,11 @@ function SourcesFooter({ sources }: { sources: ChatMessageSource[] }) {
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         Sources
       </div>
-      <ol className="space-y-1.5 text-[13px] leading-5">
-        {visible.map((s, idx) => {
-          const label = s.title || s.source || "source";
-          const key = `${s.source_url ?? label}-${idx}`;
-          return (
-            <li key={key} className="flex items-start gap-2">
-              <span className="mt-[2px] shrink-0 text-muted-foreground font-mono text-[11px]">
-                [{idx + 1}]
-              </span>
-              {s.source_url ? (
-                <a
-                  href={s.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-start gap-1 text-foreground/85 hover:text-accent"
-                >
-                  <span className="underline decoration-border underline-offset-2 group-hover:decoration-accent">
-                    {label}
-                  </span>
-                  <ExternalLink className="mt-[3px] h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
-                </a>
-              ) : (
-                <span className="text-foreground/85">{label}</span>
-              )}
-              {s.source && s.title && (
-                <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/80">
-                  {s.source}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      <div className="flex flex-wrap gap-2">
+        {visible.map((s, idx) => (
+          <SourceChip key={`${s.source_url ?? s.title ?? "src"}-${idx}`} source={s} index={idx} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -230,7 +289,9 @@ export function ChatMessage({
           label: "text-red-700 dark:text-red-200",
           meta: "text-red-700/70 dark:text-red-300/70",
           body: "text-red-950 dark:text-red-50",
-          text: "Emergency",
+          text: "Emergency — call 102 now",
+          cta: "bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400",
+          disclaimer: "text-red-900/75 dark:text-red-200/75",
         }
       : {
           container:
@@ -239,7 +300,9 @@ export function ChatMessage({
           label: "text-amber-700 dark:text-amber-200",
           meta: "text-amber-700/70 dark:text-amber-300/70",
           body: "text-amber-950 dark:text-amber-50",
-          text: "Urgent care",
+          text: "Urgent care needed",
+          cta: "bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-500 dark:hover:bg-amber-400",
+          disclaimer: "text-amber-900/75 dark:text-amber-200/75",
         };
     return (
       <motion.div
@@ -261,6 +324,18 @@ export function ChatMessage({
             </div>
             <div className={`text-[15px] leading-7 whitespace-pre-wrap ${banner.body}`}>
               {content}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <a
+                href="tel:102"
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${banner.cta}`}
+              >
+                <Phone className="h-4 w-4" aria-hidden="true" />
+                Call 102 (ambulance)
+              </a>
+              <span className={`text-[11px] ${banner.disclaimer}`}>
+                This is not a diagnosis. MediRAG is a navigator — seek in-person care.
+              </span>
             </div>
           </div>
           {timestamp && (
