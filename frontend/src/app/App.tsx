@@ -13,12 +13,23 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
+  Trash2,
 } from "lucide-react";
 import { ChatMessage, type ChatMessageSource } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
 import { MedicalContextPanel } from "./components/MedicalContextPanel";
 import { EmptyState } from "./components/EmptyState";
 import { AuthScreen } from "./components/AuthScreen";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./components/ui/alert-dialog";
 import { supabase } from "../lib/supabase";
 
 // One parsed lab marker shown in the inline table under a Stage 4
@@ -258,6 +269,10 @@ export default function App() {
   const [conversationHistory, setConversationHistory] = useState<ChatSessionRecord[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [historyAvailable, setHistoryAvailable] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<ChatSessionRecord | null>(null);
+  const [deleteInFlight, setDeleteInFlight] = useState(false);
+  const [clearAllOpen, setClearAllOpen] = useState(false);
+  const [clearAllInFlight, setClearAllInFlight] = useState(false);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -311,8 +326,32 @@ export default function App() {
       throw error;
     }
 
-    setMessages(toUiMessages((data ?? []) as ChatMessageRecord[]));
+    const rows = (data ?? []) as ChatMessageRecord[];
+    setMessages(toUiMessages(rows));
     setCurrentSessionId(chatSessionId);
+
+    // Backfill title for legacy sessions created with the "New chat"
+    // placeholder. Done lazily on open so we don't pay N+1 queries on
+    // history load. The first user message is the same seed we would
+    // have used on creation, so this matches new-session behaviour.
+    const PLACEHOLDER_TITLES = new Set(["New chat", "Untitled session", ""]);
+    const existing = conversationHistory.find((s) => s.id === chatSessionId);
+    const currentTitle = (existing?.title ?? "").trim();
+    if (existing && PLACEHOLDER_TITLES.has(currentTitle)) {
+      const firstUser = rows.find((r) => r.role === "user");
+      if (firstUser) {
+        const newTitle = generateSessionTitle(firstUser.content);
+        const { data: renamed } = await supabase
+          .from("chat_sessions")
+          .update({ title: newTitle })
+          .eq("id", chatSessionId)
+          .select("id, title, created_at, updated_at, last_message_preview")
+          .single();
+        if (renamed) {
+          upsertConversationHistory(renamed as ChatSessionRecord);
+        }
+      }
+    }
 
     // Restore the per-session attached documents from the
     // chat_sessions.attached_documents JSONB column. The chunks/markers
@@ -514,12 +553,27 @@ export default function App() {
       return;
     }
 
+    // Rename the session on the first user turn when the stored title is
+    // still a placeholder. Backend-created rows (supabase_client.create_chat_session)
+    // and older eval sessions all land with title="New chat"; without this
+    // patch the sidebar stays a wall of identical labels forever.
+    const PLACEHOLDER_TITLES = new Set(["New chat", "Untitled session", ""]);
+    const existing = conversationHistory.find((s) => s.id === chatSessionId);
+    const shouldRename =
+      message.role === "user" &&
+      (!existing || PLACEHOLDER_TITLES.has((existing.title ?? "").trim()));
+
+    const updatePayload: Record<string, unknown> = {
+      updated_at: now,
+      last_message_preview: preview,
+    };
+    if (shouldRename) {
+      updatePayload.title = generateSessionTitle(message.content);
+    }
+
     const { data: updatedSession, error: updateError } = await supabase
       .from("chat_sessions")
-      .update({
-        updated_at: now,
-        last_message_preview: preview,
-      })
+      .update(updatePayload)
       .eq("id", chatSessionId)
       .select("id, title, created_at, updated_at, last_message_preview")
       .single();
@@ -1103,6 +1157,83 @@ export default function App() {
     void loadConversationMessages(chatSessionId);
   };
 
+  // Trash-icon click: stage the row for confirmation. The actual delete
+  // runs from the AlertDialog's Continue button (confirmDeleteConversation).
+  const requestDeleteConversation = (conversation: ChatSessionRecord) => {
+    if (!session?.user?.id) return;
+    setDeleteTarget(conversation);
+  };
+
+  // Hard-delete a chat session and everything scoped to it. The DB does
+  // the heavy lifting via on-delete-cascade:
+  //   chat_sessions → chat_messages
+  //   chat_sessions → session_documents → session_chunks, user_lab_markers
+  // query_log.session_id has no FK (text column), so we sweep it by hand
+  // for privacy parity. RLS already scopes every table to the signed-in
+  // user, so the delete can only touch the caller's own rows.
+  // Nuke every chat_sessions row owned by the signed-in user. Cascades
+  // handle chat_messages, session_documents → session_chunks +
+  // user_lab_markers. query_log is swept by user_id (no FK on the
+  // session_id text column). Testing-phase shortcut — guarded by a
+  // typed-confirm dialog so accidental clicks don't wipe everything.
+  const confirmClearAllConversations = async () => {
+    if (!session?.user?.id) return;
+    setClearAllInFlight(true);
+
+    const userId = session.user.id;
+    const { error } = await supabase
+      .from("chat_sessions")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) {
+      console.warn("Supabase clear-all error:", error.message || error);
+      setStatusMessage(`Could not clear history: ${error.message ?? "unknown error"}`);
+      setClearAllInFlight(false);
+      setClearAllOpen(false);
+      return;
+    }
+
+    void supabase.from("query_log").delete().eq("user_id", userId);
+
+    setConversationHistory([]);
+    resetLocalConversation("All chats cleared.");
+    setClearAllInFlight(false);
+    setClearAllOpen(false);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!deleteTarget || !session?.user?.id) return;
+    const chatSessionId = deleteTarget.id;
+    setDeleteInFlight(true);
+
+    const { error } = await supabase
+      .from("chat_sessions")
+      .delete()
+      .eq("id", chatSessionId);
+
+    if (error) {
+      console.warn("Supabase session delete error:", error.message || error);
+      setStatusMessage(`Could not delete chat: ${error.message ?? "unknown error"}`);
+      setDeleteInFlight(false);
+      setDeleteTarget(null);
+      return;
+    }
+
+    // Best-effort telemetry sweep. Failure here must not block the UI
+    // update — the user-visible data is already gone.
+    void supabase.from("query_log").delete().eq("session_id", chatSessionId);
+
+    setConversationHistory((prev) => prev.filter((s) => s.id !== chatSessionId));
+    if (currentSessionId === chatSessionId) {
+      resetLocalConversation("Chat deleted.");
+    } else {
+      setStatusMessage("Chat deleted.");
+    }
+    setDeleteInFlight(false);
+    setDeleteTarget(null);
+  };
+
   const handleStartNewSession = () => {
     resetLocalConversation(
       session?.user?.id
@@ -1388,28 +1519,40 @@ export default function App() {
                       </div>
 
                       {conversationHistory.map((conversation) => (
-                        <button
+                        <div
                           key={conversation.id}
-                          onClick={() => handleOpenConversation(conversation.id)}
-                          className={`w-full text-left px-3 py-3 rounded-lg transition-colors ${
+                          className={`group relative w-full rounded-lg transition-colors ${
                             currentSessionId === conversation.id
                               ? "bg-accent/10 border border-accent/20"
                               : "hover:bg-muted/50 border border-transparent"
                           }`}
                         >
-                          <div className="text-sm font-medium mb-1 line-clamp-1">
-                            {conversation.title}
-                          </div>
-                          {/* <div className="text-xs text-muted-foreground line-clamp-2">
-                            {conversation.last_message_preview || "Session created"}
-                          </div> */}
-                          <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
-                            {new Date(conversation.updated_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                        </button>
+                          <button
+                            onClick={() => handleOpenConversation(conversation.id)}
+                            className="w-full text-left px-3 py-3 pr-10"
+                          >
+                            <div className="text-sm font-medium mb-1 line-clamp-1">
+                              {conversation.title}
+                            </div>
+                            <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
+                              {new Date(conversation.updated_at).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              requestDeleteConversation(conversation);
+                            }}
+                            aria-label={`Delete chat: ${conversation.title}`}
+                            title="Delete chat"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground/70 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       ))}
                     </>
                   ) : (
@@ -1461,6 +1604,21 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {session?.user?.id && conversationHistory.length > 0 && (
+                <div className="border-t border-border p-3">
+                  <button
+                    onClick={() => setClearAllOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm font-medium transition-colors hover:bg-destructive/10 hover:border-destructive/50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Clear all chats
+                  </button>
+                  <p className="mt-2 text-[10px] leading-4 text-muted-foreground/70 text-center uppercase tracking-wider">
+                    {/* Testing · deletes all {conversationHistory.length} sessions */}
+                  </p>
+                </div>
+              )}
             </motion.aside>
           )}
         </AnimatePresence>
@@ -1660,6 +1818,76 @@ export default function App() {
           </button>
         )}
       </div>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteInFlight) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block">
+                "{(deleteTarget?.title ?? "").trim() || "Untitled chat"}" and all its
+                messages, uploaded documents, and parsed lab markers will be
+                permanently removed. This cannot be undone.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteInFlight}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteInFlight}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDeleteConversation();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive"
+            >
+              {deleteInFlight ? "Deleting..." : "Delete chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={clearAllOpen}
+        onOpenChange={(open) => {
+          if (!open && !clearAllInFlight) {
+            setClearAllOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all chat history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block">
+                This will permanently delete all {conversationHistory.length} saved
+                sessions, every message in them, and any uploaded documents or lab
+                markers attached to those sessions. This cannot be undone.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearAllInFlight}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={clearAllInFlight}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmClearAllConversations();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive"
+            >
+              {clearAllInFlight ? "Clearing..." : "Clear everything"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

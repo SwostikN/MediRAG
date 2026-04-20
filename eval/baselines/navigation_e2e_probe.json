@@ -1,0 +1,54 @@
+{
+  "n": 5,
+  "errors": 0,
+  "hint_recall_mean": 0.13,
+  "hint_recall_count": 5,
+  "redflag_terminated": 1,
+  "two_turn_completed": 4,
+  "error_detail": [],
+  "timestamp": "2026-04-19T16:40:12.175210+00:00",
+  "label": "probe5",
+  "server_url": "http://127.0.0.1:8000",
+  "per_case": [
+    {
+      "id": "nv-001",
+      "query": "I have a persistent cough with some blood in the sputum for two weeks. Where should I go?",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "\u00b7 Persistent cough \u00b7 2-week onset \u00b7 Blood in sputum \u00b7 No triggers mentioned \u00b7 Fever, weight loss, night sweats, TB contact, and smoking history not reported, but hemoptysis present\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms, including persistent cough and hemoptysis, require further evaluation and"
+    },
+    {
+      "id": "nv-006",
+      "query": "I'm 58, having crushing chest pain for 30 minutes, sweating and feeling sick. My left arm aches too.",
+      "path": "redflag",
+      "hint_recall": 0.4,
+      "error": null,
+      "answer_head": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-032",
+      "query": "I've had a moderate asthma flare for 2 days, using my reliever every 3-4 hours but still wheezy. I can talk in sentences.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Predominant symptom: Persistent wheezing despite reliever use.\n- Onset & pattern: 2-day history of moderate asthma flare.\n- Sputum character: Not mentioned.\n- Triggers: Unknown.\n- Red-flag features: None reported.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Same-day walk-in\n**Why this tier, not others:** A district hospital has the resources to assess and manage ast"
+    },
+    {
+      "id": "nv-041",
+      "query": "I've had a dry cough for about 4 weeks now. No blood, no weight loss, no fever. I'm 38 and otherwise well.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"I've been experiencing a persistent dry cough for approximately four weeks. The cough is dry and non-productive, with no associated fever, weight loss, or hemoptysis. I have no significant medical history and am generally healthy. I haven't traveled recently and haven't been in contact with anyone unwell. I've been maintaining good hydration and oral intake.\"\n\n---\n\n**Where to go:** District Hospi"
+    },
+    {
+      "id": "nv-047",
+      "query": "I've had a sore throat, stuffy nose, and mild cough for 3 days. No high fever, eating and drinking fine.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've had a sore throat, stuffy nose, and a mild cough for three days. The symptoms began suddenly and have been consistent. I have no associated fever, and my appetite and hydration are normal. The symptoms are not worsening, and I am able to manage daily activities without issue. I would like to discuss potential causes and next steps.\"\n\n---\n\n**Where to go:** Health Post or Urban Health "
+    }
+  ]
+}

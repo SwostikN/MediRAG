@@ -47,6 +47,7 @@ try:
     )
     from .filters import build_filter
     from .intent import classify as classify_intent
+    from .intent_gate import classify_turn as classify_intake_gate
     from .redflag import check as redflag_check
     from .stages import intake as intake_stage
     from .stages import navigation as navigation_stage
@@ -86,6 +87,7 @@ except ImportError:
     )
     from filters import build_filter
     from intent import classify as classify_intent
+    from intent_gate import classify_turn as classify_intake_gate
     from redflag import check as redflag_check
     from stages import intake as intake_stage
     from stages import navigation as navigation_stage
@@ -1225,6 +1227,30 @@ async def query_document(query: QueryRequest):
             # to retrieval (session-merge picks up the indexed chunks).
             update_chat_session(query.session_id, current_stage="navigation")
             session = None  # neutralise the intake check below
+        # Pre-intake intent gate (2026-04). Applies ONLY on the very first
+        # turn (intent_bucket still NULL). If the user's question is
+        # clearly not a symptom report — informational, navigational,
+        # results-oriented, or references an existing diagnosis — skip the
+        # 5-slot history-taking flow entirely, flip the stage, and fall
+        # through to routine retrieval. Intake remains the safe default
+        # when the gate is uncertain. See app/intent_gate.py for layers.
+        if (
+            session
+            and session.get("current_stage") == "intake"
+            and not session.get("intent_bucket")
+        ):
+            gate_decision = classify_intake_gate(
+                query.question,
+                groq_client=groq_client,
+                groq_model=GROQ_MODEL,
+            )
+            if gate_decision != "intake":
+                update_chat_session(query.session_id, current_stage=gate_decision)
+                print(
+                    f"[intent_gate] bypass: decision={gate_decision} "
+                    f"q={query.question[:60]!r}"
+                )
+                session = None  # neutralise the intake check below
         if session and session.get("current_stage") == "intake":
             if not session.get("intent_bucket"):
                 template = intake_stage.select_template(
@@ -1564,6 +1590,26 @@ async def query_document_stream(query: QueryRequest):
                 update_chat_session(query.session_id, current_stage="navigation")
                 print(f"[intake] skipped: doc-Q&A mode (session={query.session_id})")
                 session = None
+            # Pre-intake intent gate (mirrors the /query path above). Only
+            # fires on the first turn (intent_bucket still NULL). Skips
+            # the 5-slot history-taking for non-symptom questions.
+            if (
+                session
+                and session.get("current_stage") == "intake"
+                and not session.get("intent_bucket")
+            ):
+                gate_decision = classify_intake_gate(
+                    query.question,
+                    groq_client=groq_client,
+                    groq_model=GROQ_MODEL,
+                )
+                if gate_decision != "intake":
+                    update_chat_session(query.session_id, current_stage=gate_decision)
+                    print(
+                        f"[intent_gate] stream bypass: decision={gate_decision} "
+                        f"q={query.question[:60]!r}"
+                    )
+                    session = None
             if session and session.get("current_stage") == "intake":
                 if not session.get("intent_bucket"):
                     template = intake_stage.select_template(

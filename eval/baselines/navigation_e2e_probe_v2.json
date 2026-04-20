@@ -1,0 +1,54 @@
+{
+  "n": 5,
+  "errors": 0,
+  "hint_recall_mean": 0.13,
+  "hint_recall_count": 5,
+  "redflag_terminated": 1,
+  "two_turn_completed": 4,
+  "error_detail": [],
+  "timestamp": "2026-04-19T16:47:02.228850+00:00",
+  "label": "probe5_v2",
+  "server_url": "http://127.0.0.1:8000",
+  "per_case": [
+    {
+      "id": "nv-001",
+      "query": "I have a persistent cough with some blood in the sputum for two weeks. Where should I go?",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer_head": "I have been experiencing a persistent cough for two weeks, and recently noticed blood in my sputum. The cough is dry and occurs throughout the day, with no clear pattern. I have not had any fever, weight loss, or night sweats. I do not smoke and have no known TB contacts. I would like to seek medical advice and understand the cause of these symptoms.\n\n---\n\n**Where to go:** District Hospital \u2014 gene"
+    },
+    {
+      "id": "nv-006",
+      "query": "I'm 58, having crushing chest pain for 30 minutes, sweating and feeling sick. My left arm aches too.",
+      "path": "redflag",
+      "hint_recall": 0.4,
+      "error": null,
+      "answer_head": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-032",
+      "query": "I've had a moderate asthma flare for 2 days, using my reliever every 3-4 hours but still wheezy. I can talk in sentences.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Predominant symptom: Wheezing and shortness of breath.\n- Onset & pattern: Persistent for 2 days, with a moderate asthma flare.\n- Sputum character: Not mentioned.\n- Triggers: Reliever medication used every 3-4 hours.\n- Red-flag features: None reported.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** Your symptoms suggest an asthm"
+    },
+    {
+      "id": "nv-041",
+      "query": "I've had a dry cough for about 4 weeks now. No blood, no weight loss, no fever. I'm 38 and otherwise well.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "- Persistent dry cough, lasting 4 weeks, with no other symptoms such as fever, weight loss, or blood in sputum.\n- No recent travel or known exposure to respiratory illnesses.\n- Adequate hydration and oral intake are reported.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Within the week\n**Why this tier, not others:** Your persistent cough has been present for over a month, an"
+    },
+    {
+      "id": "nv-047",
+      "query": "I've had a sore throat, stuffy nose, and mild cough for 3 days. No high fever, eating and drinking fine.",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer_head": "\"Doctor, I've had a sore throat, stuffy nose, and a mild cough for three days. The symptoms started suddenly and have remained consistent. I have no associated high fever, and my appetite and hydration are unaffected. There is no radiation or exacerbating/relieving factors. The severity is mild, and I am otherwise well.\"\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day "
+    }
+  ]
+}
