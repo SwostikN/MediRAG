@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
+import { useSettings } from "../../lib/settings";
 import {
   Stethoscope,
   Brain,
@@ -14,6 +15,10 @@ import {
   Sparkles,
   ChevronRight,
   LogIn,
+  Compass,
+  BookOpen,
+  ClipboardList,
+  MessageSquare,
 } from "lucide-react";
 
 interface ExamplePrompt {
@@ -37,39 +42,48 @@ export function EmptyState({
   onLoginClick,
   showLoginButton = false,
 }: EmptyStateProps) {
+  const { t } = useSettings();
+
   const examplePrompts: ExamplePrompt[] = [
     {
-      icon: <Heart className="w-5 h-5" />,
-      category: "Cardiology",
-      title: "Cardiovascular Risk Assessment",
+      icon: <Compass className="w-5 h-5" />,
+      category: t("card_navigation"),
+      title: t("card_navigation_title"),
       description:
-        "What are the latest guidelines for managing patients with heart failure and reduced ejection fraction?",
-      gradient: "from-red-500/10 to-pink-500/10",
-    },
-    {
-      icon: <Brain className="w-5 h-5" />,
-      category: "Neurology",
-      title: "Neurological Disorders",
-      description:
-        "Summarize recent advances in Alzheimer's disease treatment and early diagnostic markers.",
-      gradient: "from-purple-500/10 to-indigo-500/10",
-    },
-    {
-      icon: <Pill className="w-5 h-5" />,
-      category: "Pharmacology",
-      title: "Drug Interactions",
-      description:
-        "Analyze potential drug interactions between metformin, atorvastatin, and lisinopril.",
+        "I have a mild cold — runny nose and sneezing for two days. Do I need to see a doctor?",
       gradient: "from-blue-500/10 to-cyan-500/10",
     },
     {
-      icon: <Microscope className="w-5 h-5" />,
-      category: "Oncology",
-      title: "Cancer Research",
+      icon: <BookOpen className="w-5 h-5" />,
+      category: t("card_condition"),
+      title: t("card_condition_title"),
       description:
-        "What are the current immunotherapy options for stage III non-small cell lung cancer?",
+        "I was told I have type 2 diabetes. Can you explain what's happening in my body?",
       gradient: "from-emerald-500/10 to-teal-500/10",
     },
+    {
+      icon: <ClipboardList className="w-5 h-5" />,
+      category: t("card_visit_prep"),
+      title: t("card_visit_prep_title"),
+      description:
+        "I'm going for a follow-up for high blood pressure. What questions should I ask?",
+      gradient: "from-purple-500/10 to-indigo-500/10",
+    },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      category: t("card_symptom_intake"),
+      title: t("card_symptom_intake_title"),
+      description:
+        "I've been coughing for about three weeks. It's not going away.",
+      gradient: "from-red-500/10 to-pink-500/10",
+    },
+  ];
+
+  const stats = [
+    { value: "2.8M+", label: t("stat_research_papers") },
+    { value: "98.7%", label: t("stat_accuracy_rate") },
+    { value: "1.2s", label: t("stat_avg_response") },
+    { value: "150K+", label: t("stat_clinical_queries") },
   ];
 
   const capabilities = [
@@ -173,12 +187,10 @@ export function EmptyState({
           </div>
 
           <h1 className="text-4xl md:text-5xl font-medium mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Medical Knowledge at Your Fingertips!
+            {t("hero_title")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Harness the power of advanced RAG technology to access evidence-based medical
-            insights from millions of peer-reviewed sources. Ask anything, get precise
-            clinical answers.
+            {t("hero_subtitle")}
           </p>
 
           {showLoginButton && onLoginClick && (
@@ -188,10 +200,29 @@ export function EmptyState({
                 className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-5 py-2.5 text-sm text-accent transition-all hover:-translate-y-0.5 hover:bg-accent/15"
               >
                 <LogIn className="h-4 w-4" />
-                Login to sync your chats
+                {t("login_sync")}
               </button>
             </div>
           )}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-8">
+            {stats.map((stat, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + idx * 0.05 }}
+                className="bg-card border border-border rounded-xl px-4 py-5 text-center hover:border-accent/50 transition-colors"
+              >
+                <div className="text-2xl md:text-3xl font-mono font-medium text-accent mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
 
         </motion.div>
 
@@ -206,7 +237,7 @@ export function EmptyState({
               {inputElement}
               <div className="text-center mt-3">
                 <p className="text-xs text-muted-foreground font-mono">
-                  Press <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Enter</kbd> to send • <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Shift+Enter</kbd> for new line
+                  {t("kbd_press")} <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Enter</kbd> {t("kbd_to_send")} • <kbd className="px-2 py-0.5 bg-muted rounded border border-border">Shift+Enter</kbd> {t("kbd_for_new_line")}
                 </p>
               </div>
             </div>
@@ -223,7 +254,7 @@ export function EmptyState({
           <div className="flex items-center gap-3 mb-6">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Explore Medical Topics
+              {t("what_i_can_help")}
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>

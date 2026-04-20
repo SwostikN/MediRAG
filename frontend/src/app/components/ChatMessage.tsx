@@ -80,6 +80,10 @@ interface ChatMessageProps {
   resolvePending?: boolean;
 }
 
+function normalizeMarkdown(s: string): string {
+  return s.replace(/([.!?)])\s+(\*\*[^*\n]{3,80}:\*\*)/g, "$1\n\n$2");
+}
+
 const markdownComponents = {
   h1: ({ children }: { children?: React.ReactNode }) => (
     <h3 className="mt-4 mb-2 text-base font-semibold text-foreground">{children}</h3>
@@ -406,7 +410,7 @@ export function ChatMessage({
               <div className="pt-1">
                 {markers && markers.length > 0 && <MarkersTable markers={markers} />}
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {content}
+                  {normalizeMarkdown(content)}
                 </ReactMarkdown>
                 {sources && sources.length > 0 && <SourcesFooter sources={sources} />}
               </div>

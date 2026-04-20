@@ -1,22 +1,39 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, CheckCircle2, Lock, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, Check, Lock, Mail, MailCheck, ShieldCheck, UserRound, X } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
 interface AuthScreenProps {
   onBack: () => void;
   onSignIn: (email: string, password: string) => Promise<void>;
-  onSignUp: (email: string, password: string, fullName: string) => Promise<void>;
-  signupSuccessMessage?: string;
+  onSignUp: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<{ needsConfirmation: boolean }>;
 }
 
 type AuthMode = "signin" | "signup";
+
+interface PasswordCheck {
+  label: string;
+  passed: boolean;
+}
+
+function evaluatePassword(pw: string): PasswordCheck[] {
+  return [
+    { label: "At least 8 characters", passed: pw.length >= 8 },
+    { label: "Contains a lowercase letter", passed: /[a-z]/.test(pw) },
+    { label: "Contains an uppercase letter", passed: /[A-Z]/.test(pw) },
+    { label: "Contains a number", passed: /\d/.test(pw) },
+    { label: "Contains a symbol (!@#$…)", passed: /[^A-Za-z0-9]/.test(pw) },
+  ];
+}
 
 export function AuthScreen({
   onBack,
   onSignIn,
   onSignUp,
-  signupSuccessMessage,
 }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
@@ -24,17 +41,29 @@ export function AuthScreen({
   const [fullName, setFullName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const successMessage = !errorMessage ? signupSuccessMessage : "";
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+
+  const passwordChecks = useMemo(() => evaluatePassword(password), [password]);
+  const passwordValid = passwordChecks.every((c) => c.passed);
 
   const handleSubmit = async () => {
     setErrorMessage("");
+
+    if (mode === "signup" && !passwordValid) {
+      setErrorMessage("Password does not meet all the requirements below.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === "signin") {
         await onSignIn(email, password);
       } else {
-        await onSignUp(email, password, fullName);
+        const result = await onSignUp(email, password, fullName);
+        if (result.needsConfirmation) {
+          setConfirmationEmail(email);
+        }
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Authentication failed");
@@ -66,26 +95,6 @@ export function AuthScreen({
             "radial-gradient(circle at 20% 20%, rgba(0, 191, 165, 0.16), transparent 28%), radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.12), transparent 22%), radial-gradient(circle at 50% 100%, rgba(0, 191, 165, 0.1), transparent 28%)",
         }}
       />
-
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -18, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="fixed left-1/2 top-6 z-30 w-[min(92vw,32rem)] -translate-x-1/2"
-        >
-          <div className="rounded-[1.6rem] border border-emerald-400/25 bg-emerald-400/12 px-5 py-4 text-emerald-50 shadow-[0_20px_70px_rgba(16,185,129,0.18)] backdrop-blur-2xl">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 rounded-full bg-emerald-400/20 p-1.5 text-emerald-200">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-emerald-100">Account status</p>
-                <p className="mt-1 text-sm leading-6 text-emerald-50/90">{successMessage}</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-10">
         <div className="w-full max-w-6xl grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
@@ -141,6 +150,41 @@ export function AuthScreen({
             className="mx-auto w-full max-w-lg"
           >
             <div className="rounded-[2rem] border border-border bg-card/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.14)] backdrop-blur">
+              {confirmationEmail ? (
+                <div className="py-6 text-center">
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+                    <MailCheck className="h-7 w-7" />
+                  </div>
+                  <h2 className="text-2xl font-medium">Check your email</h2>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    We sent a confirmation link to{" "}
+                    <span className="font-medium text-foreground">{confirmationEmail}</span>. Click the link in
+                    that email to activate your account, then return here to sign in.
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground/80">
+                    Didn’t get it? Check your spam folder, or try signing up again with the same email.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        setConfirmationEmail(null);
+                        setMode("signin");
+                        setPassword("");
+                      }}
+                      className="w-full rounded-2xl bg-accent px-4 py-3 text-accent-foreground transition-opacity hover:opacity-90"
+                    >
+                      Back to sign in
+                    </button>
+                    <button
+                      onClick={onBack}
+                      className="w-full rounded-2xl border border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      Back to DocuMed AI
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              <>
               <button
                 onClick={onBack}
                 className="mb-6 inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground lg:hidden"
@@ -222,10 +266,30 @@ export function AuthScreen({
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Minimum 6 characters"
+                    placeholder={mode === "signup" ? "At least 8 chars, mix of cases, a number, a symbol" : "Your password"}
                     className="w-full rounded-2xl border border-border bg-background px-4 py-3 focus:border-accent focus:outline-none"
                   />
                 </label>
+
+                {mode === "signup" && password.length > 0 && (
+                  <ul className="space-y-1.5 text-xs">
+                    {passwordChecks.map((check) => (
+                      <li
+                        key={check.label}
+                        className={`flex items-center gap-2 ${
+                          check.passed ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                        }`}
+                      >
+                        {check.passed ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <X className="h-3.5 w-3.5 opacity-60" />
+                        )}
+                        {check.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {errorMessage && (
@@ -238,7 +302,12 @@ export function AuthScreen({
                 onClick={() => {
                   void handleSubmit();
                 }}
-                disabled={isSubmitting || !email || !password || (mode === "signup" && !fullName)}
+                disabled={
+                  isSubmitting ||
+                  !email ||
+                  !password ||
+                  (mode === "signup" && (!fullName || !passwordValid))
+                }
                 className="mt-6 w-full rounded-2xl bg-accent px-4 py-3 text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting
@@ -247,6 +316,8 @@ export function AuthScreen({
                     ? "Sign in"
                     : "Create account"}
               </button>
+              </>
+              )}
             </div>
           </motion.div>
         </div>

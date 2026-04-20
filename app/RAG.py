@@ -183,8 +183,16 @@ MEDIRAG_SYSTEM_PROMPT = (
     "Answer strictly using the provided sources. "
     "Do not give a diagnosis for the user. "
     "Do not recommend medications, doses, or treatments. "
-    "Always frame answers as information to discuss with a doctor. "
-    "If a claim is not supported by the sources, say you don't have a source for it.\n\n"
+    "Always frame answers as information to discuss with a doctor.\n\n"
+    "MANDATORY — source-binding rule:\n"
+    "Every factual clinical claim you emit MUST be directly supported by a "
+    "sentence in the provided sources. If no source supports a claim, YOU "
+    "MUST NOT emit that claim. Do NOT paraphrase from memory. Do NOT fill "
+    "gaps with general knowledge. If none of the sources address the user's "
+    "question, output EXACTLY:\n\n"
+    "I don't have a source for that in my current library. Please try "
+    "rewording your question, or ask your doctor directly.\n\n"
+    "and nothing else.\n\n"
     "CRITICAL — topic match rule:\n"
     "The user asked about ONE specific topic. The retrieved sources may be "
     "about adjacent-but-different topics (e.g. thyroid sources retrieved for "
@@ -205,6 +213,33 @@ MEDIRAG_SYSTEM_PROMPT = (
     "- Use **bold** inline for key terms the reader should remember.\n"
     "- Do not output a `Sources:` section yourself — the system appends citations."
 )
+
+# Phase-3C: inline-citation instruction. Appended to the base prompt when
+# INLINE_CITATIONS_ENABLED=1. Kept separate so the prompt can be toggled
+# back to pre-Phase-3 behaviour with one env var.
+_INLINE_CITATION_PROMPT_SUFFIX = (
+    "\n\nCITATION BINDING (MANDATORY):\n"
+    "- Every sentence that makes a clinical claim (dose, threshold, "
+    "diagnostic criterion, treatment duration, 'is a symptom of X') MUST "
+    "end with a bracketed source tag: `[1]`, `[2]`, or `[1, 2]` when the "
+    "claim is supported by multiple sources.\n"
+    "- The number N in `[N]` refers to the `[src:N]` label on the source "
+    "block you were given. Use only numbers that appear as `[src:N]` in "
+    "the sources. Do NOT invent numbers.\n"
+    "- If you cannot cite a specific source for a claim, do NOT emit the "
+    "claim — refuse per the source-binding rule above.\n"
+    "- Framing sentences (intros, disclaimers like 'see your doctor') do "
+    "NOT need a `[N]` tag."
+)
+
+
+def build_system_prompt() -> str:
+    """Return the active system prompt, conditionally including the
+    Phase-3 inline-citation addendum. Centralised here so both /query
+    and /query/stream call sites stay in lock-step."""
+    if INLINE_CITATIONS_ENABLED:
+        return MEDIRAG_SYSTEM_PROMPT + _INLINE_CITATION_PROMPT_SUFFIX
+    return MEDIRAG_SYSTEM_PROMPT
 
 @app.on_event("startup")
 async def warm_query_encoder():
@@ -909,6 +944,50 @@ def _log_query_safe(**kwargs: Any) -> None:
         print(f"[query_log] insert failed (swallowed): {exc}")
 
 
+def _guard_clarification(clar_text: str, prior_answer: str) -> tuple[str, str, list[dict]]:
+    """Phase-1.4: apply the same NLI + scope-guard that routine answers get,
+    but with the PRIOR ANSWER as the sole reference "chunk". Catches the two
+    clarification-specific risks:
+
+    (a) New medical claim introduced by the LLM that was not in the prior
+        answer (e.g. a dose, a diagnostic criterion). NLI against
+        prior_answer will fail and the sentence is redacted.
+    (b) The clarification reads as a diagnosis / prescription on its own.
+        classify_scope returns diagnostic / prescriptive → hard refuse.
+
+    Returns (final_text, verdict, score_log). verdict ∈ {"pass",
+    "redacted_all", "scope_refused"}. Caller uses verdict to decide which
+    response shape + log reason to emit.
+    """
+    if not clar_text or not clar_text.strip():
+        return clar_text, "pass", []
+    if not prior_answer or not prior_answer.strip():
+        # Without a reference we can't NLI-check; fall back to scope-only.
+        scope = classify_scope(clar_text)
+        if scope in ("diagnostic", "prescriptive"):
+            return SCOPE_REFUSAL_TEMPLATES[scope], "scope_refused", []
+        return clar_text, "pass", []
+
+    filtered, score_log = apply_guardrails(
+        clar_text,
+        [{"content": prior_answer}],
+    )
+    if not filtered.strip():
+        return _CLARIFICATION_REDACTED_FALLBACK, "redacted_all", score_log
+
+    scope = classify_scope(filtered)
+    if scope in ("diagnostic", "prescriptive"):
+        return SCOPE_REFUSAL_TEMPLATES[scope], "scope_refused", score_log
+
+    return filtered, "pass", score_log
+
+
+_CLARIFICATION_REDACTED_FALLBACK = (
+    "My previous answer did not specify that — please ask it as a new "
+    "question and I'll look it up."
+)
+
+
 def _session_in_doc_qa_mode(session: Optional[dict]) -> bool:
     """True if the session has ANY uploaded document attached.
 
@@ -942,6 +1021,22 @@ RETRIEVE_K = 15
 CONTEXT_CHUNKS = 6
 DISPLAY_SOURCES = 3
 RERANK_MODEL = "rerank-v3.5"
+
+# Phase-1.3: explicit temperature on the main /query and /query/stream
+# generation calls. Previously these inherited provider defaults (Cohere
+# ~1.0), which is unacceptable variance for medical outputs. Stage 1/2/4
+# modules already use 0.1–0.2; align here. If tuning is needed per
+# provider, split into GROQ_TEMPERATURE / COHERE_TEMPERATURE later.
+MAIN_QUERY_TEMPERATURE = 0.15
+
+# Phase-3: inline-citation binding + fusion-drift detection.
+# - INLINE_CITATIONS_ENABLED turns on the prompt instruction that asks
+#   the LLM to tag each clinical claim with `[N]` markers, and the
+#   guardrail parses + verifies against the assigned chunk only.
+# - FUSION_DRIFT_ENABLED turns on the 2-sentence window NLI pass.
+# Both default ON, but flag-gated so we can A/B against gold.
+INLINE_CITATIONS_ENABLED = os.getenv("INLINE_CITATIONS_ENABLED", "1") not in ("0", "false", "False", "")
+FUSION_DRIFT_ENABLED = os.getenv("FUSION_DRIFT_ENABLED", "1") not in ("0", "false", "False", "")
 
 # Failure A #1: lay→clinical query rewrite before retrieval. Flag-gated
 # so we can A/B against gold. Default on; set QUERY_REWRITE_ENABLED=0 to
@@ -1020,8 +1115,24 @@ def _rerank_rows(question: str, rows: list) -> list:
             top_n=len(docs),
         )
     except Exception as exc:
-        print(f"[rerank] failed, falling back to RRF order: {exc}")
-        return rows
+        # Phase-1.1 fix: previously returned rows with NO rerank_score, which
+        # (a) tripped the no-coverage gate via `rerank_missing` on every
+        # Cohere outage and (b) silently zeroed the w_r semantic component
+        # in _weighted_final_score for any row that slipped past the gate.
+        # Reuse the same synthetic scoring shape as COHERE_DISABLED so the
+        # gate + weighting stay in their designed regime during transient
+        # failures. NOT quality-equivalent — trusts hybrid RRF order — but
+        # recoverable and auditable.
+        print(f"[rerank] failed, using synthetic RRF-derived scores: {exc}")
+        n = len(rows)
+        out = []
+        for i, row in enumerate(rows):
+            synth = max(0.0, 0.80 - (0.65 * i / max(1, n - 1))) if n > 1 else 0.80
+            new_row = dict(row)
+            new_row["rerank_score"] = synth
+            new_row["rerank_source"] = "synthetic_fallback"
+            out.append(new_row)
+        return out
     reordered = []
     for result in resp.results:
         row = dict(rows[result.index])
@@ -1143,7 +1254,12 @@ def _retrieve_ranked(
                     "is_session_chunk": True,
                 })
 
-    if len(rows) > CONTEXT_CHUNKS:
+    # Phase-1.2 fix: always rerank when we have any rows. Previously we
+    # skipped rerank if len(rows) <= CONTEXT_CHUNKS, which left RRF order
+    # as-is for low-recall queries. RRF is authority-agnostic, so a
+    # session-upload chunk (tier 5) could outrank a WHO chunk (tier 1).
+    # Rerank at N=6 costs one extra Cohere call; worth it.
+    if rows:
         rows = _rerank_rows(question, rows)
     weights = STAGE_WEIGHTS.get((intent or {}).get("stage"), DEFAULT_WEIGHTS)
     for r in rows:
@@ -1226,19 +1342,27 @@ async def query_document(query: QueryRequest):
     # any non-match falls through to the existing pipeline.
     prior_assistant = last_assistant_turn(query.history)
     if prior_assistant and is_meta_question(query.question, query.history):
-        clar = clarification_stage.compose_clarification(
+        clar_raw = clarification_stage.compose_clarification(
             prior_answer=prior_assistant,
             user_question=query.question,
             groq_client=groq_client,
             groq_model=GROQ_MODEL,
         )
-        print(f"[meta_question] fired q={query.question[:60]!r}")
+        # Phase-1.4: NLI-verify the clarification against the prior answer
+        # (the only legitimate "source" for a clarification) and run the
+        # scope-guard. Previously the clarification text went out
+        # unguarded — a Groq hallucination here emitted directly.
+        clar, verdict, clar_nli = _guard_clarification(clar_raw, prior_assistant)
+        print(f"[meta_question] fired q={query.question[:60]!r} verdict={verdict}")
         _log_query_safe(
             user_id=None,
             session_id=query.session_id,
             stage="clarification",
             query_text=query.question,
             response_text=clar,
+            refusal_triggered=(verdict != "pass"),
+            refusal_reason=(None if verdict == "pass" else f"clarification_{verdict}"),
+            nli_entailment_scores=clar_nli or None,
         )
         return {
             "answer": clar,
@@ -1460,7 +1584,7 @@ async def query_document(query: QueryRequest):
 
     sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
 
-    messages: list[dict] = [{"role": "system", "content": MEDIRAG_SYSTEM_PROMPT}]
+    messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
     if query.history:
         for h in query.history[-HISTORY_MAX_TURNS:]:
             if h.role in ("user", "assistant") and h.content:
@@ -1472,23 +1596,33 @@ async def query_document(query: QueryRequest):
         }
     )
 
+    # Phase-1.3: lock temperature + log provider. Previously the main /query
+    # path inherited provider defaults (Cohere ~1.0), which is unsafe on a
+    # medical RAG. Match the stage modules (0.1–0.2). Also track which
+    # provider emitted the final answer for incident correlation. Stored
+    # in `llm_provider` (stdout only until schema migration lands).
+    llm_provider = "none"
     if groq_client is not None:
         try:
             groq_resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
                 max_tokens=250,
+                temperature=MAIN_QUERY_TEMPERATURE,
             )
             answer = groq_resp.choices[0].message.content
+            llm_provider = "groq"
         except Exception as exc:
             print(f"[groq] generate failed, falling back to Cohere: {exc}")
             response = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
                 max_tokens=250,
+                temperature=MAIN_QUERY_TEMPERATURE,
             )
             try:
                 answer = response.message.content[0].text
+                llm_provider = "cohere_fallback"
             except Exception:
                 raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
     else:
@@ -1496,11 +1630,14 @@ async def query_document(query: QueryRequest):
             model="command-r-08-2024",
             messages=messages,
             max_tokens=250,
+            temperature=MAIN_QUERY_TEMPERATURE,
         )
         try:
             answer = response.message.content[0].text
+            llm_provider = "cohere"
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
+    print(f"[llm_provider] /query emitted via provider={llm_provider}")
 
     # Week 10 guardrails: classify + NLI-verify each sentence. On
     # contradiction we redact; on weak support we soften; dose / diagnosis
@@ -1508,7 +1645,12 @@ async def query_document(query: QueryRequest):
     # If every claim sentence was redacted, fall back to the standard
     # no-coverage refusal — we do not emit an answer with only framing
     # sentences because that would feel conversational but empty.
-    filtered_answer, nli_scores = apply_guardrails(answer, top_rows)
+    filtered_answer, nli_scores = apply_guardrails(
+        answer,
+        top_rows,
+        use_inline_citations=INLINE_CITATIONS_ENABLED,
+        check_fusion_drift=FUSION_DRIFT_ENABLED,
+    )
     if not filtered_answer.strip():
         print("[guardrails] all claim sentences redacted, falling back to refusal")
         _log_query_safe(
@@ -1629,13 +1771,17 @@ async def query_document_stream(query: QueryRequest):
         # delta; short enough that streaming tokens buys nothing.
         prior_assistant = last_assistant_turn(query.history)
         if prior_assistant and is_meta_question(query.question, query.history):
-            clar = clarification_stage.compose_clarification(
+            clar_raw = clarification_stage.compose_clarification(
                 prior_answer=prior_assistant,
                 user_question=query.question,
                 groq_client=groq_client,
                 groq_model=GROQ_MODEL,
             )
-            print(f"[meta_question] stream fired q={query.question[:60]!r}")
+            # Phase-1.4: same NLI + scope guard as batch path. If the
+            # verdict is not "pass", the replacement text is safe by
+            # construction (refusal template or "didn't specify" fallback).
+            clar, verdict, clar_nli = _guard_clarification(clar_raw, prior_assistant)
+            print(f"[meta_question] stream fired q={query.question[:60]!r} verdict={verdict}")
             yield _sse("meta", {"stage": "clarification"})
             yield _sse("delta", {"text": clar})
             _log_query_safe(
@@ -1644,6 +1790,9 @@ async def query_document_stream(query: QueryRequest):
                 stage="clarification",
                 query_text=query.question,
                 response_text=clar,
+                refusal_triggered=(verdict != "pass"),
+                refusal_reason=(None if verdict == "pass" else f"clarification_{verdict}"),
+                nli_entailment_scores=clar_nli or None,
             )
             yield _sse("done", {})
             return
@@ -1825,7 +1974,7 @@ async def query_document_stream(query: QueryRequest):
         context_text = "\n\n".join(context_blocks)
         sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
 
-        messages: list[dict] = [{"role": "system", "content": MEDIRAG_SYSTEM_PROMPT}]
+        messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
         if query.history:
             for h in query.history[-HISTORY_MAX_TURNS:]:
                 if h.role in ("user", "assistant") and h.content:
@@ -1862,7 +2011,11 @@ async def query_document_stream(query: QueryRequest):
             buffer / nli_scores / emitted_parts / streamed_any state."""
             nonlocal buffer, streamed_any
             buffer, emits = process_streaming_chunk(
-                buffer, delta, chunk_texts, nli_scores
+                buffer,
+                delta,
+                chunk_texts,
+                nli_scores,
+                use_inline_citations=INLINE_CITATIONS_ENABLED,
             )
             events = []
             for sent_out in emits:
@@ -1883,6 +2036,7 @@ async def query_document_stream(query: QueryRequest):
                     messages=messages,
                     max_tokens=250,
                     stream=True,
+                    temperature=MAIN_QUERY_TEMPERATURE,
                 )
                 source = "groq"
                 for chunk in stream:
@@ -1915,6 +2069,7 @@ async def query_document_stream(query: QueryRequest):
                     model="command-r-08-2024",
                     messages=messages,
                     max_tokens=250,
+                    temperature=MAIN_QUERY_TEMPERATURE,
                 )
                 source = "cohere"
                 for ev in cohere_stream:
@@ -1936,7 +2091,12 @@ async def query_document_stream(query: QueryRequest):
 
         # Flush any trailing sentence that did not end with whitespace —
         # LLMs commonly drop the terminal newline on short answers.
-        for sent_out in flush_streaming_buffer(buffer, chunk_texts, nli_scores):
+        for sent_out in flush_streaming_buffer(
+            buffer,
+            chunk_texts,
+            nli_scores,
+            use_inline_citations=INLINE_CITATIONS_ENABLED,
+        ):
             emitted_parts.append(sent_out)
             streamed_any = True
             yield _sse("delta", {"text": sent_out})
@@ -1999,6 +2159,9 @@ async def query_document_stream(query: QueryRequest):
 
         if sources:
             yield _sse("sources", {"sources": sources})
+        # Phase-1.6: provider observability (stdout only; add to query_log
+        # once the schema migration for llm_provider column lands).
+        print(f"[llm_provider] /query/stream emitted via provider={source}")
         _log_query_safe(
             user_id=None,
             session_id=query.session_id,

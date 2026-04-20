@@ -243,6 +243,60 @@ _NLI_HARD_CLAIM_MIN = 0.5
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\[])")
 
 
+# ──────────────────────────────────────────────────────────────────────────
+# Phase 3 — Inline citation parsing + per-claim source assignment
+# ──────────────────────────────────────────────────────────────────────────
+#
+# When the LLM tags each clinical claim with `[N]` or `[src:N]` markers,
+# we can NLI-verify the sentence against JUST the chunks it claimed to cite,
+# not the max across all chunks. This closes the "right claim, wrong
+# citation" binding error that max-across-all cannot detect.
+#
+# Markers the parser recognises (inclusive):
+#   [1]   [2, 3]   [src:1]   [src:1,2]   [1,2]
+#
+# Absence of a marker on a claim sentence is NOT treated as a failure here;
+# the fallback is the original max-across-all NLI (same behaviour as before).
+# A stricter mode that REQUIRES markers on claim sentences is a separate
+# opt-in, controlled by the `require_markers` flag in apply_guardrails.
+
+_CITATION_MARKER_RE = re.compile(r"\[(?:src\s*:\s*)?((?:\d+\s*,?\s*)+)\]", re.IGNORECASE)
+
+
+def parse_inline_citations(sentence: str) -> tuple[str, list[int]]:
+    """Extract citation markers and return (clean_sentence, [0-indexed chunk idxs]).
+
+    LLM emits 1-based markers (`[1]`, `[2, 3]`). We convert to 0-based
+    internally for list indexing. Duplicate indices are deduped. The
+    clean sentence has the marker tokens removed so NLI is not distracted
+    by bracketed digits that are not part of the claim.
+    """
+    if not sentence:
+        return sentence, []
+    idxs: list[int] = []
+    for m in _CITATION_MARKER_RE.finditer(sentence):
+        raw = m.group(1)
+        for part in re.split(r",\s*", raw):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                idxs.append(int(part) - 1)
+            except ValueError:
+                continue
+    # Dedupe preserving order, drop negatives.
+    seen: set[int] = set()
+    deduped: list[int] = []
+    for i in idxs:
+        if i >= 0 and i not in seen:
+            seen.add(i)
+            deduped.append(i)
+    clean = _CITATION_MARKER_RE.sub("", sentence).strip()
+    # Collapse any double spaces left by the substitution.
+    clean = re.sub(r"\s{2,}", " ", clean)
+    return clean, deduped
+
+
 def _split_sentences(text: str) -> list[str]:
     """Cheap sentence splitter. Good enough for patient-ed prose; does not
     try to handle abbreviations like 'e.g.' or 'Dr.' perfectly — the cost
@@ -259,6 +313,7 @@ def _process_sentence(
     *,
     verifier,
     classifier,
+    use_inline_citations: bool = False,
 ) -> tuple[str | None, dict]:
     """Apply classify → NLI → tiered-action to one sentence.
 
@@ -266,7 +321,29 @@ def _process_sentence(
     to the filtered answer, or `None` if the sentence is redacted. Shared
     between batch (apply_guardrails) and streaming (process_streaming_chunk)
     so both paths apply exactly the same policy.
+
+    When `use_inline_citations=True` and the sentence carries `[N]` markers,
+    the NLI pass is restricted to the assigned chunks (1-based markers,
+    0-indexed internally). Missing / out-of-range markers fall back to the
+    max-across-all behaviour so the model cannot silently bypass
+    verification by citing a non-existent chunk.
     """
+    # Phase-3A: strip inline citation markers before classification + NLI.
+    assigned_idxs: list[int] = []
+    sent_raw = sent
+    if use_inline_citations:
+        sent, assigned_idxs = parse_inline_citations(sent_raw)
+        if not sent:
+            # Sentence was nothing but a citation marker — treat as empty.
+            return None, {
+                "sentence": sent_raw[:200],
+                "action": "redact_empty_after_marker_strip",
+                "requires_nli": False,
+                "p_entail": None,
+                "flags": {},
+                "assigned_idxs": assigned_idxs,
+            }
+
     feats = classifier(sent)
     flags = {
         "dose": feats.has_dose,
@@ -276,18 +353,35 @@ def _process_sentence(
     }
 
     if not feats.requires_nli:
-        return sent, {
+        entry = {
             "sentence": sent[:200],
             "action": "keep_no_claim",
             "requires_nli": False,
             "p_entail": None,
             "flags": flags,
         }
+        if use_inline_citations:
+            entry["assigned_idxs"] = assigned_idxs
+        return sent, entry
+
+    # Pick which chunks this sentence will be NLI-verified against. When
+    # inline markers are valid, restrict to those; otherwise fall back to
+    # all chunks (preserves legacy behaviour when markers are absent or
+    # malformed).
+    nli_sources_mode = "all"
+    nli_targets = chunk_texts
+    if use_inline_citations and assigned_idxs:
+        picked = [chunk_texts[i] for i in assigned_idxs if 0 <= i < len(chunk_texts)]
+        if picked:
+            nli_targets = picked
+            nli_sources_mode = "assigned"
+        else:
+            nli_sources_mode = "assigned_invalid_fallback_all"
 
     p_entail: float = 0.0
     nli_error: str = ""
     try:
-        for ct in chunk_texts:
+        for ct in nli_targets:
             p = verifier(sent, ct)
             if p > p_entail:
                 p_entail = p
@@ -322,7 +416,44 @@ def _process_sentence(
     }
     if nli_error:
         entry["error"] = nli_error
+    if use_inline_citations:
+        entry["assigned_idxs"] = assigned_idxs
+        entry["nli_sources_mode"] = nli_sources_mode
     return emit, entry
+
+
+_FUSION_DISCLAIMER = " _(combines claims from multiple sources — confirm with a clinician)_"
+
+
+def _fusion_drift_check(
+    sent_a: str,
+    sent_b: str,
+    chunk_texts: list[str],
+    *,
+    verifier,
+) -> tuple[bool, float]:
+    """Phase-3B: two-sentence fusion-drift detector.
+
+    NLI each individual sentence passed, but the CONCATENATION is a
+    single compound claim that may not be supported by any single chunk
+    (the "ACE inhibitors cause cough in 5% of hypertensive patients"
+    shape). Re-NLI the concatenated pair; returns (fused_fails, p_fused).
+
+    fused_fails = True when the concatenation's max-entailment falls
+    below the individual-sentence soften threshold. Callers decide
+    whether to soften, redact, or just log.
+    """
+    fused = f"{sent_a.rstrip('. ')}. {sent_b.lstrip()}"
+    p_fused: float = 0.0
+    try:
+        for ct in chunk_texts:
+            p = verifier(fused, ct)
+            if p > p_fused:
+                p_fused = p
+    except Exception as exc:
+        print(f"[guardrails] fusion NLI failed, fail-soft: {exc}")
+        return False, 0.0
+    return p_fused < _NLI_SOFTEN_BELOW, p_fused
 
 
 def apply_guardrails(
@@ -331,6 +462,8 @@ def apply_guardrails(
     *,
     verifier=None,
     classifier=None,
+    use_inline_citations: bool = False,
+    check_fusion_drift: bool = False,
 ) -> tuple[str, list[dict]]:
     """Run the Layer-1 classifier + Layer-2 NLI verifier on `answer`.
 
@@ -345,6 +478,14 @@ def apply_guardrails(
     verifier  : optional override for verify_entailment. Tests inject a
                 mock to avoid loading the 400 MB NLI model.
     classifier: optional override for classify_claim.
+    use_inline_citations : when True, parse `[N]` markers on each sentence
+                and NLI against the assigned chunks only (Phase-3A
+                binding). Legacy max-across-all when False or no markers.
+    check_fusion_drift   : when True, also NLI consecutive claim-sentence
+                pairs as a compound claim. Pairs where each sentence passes
+                individually but the fusion fails get a soft-fusion
+                disclaimer appended to the second sentence and a
+                `fusion_drift` entry added to the score_log. (Phase-3B.)
 
     Returns
     -------
@@ -367,13 +508,62 @@ def apply_guardrails(
 
     kept: list[str] = []
     score_log: list[dict] = []
+    # Track the last kept sentence for fusion-drift pairing. We only pair
+    # two sentences that BOTH classified as claims AND both passed
+    # individual NLI (i.e. emit is not None and action in keep/soften).
+    prev_sent_for_fusion: str | None = None
+    prev_entry_for_fusion: dict | None = None
 
     for sent in sentences:
         emit, entry = _process_sentence(
-            sent, chunk_texts, verifier=verifier, classifier=classifier
+            sent,
+            chunk_texts,
+            verifier=verifier,
+            classifier=classifier,
+            use_inline_citations=use_inline_citations,
         )
+        # Fusion-drift check fires when BOTH the previous kept sentence
+        # and the current one are individually-verified claims. We
+        # append the fusion disclaimer to the current sentence (softens
+        # forward, never re-edits what was already appended).
+        if (
+            check_fusion_drift
+            and emit is not None
+            and entry.get("requires_nli")
+            and entry.get("action") in ("keep", "soften")
+            and prev_sent_for_fusion is not None
+            and prev_entry_for_fusion is not None
+            and prev_entry_for_fusion.get("action") in ("keep", "soften")
+        ):
+            fails, p_fused = _fusion_drift_check(
+                prev_sent_for_fusion, emit, chunk_texts, verifier=verifier
+            )
+            if fails:
+                emit = emit + _FUSION_DISCLAIMER
+                entry["fusion_drift"] = {
+                    "flagged": True,
+                    "p_fused": round(p_fused, 3),
+                    "paired_with_prev_sentence": True,
+                }
+            else:
+                entry["fusion_drift"] = {
+                    "flagged": False,
+                    "p_fused": round(p_fused, 3),
+                }
+
         if emit is not None:
             kept.append(emit)
+            if entry.get("requires_nli") and entry.get("action") in ("keep", "soften"):
+                prev_sent_for_fusion = emit
+                prev_entry_for_fusion = entry
+            else:
+                # Non-claim sentence breaks the fusion chain; do not pair
+                # a non-claim "framing" sentence with the next claim.
+                prev_sent_for_fusion = None
+                prev_entry_for_fusion = None
+        else:
+            prev_sent_for_fusion = None
+            prev_entry_for_fusion = None
         score_log.append(entry)
 
     filtered = " ".join(kept).strip()
@@ -410,6 +600,7 @@ def process_streaming_chunk(
     *,
     verifier=None,
     classifier=None,
+    use_inline_citations: bool = False,
 ) -> tuple[str, list[str]]:
     """Incrementally feed `token` into `buffer`; return any complete
     sentences that passed guardrails and are safe to flush to the client.
@@ -440,7 +631,11 @@ def process_streaming_chunk(
         if not sent:
             continue
         emit, entry = _process_sentence(
-            sent, chunk_texts, verifier=verifier, classifier=classifier
+            sent,
+            chunk_texts,
+            verifier=verifier,
+            classifier=classifier,
+            use_inline_citations=use_inline_citations,
         )
         score_log.append(entry)
         if emit is not None:
@@ -456,6 +651,7 @@ def flush_streaming_buffer(
     *,
     verifier=None,
     classifier=None,
+    use_inline_citations: bool = False,
 ) -> list[str]:
     """End-of-stream flush. If `buffer` still holds a partial sentence
     (the model's final sentence often lacks a trailing space), run it
@@ -463,6 +659,12 @@ def flush_streaming_buffer(
 
     Mutates `score_log` in place. Returns the list of surviving sentence
     strings (0 or 1 elements in practice).
+
+    Note: fusion-drift checking is batch-only. The streaming path emits
+    one sentence at a time with no cross-sentence buffer, so we cannot
+    pair consecutive claims without reintroducing the latency the
+    streaming architecture was designed to avoid. Batch callers get
+    full Phase-3 coverage; stream callers get Phase-3A (binding) only.
     """
     verifier = verifier or verify_entailment
     classifier = classifier or classify_claim
@@ -471,7 +673,11 @@ def flush_streaming_buffer(
     if not sent:
         return []
     emit, entry = _process_sentence(
-        sent, chunk_texts, verifier=verifier, classifier=classifier
+        sent,
+        chunk_texts,
+        verifier=verifier,
+        classifier=classifier,
+        use_inline_citations=use_inline_citations,
     )
     score_log.append(entry)
     return [emit] if emit is not None else []

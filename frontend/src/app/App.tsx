@@ -14,12 +14,15 @@ import {
   LogIn,
   LogOut,
   Trash2,
+  X,
 } from "lucide-react";
 import { ChatMessage, type ChatMessageSource } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
 import { MedicalContextPanel } from "./components/MedicalContextPanel";
 import { EmptyState } from "./components/EmptyState";
 import { AuthScreen } from "./components/AuthScreen";
+import { SettingsSheet } from "./components/SettingsSheet";
+import { useSettings } from "../lib/settings";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -273,6 +276,9 @@ export default function App() {
   const [deleteInFlight, setDeleteInFlight] = useState(false);
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [clearAllInFlight, setClearAllInFlight] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const { t } = useSettings();
 
   useEffect(() => {
     if (theme === "dark") {
@@ -1253,7 +1259,11 @@ export default function App() {
     setShowAuthScreen(false);
   };
 
-  const handleSignUp = async (email: string, password: string, fullName: string) => {
+  const handleSignUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<{ needsConfirmation: boolean }> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -1271,10 +1281,11 @@ export default function App() {
     if (data.session) {
       setStatusMessage("Account created and signed in.");
       setShowAuthScreen(false);
-      return;
+      return { needsConfirmation: false };
     }
 
     setStatusMessage("Account created. Check your email to confirm, then sign in.");
+    return { needsConfirmation: true };
   };
 
   const handleSignOut = async () => {
@@ -1334,7 +1345,6 @@ export default function App() {
         onBack={() => setShowAuthScreen(false)}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
-        signupSuccessMessage={statusMessage}
       />
     );
   }
@@ -1378,7 +1388,7 @@ export default function App() {
               />
               <div className="text-left">
                 <h1 className="text-lg font-medium">DocuMed AI</h1>
-                <p className="text-xs text-muted-foreground font-mono">Medical Chat Interface</p>
+                <p className="text-xs text-muted-foreground font-mono">{t("app_subtitle")}</p>
                 <p className="text-xs text-muted-foreground/80">{authLabel}</p>
               </div>
             </button>
@@ -1394,7 +1404,7 @@ export default function App() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Classic
+                {t("tab_classic")}
               </button>
               <button
                 onClick={() => setVariant("diagnostic")}
@@ -1404,7 +1414,7 @@ export default function App() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Diagnostic
+                {t("tab_diagnostic")}
               </button>
               <button
                 onClick={() => setVariant("research")}
@@ -1414,7 +1424,7 @@ export default function App() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Research
+                {t("tab_research")}
               </button>
             </div>
 
@@ -1424,7 +1434,7 @@ export default function App() {
                 className="hidden md:inline-flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/10 px-3 py-2 text-sm text-accent transition-colors hover:bg-accent/15"
               >
                 <LogIn className="w-4 h-4" />
-                Login
+                {t("login")}
               </button>
             ) : (
               <button
@@ -1434,13 +1444,9 @@ export default function App() {
                 className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <LogOut className="w-4 h-4" />
-                Sign out
+                {t("sign_out")}
               </button>
             )}
-
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
 
             <button
               onClick={toggleTheme}
@@ -1453,7 +1459,12 @@ export default function App() {
               )}
             </button>
 
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+            <button
+              onClick={() => setShowSettings(true)}
+              aria-label={t("settings")}
+              title={t("settings")}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+            >
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -1500,25 +1511,61 @@ export default function App() {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="w-64 border-r border-border bg-card flex flex-col absolute lg:relative inset-y-0 left-0 z-20"
             >
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-border space-y-3">
                 <button
                   onClick={handleStartNewSession}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="font-medium">New Session</span>
+                  <span className="font-medium">{t("new_session")}</span>
                 </button>
+
+                {session?.user?.id && conversationHistory.length > 0 && (
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <input
+                      type="text"
+                      value={sidebarSearch}
+                      onChange={(e) => setSidebarSearch(e.target.value)}
+                      placeholder={t("search_placeholder")}
+                      className="w-full pl-8 pr-8 py-2 bg-muted/40 border border-border rounded-lg text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:border-accent/50 focus:bg-background transition-colors"
+                    />
+                    {sidebarSearch && (
+                      <button
+                        onClick={() => setSidebarSearch("")}
+                        aria-label="Clear search"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {session?.user?.id ? (
                   conversationHistory.length > 0 ? (
-                    <>
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
-                        Saved Sessions
-                      </div>
+                    (() => {
+                      const q = sidebarSearch.trim().toLowerCase();
+                      const filtered = q
+                        ? conversationHistory.filter((c) => {
+                            const hay = `${c.title ?? ""} ${c.last_message_preview ?? ""}`.toLowerCase();
+                            return hay.includes(q);
+                          })
+                        : conversationHistory;
+                      return (
+                        <>
+                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                            {t("saved_sessions")}
+                          </div>
 
-                      {conversationHistory.map((conversation) => (
+                          {filtered.length === 0 ? (
+                            <div className="px-2 py-6 text-center text-xs text-muted-foreground">
+                              {t("no_chats_match")} “{sidebarSearch}”.
+                            </div>
+                          ) : (
+                            filtered.map((conversation) => (
                         <div
                           key={conversation.id}
                           className={`group relative w-full rounded-lg transition-colors ${
@@ -1553,14 +1600,17 @@ export default function App() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      ))}
-                    </>
+                            ))
+                          )}
+                        </>
+                      );
+                    })()
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4">
                       <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                      <p className="text-sm text-muted-foreground">No sessions yet</p>
+                      <p className="text-sm text-muted-foreground">{t("no_sessions")}</p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        Upload a PDF and start a conversation
+                        {t("upload_pdf_start")}
                       </p>
                     </div>
                   )
@@ -1571,7 +1621,7 @@ export default function App() {
                     return (
                       <>
                         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
-                          Current Session
+                          {t("current_session")}
                         </div>
                         <button className="w-full text-left px-3 py-3 rounded-lg bg-accent/10 border border-accent/20 transition-colors">
                           <div className="text-sm font-medium mb-1 line-clamp-2">
@@ -1582,7 +1632,7 @@ export default function App() {
                           </div>
                         </button>
                         <p className="mt-3 px-2 text-[11px] leading-5 text-muted-foreground/80">
-                          Sign in to keep a history of past sessions.
+                          {t("sign_in_to_keep")}
                         </p>
                       </>
                     );
@@ -1590,16 +1640,16 @@ export default function App() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center px-4">
                     <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                    <p className="text-sm text-muted-foreground">No sessions yet</p>
+                    <p className="text-sm text-muted-foreground">{t("no_sessions")}</p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                      Upload a PDF and start a conversation
+                      {t("upload_pdf_start")}
                     </p>
                     <button
                       onClick={() => setShowAuthScreen(true)}
                       className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm text-accent transition-colors hover:bg-accent/15"
                     >
                       <LogIn className="w-4 h-4" />
-                      Login
+                      {t("login")}
                     </button>
                   </div>
                 )}
@@ -1651,7 +1701,7 @@ export default function App() {
                       ? "Upload PDFs or query your indexed medical research..."
                       : variant === "diagnostic"
                         ? "Upload a clinical PDF and ask a diagnostic question..."
-                        : "Upload a PDF and ask about its contents..."
+                        : t("input_placeholder_default")
                   }
                 />
               }
@@ -1888,6 +1938,13 @@ export default function App() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SettingsSheet
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        signedIn={!!session?.user?.id}
+        onClearAllChats={() => setClearAllOpen(true)}
+      />
     </div>
   );
 }
