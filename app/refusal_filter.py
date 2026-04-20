@@ -113,7 +113,14 @@ def filter_response(
 
 
 _DIAGNOSTIC_SCOPE_CUES = (
-    "you have",
+    # "you have been diagnosed" is specifically diagnostic; the earlier
+    # bare "you have" catch-all (2026-04-20: removed) was over-firing on
+    # patient-ed lab explanations like "your HbA1c of 6.8% means you have
+    # a slightly elevated blood sugar." Adversarial diagnosis requests
+    # (coverage.jsonl) still fire on "you are diabetic/hypothyroid",
+    # "your diagnosis is", "most likely", "sounds like" below.
+    "you have been diagnosed",
+    "you've been diagnosed",
     "you are diagnosed",
     "your diagnosis",
     "sounds like",

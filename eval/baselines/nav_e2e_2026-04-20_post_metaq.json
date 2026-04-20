@@ -1,0 +1,414 @@
+{
+  "n": 50,
+  "errors": 0,
+  "hint_recall_mean": 0.655,
+  "hint_recall_count": 50,
+  "redflag_terminated": 18,
+  "two_turn_completed": 31,
+  "error_detail": [],
+  "timestamp": "2026-04-20T14:49:02.208748+00:00",
+  "label": "baseline",
+  "server_url": "http://127.0.0.1:8000",
+  "per_case": [
+    {
+      "id": "nv-001",
+      "query": "I have a persistent cough with some blood in the sputum for two weeks. Where should I go?",
+      "path": "routine->routine",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "You should discuss your symptoms with a doctor to determine the best course of action, as a persistent cough with blood in the sputum can be a sign of an underlying condition that requires medical attention.\n**Urgent Advice:**\n- You may want to ask for an urgent GP appointment or get help from NHS 111, as coughing up blood is considered a red flag symptom.\n- If you're experiencing severe difficulty breathing, chest pain, or other severe symptoms, you should call 999 or go to A&E.\n**What to Discuss with Your Doctor:**\n- The duration and characteristics of your cough, including the presence of blood in your sputum.\n- Any other symptoms you're experiencing, such as shortness of breath, chest pain, or fever.\n- Your medical history, including any pre-existing conditions or risk factors, such as smoking or a weakened immune system.\n**Possible Next Steps:**\n- Your doctor may listen to your chest with a stethoscope, take a sample of your sputum, or order an X-ray or other tests to determine the cause of your cough.\n- You may be referred to a specialist for further evaluation and treatment, depending on the underlying cause of your symptoms."
+    },
+    {
+      "id": "nv-002",
+      "query": "My 6-month-old has a fever of 39.5\u00b0C and is very sleepy, won't feed.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "This combination of symptoms in an infant or young child is a medical emergency. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nYoung babies can deteriorate very quickly. Do not wait to see if it improves.\nThis is not a diagnosis \u2014 urgent in-person evaluation is essential."
+    },
+    {
+      "id": "nv-003",
+      "query": "I've been feeling tired and a bit down for a few weeks. Should I see someone?",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Duration & onset: a few weeks \n\u00b7 Functional impact: tired \n\u00b7 Sleep: not reported \n\u00b7 Associated changes: mood \n\u00b7 Family history: not reported\n\n---\n\n**Where to go:** Primary Health Care Centre (PHCC)\n**When:** Within the week\n**Why this tier, not others:** The patient's complaint of fatigue with a duration of a few weeks and associated mood changes requires a primary-care consultation that can include basic lab tests. A Health Post or Urban Health Centre may not be equipped to handle the potential complexity of this complaint.\n**Go to 102 right away if:** sudden severe headache, difficulty breathing, chest pain, severe abdominal pain, inability to speak or swallow\n\n**Sources:**\n- [Depressive disorder (depression)](https://www.who.int/news-room/fact-sheets/detail/depression)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Migraine](https://www.nhs.uk/conditions/migraine/)"
+    },
+    {
+      "id": "nv-004",
+      "query": "I have a mild cold \u2014 runny nose and sneezing for two days. Do I need to see a doctor?",
+      "path": "intake->intake",
+      "hint_recall": 0.0,
+      "error": null,
+      "answer": "\u00b7 Runny nose and sneezing \u00b7 2-day onset, constant \u00b7 No sputum \u00b7 Cold \u00b7 No red-flag features reported\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms of runny nose and sneezing are consistent with a common acute illness that can be assessed by a Health Assistant or Auxiliary Health Worker. This tier is appropriate because it provides basic examination and first-line treatment, and can refer upward if needed.\n**Go to 102 right away if:** difficulty breathing, severe headache, fever over 103\u00b0F, chest pain, severe fatigue\n\n**Sources:**\n- [Common cold](https://www.nhs.uk/conditions/common-cold/)\n- [Influenza (seasonal)](https://www.who.int/news-room/fact-sheets/detail/influenza-(seasonal))\n- [Flu](https://www.nhs.uk/conditions/flu/)"
+    },
+    {
+      "id": "nv-005",
+      "query": "I'm pregnant, about 14 weeks, and I have some spotting. Is this urgent?",
+      "path": "redflag",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "In pregnancy, new or severe symptoms should be checked today. Pregnancy changes how symptoms should be read, so please don't wait to see if it settles on its own.\n\nWhile you arrange care:\n- Lie down on your left side \u2014 this improves blood flow to you and the baby\n- Bring your antenatal record (blue book) so the team knows your history\n- Do not take any medicines, including painkillers, until you have been seen\n- If you are past 28 weeks, count baby movements: 10 movements in 2 hours is reassuring; fewer is a reason to be seen sooner\n- Note any bleeding (spotting vs. soaking a pad), fluid, pain location, and when it started\n- Ask someone to come with you if possible \u2014 you may need help or quicker transport\n\nGo now to the nearest hospital with a maternity ward, or call your antenatal provider or nursing midwife and ask to be seen urgently.\n\nCall 102 for an ambulance right away if any of these happen:\n- Heavy bleeding (soaking a pad in under an hour)\n- Severe headache with vision changes, or swelling in your face or hands\n- A seizure, or severe pain on one side of your belly\n- Your baby stops moving (after 28 weeks)\n- A sudden gush of fluid from the vagina with fever\n\nThis is not a diagnosis \u2014 an in-person assessment is the only safe way to know what is happening."
+    },
+    {
+      "id": "nv-006",
+      "query": "I'm 58, having crushing chest pain for 30 minutes, sweating and feeling sick. My left arm aches too.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-007",
+      "query": "My husband's face is drooping on one side, his speech is slurred and his right arm is weak. It started 20 minutes ago.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "These symptoms could be a stroke. Every minute matters. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nNote the exact time the symptoms started \u2014 the emergency team will need it to decide on treatment.\nDo not eat, drink, or take any medicine while waiting. This is not a diagnosis; urgent in-person evaluation is essential."
+    },
+    {
+      "id": "nv-008",
+      "query": "My 7-year-old ate peanuts and now her face is swelling, she's wheezing, and she says her throat feels tight.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "This sounds like a severe allergic reaction. Call 102 immediately or go to the nearest hospital emergency department.\nIf you have an adrenaline auto-injector (EpiPen) prescribed for you, use it now and then still go to hospital.\nDo not stay alone. This is not a diagnosis \u2014 get emergency help now."
+    },
+    {
+      "id": "nv-009",
+      "query": "My asthma inhaler isn't helping, I can barely finish a sentence and my lips feel bluish.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Shortness of breath, difficulty speaking \n\u00b7 Sudden onset, persistent \n\u00b7 No sputum \n\u00b7 Asthma inhaler not helping \n\u00b7 Bluish lips, no other red flags reported\n\n---\n\n**Where to go:** Nearest Emergency Department \u2014 call 102 for ambulance\n**When:** Go now \u2014 do not wait\n**Why this tier, not others:** The patient's sudden onset of shortness of breath, difficulty speaking, and bluish lips, along with the asthma inhaler not helping, indicate a life-threatening presentation that requires immediate emergency care. The other tiers are not equipped to handle this level of urgency and severity.\n**Go to 102 right away if:** shortness of breath, difficulty speaking, bluish lips, inability to speak full sentences, reduced response to reliever inhaler\n\n**Sources:**\n- [Pneumonia](https://www.nhs.uk/conditions/pneumonia/)\n- [Asthma](https://www.nhs.uk/conditions/asthma/)\n- [COPD](https://www.nhs.uk/conditions/chronic-obstructive-pulmonary-disease-copd/)"
+    },
+    {
+      "id": "nv-010",
+      "query": "I have type 1 diabetes, I've been vomiting all day, my breathing is fast and deep, my blood sugar is 420 mg/dL.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Vomiting \u00b7 Acute onset, worsening trajectory \u00b7 Abdominal cramps, no blood \u00b7 History of type 1 diabetes \u00b7 Fever, dehydration, and high blood sugar (420 mg/dL) present.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms of vomiting, abdominal cramps, fever, and high blood sugar require immediate attention and lab tests, which can be handled at the District Hospital level. The presence of dehydration and high blood sugar also necessitates prompt medical intervention.\n**Go to 102 right away if:** severe abdominal pain, vomiting blood, inability to keep fluids down, signs of shock, high fever above 103\u00b0F, severe dehydration, blood glucose above 600 mg/dL\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Type 2 diabetes \u2014 diagnosis (HbA1c and fasting glucose)](https://www.nhs.uk/conditions/type-2-diabetes/diagnosis/)\n- [Diabetes](https://www.who.int/news-room/fact-sheets/detail/diabetes)"
+    },
+    {
+      "id": "nv-011",
+      "query": "My 19-year-old son has fever, severe headache, a stiff neck and a new purple rash that doesn't fade when I press a glass on it.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "These signs can indicate a serious infection of the brain or its lining (meningitis) and must be evaluated urgently. Go to the nearest hospital emergency department now, or call 102.\nDo not wait until morning. This is not a diagnosis \u2014 early treatment makes a large difference."
+    },
+    {
+      "id": "nv-012",
+      "query": "I'm vomiting bright red blood and passing black tarry stools. I've felt faint twice.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "Vomiting blood or coughing up blood is a medical emergency. Go to the nearest hospital emergency department now, or call 102.\nDo not eat or drink anything. This is not a diagnosis \u2014 urgent evaluation is required."
+    },
+    {
+      "id": "nv-013",
+      "query": "My period is 8 weeks late, I had a positive home test, and now I have severe one-sided pelvic pain and shoulder tip pain. I feel faint.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "In pregnancy, this combination of symptoms is a medical emergency. Go to the nearest hospital with an obstetric or maternity ward immediately, or call 102.\nDo not wait until morning or a regular appointment. Take any antenatal records with you if possible.\nThis is not a diagnosis \u2014 only in-person evaluation can determine what is happening."
+    },
+    {
+      "id": "nv-014",
+      "query": "I'm 68, suddenly have a tearing pain in my back and chest that moves, and my left leg feels cold and numb.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "* Site: back, chest, left leg\n* Onset: sudden\n* Character: tearing pain, numbness\n* Radiation: moving pain\n* Associations: left leg feels cold\n* Timing: recent\n* Exacerbating/relieving: not specified\n* Severity: severe pain, numbness\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of severe tearing pain, numbness, and a cold left leg suggest a potential vascular issue that requires immediate attention and diagnostic capabilities beyond a Health Post or PHCC. A District Hospital can provide the necessary lab tests, imaging, and specialist consultation to address the patient's condition.\n**Go to 102 right away if:** severe pain worsening over time, numbness spreading to other areas, inability to move the left leg, coldness or discoloration of the left leg, sudden severe headache, confusion, or difficulty speaking\n\n**Sources:**\n- [Back pain \u2014 red flags and when to see a GP](https://www.nhs.uk/conditions/back-pain/)\n- [Cardiovascular diseases (CVDs)](https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds))\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)"
+    },
+    {
+      "id": "nv-015",
+      "query": "My 22-year-old brother had a road accident, now he has sudden severe breathlessness, one side of his chest doesn't move, and his neck veins are bulging.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Sudden severe breathlessness \u00b7 Immediate onset after road accident, constant \u00b7 No sputum \u00b7 None \u00b7 Fever, bulging neck veins, one side of chest not moving.\n\n---\n\n**Where to go:** Nearest Emergency Department \u2014 call 102 for ambulance\n**When:** Go NOW. Do not wait.\n**Why this tier, not others:** The patient's symptoms, including sudden severe breathlessness, fever, bulging neck veins, and one side of the chest not moving, indicate a life-threatening condition that requires immediate attention. The presence of these red flags overrides the typical tier ladder and necessitates emergency care.\n**Go to 102 right away if:** severe breathlessness, fever, bulging neck veins, chest not moving, severe headache, confusion, loss of consciousness\n\n**Sources:**\n- [Cardiovascular diseases (CVDs)](https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds))\n- [Chest pain \u2014 when to call 999 vs see GP](https://www.nhs.uk/conditions/chest-pain/)\n- [COPD](https://www.who.int/news-room/fact-sheets/detail/chronic-obstructive-pulmonary-disease-(copd))"
+    },
+    {
+      "id": "nv-016",
+      "query": "My father fell down stairs, hit his head, was briefly unconscious, and is now vomiting repeatedly and increasingly drowsy.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "This injury needs emergency care. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nKeep the person still, apply firm direct pressure to bleeding wounds with a clean cloth, and do not remove anything stuck in a wound.\nThis is not a diagnosis \u2014 in-person assessment is required urgently."
+    },
+    {
+      "id": "nv-017",
+      "query": "I've been thinking about ending my life and I have pills saved up. I don't want to be here tomorrow.",
+      "path": "redflag",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "You matter, and what you're describing is a mental health emergency. Please reach out now \u2014 in Nepal, the TUTH Suicide Hotline is 9840021600, and the Mental Health Helpline Nepal is 1166. You can also go to the nearest hospital emergency department.\nIf you can, tell someone you trust right now and stay with them. Move any medicines, weapons, or other means of harm out of reach.\nThis is not a substitute for care \u2014 please contact one of these services now."
+    },
+    {
+      "id": "nv-018",
+      "query": "Three people in my house are dizzy, have headaches, and feel nauseous since we lit the gas heater overnight in a closed room.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "* Site: Head, stomach\n* Onset: After lighting gas heater\n* Character: Dizziness, headaches, nausea\n* Radiation: None\n* Associations: Exposure to gas heater\n* Timing: Overnight\n* Exacerbating/relieving: None\n* Severity: Multiple people affected\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms of dizziness, headaches, and nausea, possibly related to exposure to a gas heater, require a basic examination and assessment by a Health Assistant or Auxiliary Health Worker. This tier is suitable for common acute illness and can provide initial evaluation and referral if needed.\n**Go to 102 right away if:** severe headache, persistent vomiting, difficulty breathing, severe dizziness, loss of consciousness\n\n**Sources:**\n- [Migraine](https://www.nhs.uk/conditions/migraine/)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)"
+    },
+    {
+      "id": "nv-019",
+      "query": "I'm 72, I have a cough and fever for 3 days, now I'm shivering, confused, my BP at home read 88/52 and I'm breathing fast.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "This pattern can be sepsis \u2014 a life-threatening response to infection. Go to the nearest hospital emergency department now, or call 102 for an ambulance.\nSepsis gets worse quickly. This is not a diagnosis \u2014 urgent in-person assessment is critical."
+    },
+    {
+      "id": "nv-020",
+      "query": "I'm a 62-year-old diabetic. I don't have chest pain, but for two days I've felt extremely tired, short of breath climbing stairs, and a bit nauseous. I'm sweating more than usual.",
+      "path": "redflag",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-021",
+      "query": "I'm a 54-year-old woman with jaw pain and left shoulder ache for an hour, a bit breathless, feeling anxious and sweaty. No chest pain though.",
+      "path": "redflag",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "This could be a heart attack. Go to the nearest hospital emergency department immediately, or call 102 for an ambulance in Nepal.\nDo not drive yourself. If possible, chew one regular aspirin (300 mg) while waiting for help, unless you have been told you are allergic to aspirin or must not take it.\nThis is not a diagnosis \u2014 only an emergency team can rule out a heart attack."
+    },
+    {
+      "id": "nv-022",
+      "query": "I'm 70, I've had sudden severe lower back and flank pain, feel faint, and my abdomen feels like it's pulsating.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "* Site: lower back and flank\n* Onset: sudden\n* Character: severe pain, pulsating abdomen\n* Radiation: none\n* Associations: faintness\n* Timing: recent\n* Exacerbating/relieving: not specified\n* Severity: severe\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's severe lower back and flank pain with faintness requires a more thorough evaluation, including lab tests and possibly imaging, which is available at the District Hospital level. The Health Post or PHCC may not have the necessary resources to fully assess and manage this condition.\n**Go to 102 right away if:** severe abdominal tenderness, vomiting, fever, difficulty starting to urinate, severe dizziness or fainting, cold sweats, chest pain or pressure\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Back pain \u2014 red flags and when to see a GP](https://www.nhs.uk/conditions/back-pain/)\n- [Diarrhoea and vomiting \u2014 when to get help](https://www.nhs.uk/conditions/diarrhoea-and-vomiting/)"
+    },
+    {
+      "id": "nv-023",
+      "query": "I feel like I can't catch my breath and my heart is racing. I had a long flight yesterday and my calf is a bit sore. I think it's a panic attack.",
+      "path": "redflag",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "Serious breathing trouble is a medical emergency. Call 102 for an ambulance now, or go to the nearest hospital emergency department.\nSit the person upright; do not try to give food, water, or medicine if they are struggling to breathe.\nThis is not a diagnosis \u2014 get emergency help immediately."
+    },
+    {
+      "id": "nv-024",
+      "query": "My 9-year-old son has had belly pain and vomiting all day, he's breathing fast and smells a bit fruity. He's been drinking and peeing a lot the past week.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: belly\n* Onset: today\n* Character: pain and vomiting\n* Radiation: none\n* Associations: fruity smell, increased thirst and urination\n* Timing: all day\n* Exacerbating/relieving: none\n* Severity: breathing fast\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of belly pain, vomiting, and increased thirst and urination, along with a fruity smell, suggest a potential serious condition that requires lab tests and medical evaluation. A District Hospital is the most suitable tier for this complaint as it provides access to medical officers, basic lab tests, and emergency cover.\n**Go to 102 right away if:** severe abdominal tenderness, vomiting blood, inability to keep fluids down, severe thirst, high fever, signs of dehydration, difficulty breathing\n\n**Sources:**\n- [Diarrhoea and vomiting \u2014 when to get help](https://www.nhs.uk/conditions/diarrhoea-and-vomiting/)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Stomach ulcer](https://www.nhs.uk/conditions/stomach-ulcer/)"
+    },
+    {
+      "id": "nv-025",
+      "query": "My 2-month-old has a rectal temperature of 38.2\u00b0C. She's feeding okay and looks fine otherwise.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "\u00b7 Max temp 38.2\u00b0C, duration unknown \u00b7 Fever \u00b7 No other symptoms reported \u00b7 No recent travel or sick contacts \u00b7 Normal feeding and oral intake.\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms are acute and can be initially assessed at a Health Post or Urban Health Centre, which can provide basic examination and first-line treatment. This tier is appropriate as the symptoms do not indicate a need for more specialized care at this point.\n**Go to 102 right away if:** severe headache, neck stiffness, difficulty breathing, chest pain, severe abdominal pain, vomiting, diarrhea, rash, or if fever exceeds 40\u00b0C\n\n**Sources:**\n- [Diarrhoea and vomiting \u2014 when to get help](https://www.nhs.uk/conditions/diarrhoea-and-vomiting/)\n- [Typhoid](https://www.who.int/news-room/fact-sheets/detail/typhoid)\n- [Common cold](https://www.nhs.uk/conditions/common-cold/)"
+    },
+    {
+      "id": "nv-026",
+      "query": "I'm in Kathmandu, 4 days into a fever, today I have severe abdominal pain, vomiting, and my gums are bleeding when I brush. It's dengue season.",
+      "path": "redflag",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "Severe stomach pain should be seen today \u2014 it has many possible causes, and some need surgery.\n\nWhile you arrange care, do this now:\n- Do not eat, drink, or take painkillers until you are seen \u2014 if surgery is needed, your stomach must be empty\n- Rest in whichever position hurts least; often that is lying on your side with your knees pulled up toward your chest\n- Note when the pain started, where it is, whether it moves, and what makes it worse (eating, movement, pressing on it)\n- Note any vomiting, fever, bleeding, or changes in stool \u2014 the doctor will ask\n- Don't use a hot water bottle or heat pad; it can mask the pain pattern\n\nGo now to the nearest hospital or clinic. If you can, choose one with a surgical team.\n\nCall 102 for an ambulance right away if any of these happen:\n- Your belly becomes hard or board-like when you press it\n- You vomit blood, or your stool is black or bloody\n- You feel faint, or your skin goes pale and cold\n- You are pregnant (or could be) and the pain is on one side\n- The pain is rapidly getting worse\n\nThis is not a diagnosis \u2014 only an in-person exam can rule out the dangerous causes."
+    },
+    {
+      "id": "nv-027",
+      "query": "I'm a farmer in Chitwan, post-monsoon, I have high fever, severe calf muscle pain, red eyes, and yellowish skin for 4 days.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: calf muscles, eyes, skin\n* Onset: 4 days ago\n* Character: severe pain, redness, yellowish discoloration\n* Radiation: no radiation mentioned\n* Associations: post-monsoon, farming work\n* Timing: constant for 4 days\n* Exacerbating/relieving: no factors mentioned\n* Severity: high fever, severe pain\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of severe pain, high fever, and yellowish discoloration in the calf muscles, eyes, and skin, along with a history of farming work and post-monsoon timing, suggest a need for further evaluation and possible laboratory tests, which are available at the District Hospital level. The Health Post or PHCC may not have the necessary resources to fully assess and manage the patient's condition.\n**Go to 102 right away if:** severe difficulty breathing, sudden inability to move the affected limb, high fever with confusion or disorientation, severe headache with stiff neck, or worsening of symptoms despite initial treatment\n\n**Sources:**\n- [Dengue \u2014 symptoms, warning signs and when to seek help](https://www.nhs.uk/conditions/dengue/)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Influenza (seasonal)](https://www.who.int/news-room/fact-sheets/detail/influenza-(seasonal))"
+    },
+    {
+      "id": "nv-028",
+      "query": "We're trekking at 4700m in Manang, my friend has severe headache, is very breathless even at rest, coughing pink frothy sputum, confused.",
+      "path": "redflag",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "This pattern can be HAPE (fluid in the lungs) or HACE (brain swelling) \u2014 severe altitude illness, both life-threatening within hours if altitude is not lost.\nDescend immediately \u2014 lose at least 500\u20131000m of altitude if at all physically possible, and do not continue ascending for any reason. Arrange rescue: HRA / Himalayan Rescue Association posts at Pheriche / Manang / Lukla, or call the TAAN rescue line. A helicopter evacuation may be needed.\nIf available, give bottled or portable oxygen and keep the person warm. Do not rely on medication alone (dexamethasone / nifedipine / acetazolamide help buy time \u2014 they do not replace descent).\nThis is not a diagnosis \u2014 only descent and hospital-level evaluation can be trusted."
+    },
+    {
+      "id": "nv-029",
+      "query": "I was bitten by a snake in my field in Terai 40 minutes ago, my arm is swelling fast and my eyelids feel heavy.",
+      "path": "redflag",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "A suspected snake bite is a medical emergency in Nepal. Go to the nearest hospital with antivenom immediately, or call 102.\nKeep the bitten limb still and below heart level. Do not cut the wound, suck out venom, apply a tight tourniquet, or use home remedies.\nThis is not a diagnosis \u2014 antivenom decisions require a hospital."
+    },
+    {
+      "id": "nv-030",
+      "query": "A street dog bit my child's hand 2 hours ago and broke the skin. The dog ran away. What do we do?",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Location & extent: Hand, broken skin \n\u00b7 Onset & evolution: 2 hours ago, after dog bite\n\u00b7 Morphology: Broken skin\n\u00b7 Symptoms: None reported\n\u00b7 Exposure history: Bitten by street dog, dog ran away\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient has a minor injury from a dog bite with broken skin, which can be handled by a Health Assistant or Auxiliary Health Worker at a Health Post or Urban Health Centre. This tier is appropriate for basic wound care and assessment.\n**Go to 102 right away if:** severe bleeding, difficulty moving the hand, numbness or tingling, fever, redness or swelling that spreads beyond the bite area\n\n**Sources:**\n- [Rabies \u2014 post-exposure prophylaxis and when to seek care after animal bite](https://www.who.int/news-room/fact-sheets/detail/rabies)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)"
+    },
+    {
+      "id": "nv-031",
+      "query": "Our village has several people with sudden profuse watery diarrhea like rice water and vomiting since yesterday. My uncle looks very dehydrated.",
+      "path": "intake->intake",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "\u00b7 Sudden profuse watery diarrhea and vomiting \u00b7 Acute onset, rapid progression \u00b7 Rice-water like stool, dehydration apparent \u00b7 Possible contaminated food/water exposure \u00b7 Red-flag features: dehydration, vomiting.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms of sudden profuse watery diarrhea, vomiting, and dehydration require immediate attention and possibly intravenous rehydration, which cannot be provided at lower tiers. The District Hospital is the appropriate tier for managing acute gastrointestinal symptoms with red-flag features.\n**Go to 102 right away if:** vomiting preventing any oral intake for >24 hours, severe dehydration, bloody stools, fever above 38\u00b0C, signs of shock or severe abdominal pain\n\n**Sources:**\n- [National SOP for Early Warning, Alert and Response System (EWARS), 2025](https://edcd.gov.np/resources/download/national-standard-operating-procedure-sop-for-early-warning-alert-and-response-system-ewars-2025)\n- [Diarrhoea and vomiting \u2014 when to get help](https://www.nhs.uk/conditions/diarrhoea-and-vomiting/)\n- [Cholera](https://www.who.int/news-room/fact-sheets/detail/cholera)"
+    },
+    {
+      "id": "nv-032",
+      "query": "I've had a moderate asthma flare for 2 days, using my reliever every 3-4 hours but still wheezy. I can talk in sentences.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "\u00b7 Wheezing \u00b7 2-day onset, persistent, worsening \u00b7 No sputum \u00b7 Triggers: asthma flare \u00b7 No red-flag features reported\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's worsening wheezing with a 2-day onset and asthma flare trigger requires medical evaluation and potential adjustment of treatment, which is beyond the scope of Health Post or PHCC. District Hospital is the most suitable tier for this complaint.\n**Go to 102 right away if:** severe difficulty breathing, inability to speak full sentences, reduced response to reliever inhaler, chest pain, severe headache, fever above 38\u00b0C\n\n**Sources:**\n- [Asthma](https://www.who.int/news-room/fact-sheets/detail/asthma)\n- [COPD](https://www.nhs.uk/conditions/chronic-obstructive-pulmonary-disease-copd/)\n- [Asthma](https://www.nhs.uk/conditions/asthma/)"
+    },
+    {
+      "id": "nv-033",
+      "query": "I'm a 32-year-old woman with burning when I pee, peeing often, and now I have a fever of 38.5\u00b0C and back pain.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: Urinary tract, back\n* Onset: Recent\n* Character: Burning during urination, frequent urination\n* Radiation: Back pain\n* Associations: Fever\n* Timing: Recent onset\n* Exacerbating/relieving: Not specified\n* Severity: High fever (38.5\u00b0C)\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of burning during urination, frequent urination, back pain, and high fever suggest a possible urinary tract infection that requires laboratory tests and potentially antibiotics, which can be handled at the District Hospital level. The Health Post or PHCC may not have the necessary resources to fully diagnose and treat this condition.\n**Go to 102 right away if:** severe abdominal pain, vomiting, inability to urinate, fever above 40\u00b0C, severe back pain, signs of sepsis\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Urinary tract infections (UTIs)](https://www.nhs.uk/conditions/urinary-tract-infections-utis/)\n- [Back pain \u2014 red flags and when to see a GP](https://www.nhs.uk/conditions/back-pain/)"
+    },
+    {
+      "id": "nv-034",
+      "query": "My calf is red, hot, swollen, and painful with a small cut from two days ago. I feel a bit feverish.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: calf\n* Onset: 2 days ago\n* Character: red, hot, swollen, painful\n* Radiation: none\n* Associations: small cut, feverish\n* Timing: constant\n* Exacerbating/relieving: none\n* Severity: significant\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's symptoms of a red, hot, swollen, and painful calf with a small cut and feverish associations suggest a common acute illness that can be assessed by a Health Assistant or Auxiliary Health Worker. This tier is appropriate as it can provide basic examination, wound care, and first-line antibiotics if needed.\n**Go to 102 right away if:** high fever, increased redness or swelling that spreads beyond the initial area, severe pain, difficulty walking, signs of infection such as pus or discharge\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Gout](https://www.nhs.uk/conditions/gout/)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)"
+    },
+    {
+      "id": "nv-035",
+      "query": "I've had vomiting and diarrhea for 2 days, haven't kept fluids down, my mouth is dry and I haven't urinated for 10 hours.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "\u00b7 Vomiting and diarrhea \u00b7 2-day onset, persistent \u00b7 Abdominal, watery stools, no blood \u00b7 Recent food/water exposure unclear \u00b7 Fever, weight loss, and dehydration noted, no bleeding.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of vomiting, diarrhea, fever, weight loss, and dehydration require a higher level of care than a Health Post or PHCC can provide, and the District Hospital is equipped to handle these symptoms with lab tests and potential IV rehydration. The patient's condition is not severe enough to require immediate emergency department attention, but does require urgent evaluation.\n**Go to 102 right away if:** vomiting preventing any oral intake for >24 hours, severe dehydration, bloody stools, severe abdominal pain, difficulty breathing, chest pain, severe headache, neck stiffness\n\n**Sources:**\n- [Diarrhoea and vomiting \u2014 when to get help](https://www.nhs.uk/conditions/diarrhoea-and-vomiting/)\n- [Dengue and severe dengue](https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue)\n- [Typhoid](https://www.who.int/news-room/fact-sheets/detail/typhoid)"
+    },
+    {
+      "id": "nv-036",
+      "query": "My eyes and skin have turned yellow over the past 3 days, my urine is dark and I feel itchy and tired.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "\u00b7 Duration & onset: 3 days \n\u00b7 Functional impact: tired, itchy \n\u00b7 Sleep: not reported \n\u00b7 Associated changes: yellow eyes and skin, dark urine \n\u00b7 Family history: not reported\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of yellow eyes and skin, and dark urine, indicate a potential liver issue that requires urgent attention and laboratory tests, making District Hospital the most suitable tier. The Health Post or PHCC may not have the necessary facilities to handle this condition.\n**Go to 102 right away if:** severe abdominal pain, vomiting blood, difficulty breathing, severe headache, fever above 39\u00b0C\n\n**Sources:**\n- [Migraine](https://www.nhs.uk/conditions/migraine/)\n- [Type 2 diabetes \u2014 diagnosis (HbA1c and fasting glucose)](https://www.nhs.uk/conditions/type-2-diabetes/diagnosis/)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)"
+    },
+    {
+      "id": "nv-037",
+      "query": "I cut my hand on glass while cooking, the cut is gaping open about 3 cm and still bleeding after 20 minutes of pressure.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "\u00b7 Location & extent: Cut on hand, 3 cm gaping wound \n\u00b7 Onset & evolution: Occurred while cooking, still bleeding after 20 minutes of pressure \n\u00b7 Morphology: Open wound \n\u00b7 Symptoms: Bleeding \n\u00b7 Exposure history: Cut by glass, systemic features: None reported\n\n---\n\n**Where to go:** Health Post or Urban Health Centre\n**When:** Same-day walk-in\n**Why this tier, not others:** The patient's complaint is an acute injury with bleeding that has not stopped after 20 minutes of pressure, requiring basic wound care and possibly stitches, which can be handled at a Health Post or Urban Health Centre. A higher tier is not immediately necessary unless complications arise.\n**Go to 102 right away if:** excessive bleeding, cold or pale extremities, difficulty moving the affected hand, fever, redness or swelling around the wound, numbness or tingling in the hand\n\n**Sources:**\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)\n- [National Guideline for Sample Collection and Transportation During Acute Public Health Events, 2025](https://edcd.gov.np/resources/download/national-guideline-for-sample-collection-and-transportation-during-acute-public-health-events-2025)\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)"
+    },
+    {
+      "id": "nv-038",
+      "query": "I suddenly have severe pain in my right eye with blurred vision and I'm seeing halos around lights. There's nausea too.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: right eye\n* Onset: sudden\n* Character: severe pain, blurred vision, seeing halos\n* Associations: nausea \n* Timing: recent\n* Exacerbating/relieving: not specified\n* Severity: severe\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within 24 hours\n**Why this tier, not others:** The patient's symptoms of severe eye pain, blurred vision, and seeing halos require prompt evaluation and possible imaging, which is available at the District Hospital level. The Health Post or PHCC may not have the necessary resources to fully assess and manage this condition.\n**Go to 102 right away if:** severe headache, sudden loss of vision, eye trauma, severe nausea and vomiting, fever over 38\u00b0C\n\n**Sources:**\n- [Stroke \u2014 FAST symptoms and when to act](https://www.nhs.uk/conditions/stroke/symptoms/)\n- [Overactive thyroid (hyperthyroidism)](https://www.nhs.uk/conditions/overactive-thyroid-hyperthyroidism/)\n- [Migraine](https://www.nhs.uk/conditions/migraine/)"
+    },
+    {
+      "id": "nv-039",
+      "query": "I'm 6 weeks pregnant and having light pink spotting with mild cramping. No heavy bleeding, not faint.",
+      "path": "redflag",
+      "hint_recall": 0.5,
+      "error": null,
+      "answer": "In pregnancy, this combination of symptoms is a medical emergency. Go to the nearest hospital with an obstetric or maternity ward immediately, or call 102.\nDo not wait until morning or a regular appointment. Take any antenatal records with you if possible.\nThis is not a diagnosis \u2014 only in-person evaluation can determine what is happening."
+    },
+    {
+      "id": "nv-040",
+      "query": "I've been feeling hopeless and low for a month, some fleeting thoughts of not wanting to be here but no plan and no means. I haven't told anyone.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "\u00b7 Overwhelming hopelessness for a month \u00b7 Sleep and appetite unaffected, work and relationships strained \u00b7 No identified triggers \u00b7 No coping strategies tried \u00b7 No social support disclosed.\n\n---\n\n**Where to go:** Primary Health Care Centre (PHCC)\n**When:** Within the week\n**Why this tier, not others:** The patient's complaint of overwhelming hopelessness for a month without any identified triggers or coping strategies suggests a need for a medical officer consultation and potential basic laboratory tests. A PHCC is the most suitable tier as it provides medical officer consultation and basic laboratory tests, which can help in assessing and managing the patient's condition.\n**Go to 102 right away if:** severe suicidal thoughts, self-harm behaviors, inability to care for oneself, significant decline in work or social functioning, sudden onset of psychotic symptoms.\n\n**Sources:**\n- [Clinical depression](https://www.nhs.uk/mental-health/conditions/clinical-depression/overview/)\n- [Depressive disorder (depression)](https://www.who.int/news-room/fact-sheets/detail/depression)\n- [Mental disorders](https://www.who.int/news-room/fact-sheets/detail/mental-disorders)"
+    },
+    {
+      "id": "nv-041",
+      "query": "I've had a dry cough for about 4 weeks now. No blood, no weight loss, no fever. I'm 38 and otherwise well.",
+      "path": "intake->intake",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "\u00b7 No fever, duration 4 weeks \u00b7 Dry cough \u00b7 No other symptoms \u00b7 No travel or contact history provided \u00b7 Normal hydration and oral intake.\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within the week\n**Why this tier, not others:** The patient's persistent dry cough for 4 weeks requires further evaluation and possibly lab tests or imaging, which is beyond the capability of Health Post or PHCC. District Hospital is the appropriate tier for persistent non-red-flag complaints that require more comprehensive assessment.\n**Go to 102 right away if:** severe difficulty breathing, chest pain, coughing up blood, severe headache, confusion, or inability to speak in full sentences\n\n**Sources:**\n- [Alert and Response Framework](https://edcd.gov.np/resources/download/alert-and-response-framework)\n- [Pneumonia](https://www.nhs.uk/conditions/pneumonia/)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)"
+    },
+    {
+      "id": "nv-042",
+      "query": "I've lost 6 kg in the last 3 months without trying. I'm 45. Appetite okay-ish.",
+      "path": "intake->intake",
+      "hint_recall": 1.0,
+      "error": null,
+      "answer": "\u00b7 Weight loss \u00b7 3 months, progressive \u00b7 general, no specific location \u00b7 normal diet, no changes \u00b7 weight loss, no fever, bleeding, or dehydration reported\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within the week\n**Why this tier, not others:** The patient's progressive weight loss over 3 months requires further evaluation and potential lab tests, which are available at the District Hospital level. This tier is more suitable than a Health Post or PHCC due to the need for a more comprehensive assessment.\n**Go to 102 right away if:** new-onset night sweats, persistent cough over 2 weeks, palpable lump, severe vomiting, difficulty swallowing, or any signs of dehydration or severe malnutrition\n\n**Sources:**\n- [Tuberculosis \u2014 symptoms and when to see a GP](https://www.nhs.uk/conditions/tuberculosis-tb/symptoms/)\n- [Tuberculosis](https://www.who.int/news-room/fact-sheets/detail/tuberculosis)\n- [National Drinking Water Quality Surveillance Guideline, 2082](https://edcd.gov.np/resources/download/national-drinking-water-quality-surveillance-guideline-2082)"
+    },
+    {
+      "id": "nv-043",
+      "query": "I'm 66, I have a new persistent headache for 3 weeks, different from my usual ones, worse in the morning. No weakness.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: head\n* Onset: 3 weeks ago\n* Character: persistent headache, different from usual\n* Radiation: none\n* Associations: none\n* Timing: worse in morning\n* Exacerbating/relieving: none\n* Severity: persistent\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within the week\n**Why this tier, not others:** The patient's persistent headache, which is different from their usual headache, warrants further evaluation at a higher tier. A District Hospital can provide the necessary lab tests and specialist consultation to assess the cause of the headache.\n**Go to 102 right away if:** severe headache, sudden onset of headache, headache with neck stiffness, fever, confusion, weakness, or blurred vision\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Migraine](https://www.nhs.uk/conditions/migraine/)"
+    },
+    {
+      "id": "nv-044",
+      "query": "I've had mild right-knee pain for 2 months, worse after walking. No swelling, no injury, no locking.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: right knee\n* Onset: 2 months ago\n* Character: mild pain\n* Radiation: none\n* Associations: none\n* Timing: constant, worse after walking\n* Exacerbating/relieving: exacerbated by walking\n* Severity: mild\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Within the week\n**Why this tier, not others:** The patient's complaint of mild knee pain that worsens after walking suggests a need for further evaluation and possibly imaging, which is available at the District Hospital level. The Health Post or PHCC may not have the necessary resources to fully assess and manage this condition.\n**Go to 102 right away if:** sudden severe knee pain, inability to bear weight, significant swelling, fever, redness or warmth around the knee\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Osteoarthritis](https://www.nhs.uk/conditions/osteoarthritis/)\n- [Rheumatoid arthritis](https://www.nhs.uk/conditions/rheumatoid-arthritis/)"
+    },
+    {
+      "id": "nv-045",
+      "query": "I have type 2 diabetes, on metformin, and I'd like to book my 3-monthly HbA1c and BP check.",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Onset: Ongoing management\n* Provocation: None\n* Quality: Routine check\n* Region: None\n* Severity: None\n* Time: 3-monthly \n* Associated symptoms: None, type 2 diabetes, on current treatment\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [Diabetes](https://www.who.int/news-room/fact-sheets/detail/diabetes)\n- [Type 2 diabetes \u2014 diagnosis (HbA1c and fasting glucose)](https://www.nhs.uk/conditions/type-2-diabetes/diagnosis/)\n- [Community Based Disease Surveillance Guideline, 2082](https://edcd.gov.np/resources/download/community-based-disease-surveillance-guideline-2082)"
+    },
+    {
+      "id": "nv-046",
+      "query": "I had unprotected sex 4 days ago with a new partner. I feel fine but I'd like to be checked discreetly.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "* Onset: 4 days ago after unprotected sex with a new partner\n* Provocation: none mentioned\n* Quality: no symptoms described\n* Region: no specific area mentioned\n* Severity: no issues reported\n* Time: 4 days since exposure \n* Associated symptoms: none\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)\n- [Hepatitis C](https://www.who.int/news-room/fact-sheets/detail/hepatitis-c)"
+    },
+    {
+      "id": "nv-047",
+      "query": "I've had a sore throat, stuffy nose, and mild cough for 3 days. No high fever, eating and drinking fine.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "* Site: throat, nose\n* Onset: 3 days ago\n* Character: sore, stuffy, mild cough\n* Radiation: none\n* Associations: none\n* Timing: constant\n* Exacerbating/relieving: none\n* Severity: mild\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [Common cold](https://www.nhs.uk/conditions/common-cold/)\n- [Cough \u2014 when to see a GP and red flags](https://www.nhs.uk/conditions/cough/)\n- [Influenza (seasonal)](https://www.who.int/news-room/fact-sheets/detail/influenza-(seasonal))"
+    },
+    {
+      "id": "nv-048",
+      "query": "I twisted my ankle walking, it's a bit swollen and sore but I can still bear weight. No deformity.",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "* Site: ankle\n* Onset: sudden, while walking\n* Character: soreness, swelling\n* Radiation: none\n* Associations: twisting injury\n* Timing: acute\n* Exacerbating/relieving: none reported\n* Severity: mild, able to bear weight\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [Gout](https://www.nhs.uk/conditions/gout/)\n- [Osteoarthritis](https://www.nhs.uk/conditions/osteoarthritis/)\n- [Rapid Risk Assessment of Public Health Events at Local Level](https://edcd.gov.np/resources/download/rapid-risk-assessment-of-public-health-events-at-local-level)"
+    },
+    {
+      "id": "nv-049",
+      "query": "I have a headache and body aches for 2 days. Can you tell me if this is dengue or just flu, and what medicine I should take?",
+      "path": "intake->intake",
+      "hint_recall": 0.25,
+      "error": null,
+      "answer": "* Site: Head and body\n* Onset: 2 days ago\n* Character: Aches\n* Radiation: None\n* Associations: None\n* Timing: Constant\n* Exacerbating/relieving: Not specified\n* Severity: Not specified\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [EWARS Annual Report 2022 and 2023](https://edcd.gov.np/resources/download/early-warning-and-reporting-system-ewars-annual-report-2022-and-2023)\n- [Migraine](https://www.nhs.uk/conditions/migraine/)"
+    },
+    {
+      "id": "nv-050",
+      "query": "I have chest pain on the left side. It's sharp, worse when I press on it or take deep breaths, came on after lifting boxes yesterday. I'm 28, otherwise healthy. Is this just muscle strain?",
+      "path": "intake->intake",
+      "hint_recall": 0.75,
+      "error": null,
+      "answer": "* Site: left side of chest\n* Onset: after lifting boxes yesterday\n* Character: sharp pain\n* Radiation: no radiation mentioned\n* Associations: worsens with pressure or deep breaths \n* Timing: started after physical activity\n* Exacerbating/relieving: worsens with pressure or deep breaths\n* Severity: not specified\n\n---\n\n**Where to go:** District Hospital \u2014 general medicine OPD\n**When:** Routine appointment in the next 1\u20132 weeks\n**Why this tier, not others:** A District Hospital has the lab, imaging, and medical-officer review needed for a persistent complaint. Lower tiers can refer you upward; higher tiers are for referrals or clear emergencies.\n**Go to 102 right away if:** severe breathing difficulty, chest pain, fainting, confusion, uncontrolled bleeding, or a rapidly worsening condition.\n\n**Sources:**\n- [Chest pain \u2014 when to call 999 vs see GP](https://www.nhs.uk/conditions/chest-pain/)\n- [COPD](https://www.nhs.uk/conditions/chronic-obstructive-pulmonary-disease-copd/)\n- [COPD](https://www.who.int/news-room/fact-sheets/detail/chronic-obstructive-pulmonary-disease-(copd))"
+    }
+  ]
+}

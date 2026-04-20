@@ -48,7 +48,10 @@ try:
     from .filters import build_filter
     from .intent import classify as classify_intent
     from .intent_gate import classify_turn as classify_intake_gate
+    from .meta_question import is_meta_question, last_assistant_turn
+    from .query_rewrite import expand_for_retrieval
     from .redflag import check as redflag_check
+    from .stages import clarification as clarification_stage
     from .stages import intake as intake_stage
     from .stages import navigation as navigation_stage
     from .stages import results as results_stage
@@ -88,7 +91,10 @@ except ImportError:
     from filters import build_filter
     from intent import classify as classify_intent
     from intent_gate import classify_turn as classify_intake_gate
+    from meta_question import is_meta_question, last_assistant_turn
+    from query_rewrite import expand_for_retrieval
     from redflag import check as redflag_check
+    from stages import clarification as clarification_stage
     from stages import intake as intake_stage
     from stages import navigation as navigation_stage
     from stages import results as results_stage
@@ -937,6 +943,11 @@ CONTEXT_CHUNKS = 6
 DISPLAY_SOURCES = 3
 RERANK_MODEL = "rerank-v3.5"
 
+# Failure A #1: lay→clinical query rewrite before retrieval. Flag-gated
+# so we can A/B against gold. Default on; set QUERY_REWRITE_ENABLED=0 to
+# skip the expansion and reproduce pre-fix behaviour.
+QUERY_REWRITE_ENABLED = os.getenv("QUERY_REWRITE_ENABLED", "1") not in ("0", "false", "False", "")
+
 # Three-layer no-coverage refusal gate. Cohere rerank-v3.5 scores in [0, 1].
 # Empirical bands: strong on-topic 0.5+, good 0.3–0.5, adjacent-topic drift
 # 0.15–0.35 (the "hyperthermia → hyperthyroidism" failure mode lives here),
@@ -1207,6 +1218,34 @@ async def query_document(query: QueryRequest):
             },
         }
 
+    # Meta-question gate (Failure B, 2026-04-20). Runs BEFORE intake /
+    # intent-gate / retrieval. If the turn is a clarification about the
+    # prior assistant answer ("is that for T2D only?", "what about
+    # children?", "why?"), skip retrieval entirely and answer against
+    # the prior assistant text via stages.clarification. Safe default:
+    # any non-match falls through to the existing pipeline.
+    prior_assistant = last_assistant_turn(query.history)
+    if prior_assistant and is_meta_question(query.question, query.history):
+        clar = clarification_stage.compose_clarification(
+            prior_answer=prior_assistant,
+            user_question=query.question,
+            groq_client=groq_client,
+            groq_model=GROQ_MODEL,
+        )
+        print(f"[meta_question] fired q={query.question[:60]!r}")
+        _log_query_safe(
+            user_id=None,
+            session_id=query.session_id,
+            stage="clarification",
+            query_text=query.question,
+            response_text=clar,
+        )
+        return {
+            "answer": clar,
+            "sources": [],
+            "stage": "clarification",
+        }
+
     # Week 7A Stage 1: structured intake. Runs only when a session_id is
     # provided and the session is in the 'intake' stage.
     #
@@ -1339,6 +1378,13 @@ async def query_document(query: QueryRequest):
     retrieval_query = _retrieval_query_with_history(query.question, query.history)
     if retrieval_query != query.question:
         print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
+    if QUERY_REWRITE_ENABLED:
+        expanded = expand_for_retrieval(
+            retrieval_query, groq_client=groq_client, groq_model=GROQ_MODEL,
+        )
+        if expanded != retrieval_query:
+            print(f"[query_rewrite] expanded: {expanded[:200]!r}")
+            retrieval_query = expanded
     rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
     refusal = {
@@ -1577,6 +1623,31 @@ async def query_document_stream(query: QueryRequest):
             yield _sse("done", {})
             return
 
+        # ── Meta-question gate (Failure B) ────────────────────────────────
+        # Clarifications about the prior assistant turn skip retrieval and
+        # answer against the stored prior answer. Emitted as a single
+        # delta; short enough that streaming tokens buys nothing.
+        prior_assistant = last_assistant_turn(query.history)
+        if prior_assistant and is_meta_question(query.question, query.history):
+            clar = clarification_stage.compose_clarification(
+                prior_answer=prior_assistant,
+                user_question=query.question,
+                groq_client=groq_client,
+                groq_model=GROQ_MODEL,
+            )
+            print(f"[meta_question] stream fired q={query.question[:60]!r}")
+            yield _sse("meta", {"stage": "clarification"})
+            yield _sse("delta", {"text": clar})
+            _log_query_safe(
+                user_id=None,
+                session_id=query.session_id,
+                stage="clarification",
+                query_text=query.question,
+                response_text=clar,
+            )
+            yield _sse("done", {})
+            return
+
         # ── Stage 1: structured intake (multi-turn) ──────────────────────
         # Question turn returns 5 slot questions as one block — no LLM
         # streaming, just emit as a single delta. Summary turn does run
@@ -1693,6 +1764,13 @@ async def query_document_stream(query: QueryRequest):
         retrieval_query = _retrieval_query_with_history(query.question, query.history)
         if retrieval_query != query.question:
             print(f"[history] retrieval_query rewritten: {retrieval_query[:120]!r}")
+        if QUERY_REWRITE_ENABLED:
+            expanded = expand_for_retrieval(
+                retrieval_query, groq_client=groq_client, groq_model=GROQ_MODEL,
+            )
+            if expanded != retrieval_query:
+                print(f"[query_rewrite] expanded: {expanded[:200]!r}")
+                retrieval_query = expanded
         rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
         refusal_text = (

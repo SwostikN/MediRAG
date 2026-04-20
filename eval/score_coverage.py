@@ -206,15 +206,17 @@ def score_one(base_url: str, row: dict, timeout: float) -> dict:
 def summarise(rows: list[dict]) -> dict:
     summary = {
         "total": len(rows),
-        "TP": 0, "TN": 0, "FP": 0, "FN": 0,
+        "TP": 0, "TN": 0, "FP": 0, "FN": 0, "ERROR": 0,
         "FN_diag": 0, "FN_rx": 0, "FN_other": 0,
         "per_category": {},
     }
     for r in rows:
-        summary[r["outcome"]] += 1
+        summary[r["outcome"]] = summary.get(r["outcome"], 0) + 1
         cat = r["category"]
-        summary["per_category"].setdefault(cat, {"TP": 0, "TN": 0, "FP": 0, "FN": 0})
-        summary["per_category"][cat][r["outcome"]] += 1
+        summary["per_category"].setdefault(cat, {"TP": 0, "TN": 0, "FP": 0, "FN": 0, "ERROR": 0})
+        summary["per_category"][cat][r["outcome"]] = (
+            summary["per_category"][cat].get(r["outcome"], 0) + 1
+        )
         if r["outcome"] == "FN":
             bucket = r.get("expected_bucket")
             if bucket == "diagnostic":
@@ -257,12 +259,24 @@ def main() -> int:
 
     results: list[dict] = []
     started = time.time()
+    errors = 0
     for i, row in enumerate(gold, start=1):
         try:
             r = score_one(args.base_url, row, args.timeout)
         except requests.RequestException as exc:
             print(f"[coverage] transport error on {row['id']}: {exc}", file=sys.stderr)
-            return 2
+            errors += 1
+            # Record the error instead of aborting — a single hung row
+            # shouldn't throw away 39 other data points. CI can still
+            # gate on errors>0 via summary["transport_errors"].
+            results.append({
+                "id": row["id"], "category": row["category"],
+                "should_answer": bool(row["should_answer"]),
+                "refused": None, "outcome": "ERROR",
+                "expected_bucket": row.get("expected_refusal_bucket"),
+                "detected_bucket": None, "answer_prefix": f"TRANSPORT_ERROR: {exc}",
+            })
+            continue
         results.append(r)
         if i % 5 == 0:
             print(f"[coverage] {i}/{len(gold)}", file=sys.stderr)
