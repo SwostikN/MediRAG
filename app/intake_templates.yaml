@@ -27,6 +27,140 @@
 
 templates:
 
+  # source: ATLS mechanism-of-injury history + NHS first-aid pathways
+  #   (burns, head injury, cuts, sprains). Placed FIRST so mechanism-of-
+  #   injury words ("burn", "fell", "cut", "hit my head") override both
+  #   `pain` ("hurts", "burning") and `derm` ("blister"). Mechanism is
+  #   clinically more informative than symptom word for trauma triage,
+  #   so this ordering is deliberate, not alphabetical.
+  - id: trauma
+    label: "Injury / burn / trauma — structured history"
+    framework: "ATLS mechanism-of-injury + NHS first-aid"
+    keywords:
+      - burn
+      - burnt
+      - burned
+      - scald
+      - scalded
+      - scalding
+      - hot water
+      - hot oil
+      - hot liquid
+      - boiling water
+      - boiling oil
+      - steam burn
+      - chemical burn
+      - electric shock
+      - electrocuted
+      - cut my
+      - cut on
+      - deep cut
+      - gash
+      - laceration
+      - wound
+      - bleeding wound
+      - fell down
+      - fell off
+      - fell from
+      - fell over
+      - slipped and
+      - hit my head
+      - hit her head
+      - hit his head
+      - hitting my head
+      - hitting it
+      - hitting my
+      - after hitting
+      - banged my head
+      - bumped my head
+      - head injury
+      - concussion
+      - sprain
+      - sprained
+      - twisted my
+      - broken bone
+      - fracture
+      - fractured
+      - dislocated
+      - nosebleed
+      - animal bite
+      - dog bite
+      - snake bite
+      - insect bite
+      - splinter
+      - foreign object in
+    slot_questions:
+      - "Where on the body is the injury, and roughly how much area is affected (palm-size, arm-length, etc.)?"
+      - "How did it happen, and exactly how long ago? (hot water, fall, cut, hit, bite, etc.)"
+      - "What does it look like now — redness, blisters, open wound, bleeding, swelling, deformity, loss of movement?"
+      - "What first-aid have you done so far (cooled under running water, pressure on wound, ice, bandage)?"
+      - "Any worsening signs — spreading redness, numbness, inability to move it, severe pain, dizziness, drowsiness after a head hit, fever, pus?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP or A&E
+      nurse in Nepal. Structure: Location & extent · Mechanism & time
+      elapsed · Current appearance (redness / blisters / bleeding /
+      swelling) · First-aid performed · Red-flag features (spreading
+      redness, numbness, loss of function, drowsiness after head
+      injury, deep contamination, severe pain). Descriptive only.
+      Keep it under 80 words.
+
+  # source: Oxford Handbook of Clinical Medicine — jaundice workup + NICE
+  #   CKS jaundice-in-adults pathway. Jaundice is a time-critical sign
+  #   (acute liver failure, ascending cholangitis, obstructive biliary
+  #   disease) and needs a HEPATIC history, not dermatology "what soap
+  #   did you use". Placed BEFORE derm/pain/fever so "my skin is turning
+  #   yellow", "dark urine", etc. route here first — before the word
+  #   "skin" is captured by the derm template or "fever" by fever, or
+  #   "pain" by pain. This template is a navigation handoff: the
+  #   Stage 2 prompt's URGENT SYMPTOM OVERRIDES ladder (navigation.py)
+  #   routes any jaundice presentation to District Hospital within 24h.
+  - id: jaundice
+    label: "Yellow skin / yellow eyes / dark urine — structured history"
+    framework: "Oxford Handbook jaundice workup + NICE CKS"
+    keywords:
+      - yellow skin
+      - yellow eyes
+      - yellowish skin
+      - yellowing of skin
+      - yellowing of eyes
+      - skin turning yellow
+      - skin are turning yellow
+      - skin is yellow
+      - eyes turning yellow
+      - eyes are yellow
+      - eyes look yellow
+      - whites of my eyes are yellow
+      - jaundice
+      - jaundiced
+      - icterus
+      - dark urine
+      - tea colored urine
+      - tea-coloured urine
+      - tea-colored urine
+      - cola coloured urine
+      - brown urine
+      - pale stool
+      - pale stools
+      - clay colored stool
+      - clay-coloured stool
+      - chalky stool
+    slot_questions:
+      - "When did the yellow colour first start, and is it getting worse, staying the same, or fading?"
+      - "Any fever, severe belly pain (especially upper right), vomiting, or confusion / drowsiness alongside it?"
+      - "What medicines are you taking right now — prescription, over-the-counter painkillers (paracetamol, ibuprofen), herbal or Ayurvedic remedies, supplements? Any alcohol use, and how much? Any recent travel outside the Kathmandu valley or abroad?"
+      - "What colour is your urine (light yellow, dark tea-coloured, cola-coloured) and your stools (normal brown, very pale, clay-coloured)?"
+      - "Any itching, easy bruising or bleeding, nausea, loss of appetite, or weight loss recently?"
+    summary_prompt: |
+      Compose a one-paragraph bullet summary suitable for a GP or
+      medical-officer in Nepal. Structure: Onset & trajectory ·
+      Associated alarm features (fever / right-upper-quadrant pain /
+      vomiting / confusion) · Exposure history (medications /
+      alcohol / travel / possible hepatitis contact) · Urine & stool
+      colour · Other systemic features (itch / bruising / appetite /
+      weight). Descriptive only — NO diagnostic labels (hepatitis,
+      cholangitis, liver failure). Flag any alarm feature explicitly
+      for the Stage 2 navigator. Keep it under 90 words.
+
   # source: SOCRATES (Hegedus 2016) — Site, Onset, Character, Radiation,
   #   Associations, Timing, Exacerbating/relieving, Severity. Five questions
   #   below cover all eight slots (Site+Radiation merged; Character+Severity

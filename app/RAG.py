@@ -64,8 +64,9 @@ try:
         apply_guardrails,
         process_streaming_chunk,
         flush_streaming_buffer,
+        post_stream_fusion_check,
     )
-    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES
+    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -107,8 +108,9 @@ except ImportError:
         apply_guardrails,
         process_streaming_chunk,
         flush_streaming_buffer,
+        post_stream_fusion_check,
     )
-    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES
+    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -179,11 +181,57 @@ def get_query_encoder() -> QueryEncoder:
 
 
 MEDIRAG_SYSTEM_PROMPT = (
-    "You are MediRAG, a Nepal-focused health navigator. "
+    "You are DocuMed AI, a Nepal-focused health navigator. "
     "Answer strictly using the provided sources. "
     "Do not give a diagnosis for the user. "
-    "Do not recommend medications, doses, or treatments. "
+    "Do not recommend specific medications, doses, or prescription treatments. "
+    "You MAY share safe non-prescription self-care steps (rest, hydration, "
+    "safe positioning, first-aid actions like RICE or cooling a burn, "
+    "breathing exercises, sleep hygiene, trigger avoidance) when the "
+    "retrieved sources contain them and the user asks what to do or how "
+    "to feel better while awaiting care. These are navigation aids, not "
+    "treatment — they must still be grounded in the sources. "
     "Always frame answers as information to discuss with a doctor.\n\n"
+    "WHILE-YOU-WAIT section (MANDATORY whenever applicable):\n"
+    "Saying only \"go to the hospital\" is not enough — the user needs "
+    "to know what they can safely do RIGHT NOW while they travel to "
+    "care, or while they wait for an appointment. For ANY question "
+    "that describes a current complaint (not just queries with 'what "
+    "can I do'), if the retrieved sources contain safe self-care / "
+    "first-aid / harm-reduction guidance for that complaint, you MUST "
+    "include a `**While you wait:**` section with 2–5 concrete bullets "
+    "drawn verbatim-in-meaning from the sources. This applies equally "
+    "when you are also telling the user to seek urgent care — the two "
+    "are complementary, not alternatives.\n"
+    "Concrete expectations (all must come from retrieved sources):\n"
+    "- For burns → cool the burn under cool running water for at least "
+    "20 minutes, remove jewellery/tight clothing near the burn, do NOT "
+    "apply ice or butter/toothpaste/creams, cover loosely with cling "
+    "film or a clean non-fluffy cloth, elevate the area.\n"
+    "- For chest pain → sit down and rest, loosen tight clothing, stay "
+    "calm, do NOT drive yourself, chew one 300 mg aspirin only if not "
+    "allergic AND it has been suggested by a clinician before.\n"
+    "- For headache → rest in a quiet dark room, drink water, consider "
+    "a cold compress on the forehead, try a small paracetamol/ibuprofen "
+    "dose if safe for you.\n"
+    "- For head injury → sit or lie down with head slightly raised, "
+    "watch for drowsiness, vomiting, vision changes, worsening "
+    "headache, do NOT drink alcohol, have someone stay with you for "
+    "the next 24 hours.\n"
+    "- For fever → drink plenty of fluids, rest, light clothing, "
+    "paracetamol if tolerated, monitor temperature every few hours.\n"
+    "- For diarrhoea/vomiting → sip small amounts of oral rehydration "
+    "solution frequently, avoid solid food until vomiting settles, "
+    "watch urine output.\n"
+    "- For stress / anxiety → slow breathing (4-4-6 or box breathing), "
+    "grounding exercise, step away from the trigger, avoid caffeine.\n"
+    "If the retrieved sources genuinely contain NO self-care or "
+    "harm-reduction content for the complaint, say so honestly with a "
+    "single line (e.g. \"**While you wait:** I don't have specific "
+    "self-care steps from my sources for this — please follow any "
+    "advice the emergency dispatcher or your clinician gives you.\") "
+    "rather than inventing steps and rather than silently omitting the "
+    "section.\n\n"
     "MANDATORY — source-binding rule:\n"
     "Every factual clinical claim you emit MUST be directly supported by a "
     "sentence in the provided sources. If no source supports a claim, YOU "
@@ -575,7 +623,7 @@ async def upload(
                 "error": "non_medical_paper",
                 "message": (
                     "This document doesn't look like a health or medicine "
-                    "paper. MediRAG only accepts medical / clinical / "
+                    "paper. DocuMed AI only accepts medical / clinical / "
                     "public-health documents. Please upload a different "
                     "file."
                 ),
@@ -648,7 +696,15 @@ def _handle_lab_report(
     page_count: Optional[int],
 ) -> dict:
     """Parse markers, persist them, run the Stage 4 explainer, return
-    the answer + table data ready for the frontend."""
+    the answer + table data ready for the frontend.
+
+    When the marker parser returns zero markers (scanned image PDF,
+    unseen layout, or markers outside our reference dictionary), we
+    fall back to `needs_user_intent` — persist the extracted text and
+    offer the user the "Treat as research paper" button so they can
+    still ask questions about the PDF's prose. Previously this path
+    returned a dead-end "I couldn't pick out any markers" message and
+    gave the user no recovery option."""
     explainer = results_stage.compose_explainer(
         text,
         # Pass _retrieve_ranked itself — the composer queries it
@@ -661,6 +717,28 @@ def _handle_lab_report(
         groq_model=GROQ_MODEL,
         cohere_client=co,
     )
+
+    # Zero-markers fallback: the classifier thought this was a lab
+    # report, but the parser couldn't lift any values. Persist the
+    # extracted text and hand the user the same disambiguation UX the
+    # `other`-bucket path uses so they can recover without re-uploading.
+    if not explainer.get("markers"):
+        update_session_document(session_doc_id, extracted_text=text)
+        return {
+            "stage": "upload",
+            "status": "needs_user_intent",
+            "doc_type": "lab_report_unreadable",
+            "session_doc_id": session_doc_id,
+            "filename": filename,
+            "page_count": page_count,
+            "message": (
+                "I recognised this as a lab report but couldn't pick out "
+                "specific markers from the layout — the PDF may be image-"
+                "only (scanned), or it uses a format I haven't seen. You "
+                "can re-upload a text-based version, or treat it as a "
+                "research paper so I can answer questions about the text."
+            ),
+        }
 
     # Persist parsed markers to user_lab_markers for longitudinal
     # tracking. Failure here does NOT block the response — the
@@ -826,7 +904,7 @@ async def upload_resolve(req: ResolveUploadRequest):
                 "error": "non_medical_paper",
                 "message": (
                     "This document doesn't look like a health or medicine "
-                    "paper. MediRAG only accepts medical / clinical / "
+                    "paper. DocuMed AI only accepts medical / clinical / "
                     "public-health documents."
                 ),
             },
@@ -881,7 +959,7 @@ class DeleteUploadRequest(BaseModel):
 
 
 @app.get("/uploads")
-async def list_uploads(user_id: str) -> Dict[str, Any]:
+async def list_uploads(user_id: str):
     if not user_id:
         raise HTTPException(status_code=400, detail="user_id is required")
     rows = list_user_session_documents(user_id)
@@ -889,7 +967,7 @@ async def list_uploads(user_id: str) -> Dict[str, Any]:
 
 
 @app.delete("/upload/{session_doc_id}")
-async def delete_upload(session_doc_id: str, req: DeleteUploadRequest) -> Dict[str, Any]:
+async def delete_upload(session_doc_id: str, req: DeleteUploadRequest):
     if not req.user_id:
         raise HTTPException(status_code=400, detail="user_id is required")
     doc = get_session_document(session_doc_id)
@@ -1671,6 +1749,14 @@ async def query_document(query: QueryRequest):
     # kind of claim we should be making at all?". A well-grounded dose
     # recommendation is still a dose recommendation — this closes that gap.
     scope = classify_scope(filtered_answer)
+    # Informational questions bypass diagnostic-scope retraction (see
+    # stream path for rationale). Prescriptive scope still applies.
+    if scope == "diagnostic" and is_informational_question(query.question):
+        print(
+            f"[scope-guard] diagnostic classification bypassed — "
+            f"question is informational: {query.question[:80]!r}"
+        )
+        scope = "safe"
     if scope in ("diagnostic", "prescriptive"):
         scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
         print(f"[scope-guard] filtered answer classified as {scope}, refusing")
@@ -2103,16 +2189,64 @@ async def query_document_stream(query: QueryRequest):
 
         filtered_answer = " ".join(emitted_parts).strip()
 
-        # Total-redaction fallback: if every sentence was dropped by the
-        # guardrail we have nothing to show the user. Emit the standard
-        # no-source refusal as a final delta so the frontend's existing
-        # "append delta, finalize on done" path handles it without changes.
+        # Phase-3B post-stream fusion-drift pass: streaming guardrails NLI
+        # one sentence at a time and cannot catch two-source fusion errors
+        # (e.g. "ACE inhibitors cause cough in 5% of patients" where each
+        # half entails its own chunk but the fusion is unsupported). We
+        # run a post-stream pair-wise check and emit a trailing disclaimer
+        # delta if any pair flags. We cannot unemit text already on the
+        # user's screen.
+        if FUSION_DRIFT_ENABLED and filtered_answer and emitted_parts:
+            try:
+                drifts = post_stream_fusion_check(emitted_parts, chunk_texts)
+            except Exception as exc:
+                print(f"[guardrails] post-stream fusion check failed, fail-soft: {exc}")
+                drifts = []
+            if drifts:
+                print(f"[guardrails] fusion-drift flagged {len(drifts)} pair(s) post-stream")
+                for d in drifts:
+                    nli_scores.append({
+                        "stage": "fusion_drift_post_stream",
+                        "sent_a_index": d["sent_a_index"],
+                        "sent_b_index": d["sent_b_index"],
+                        "p_fused": d["p_fused"],
+                        "flagged": True,
+                    })
+                yield _sse("delta", {
+                    "text": (
+                        "\n\n_Note: parts of this answer combine claims from "
+                        "multiple sources and may not be jointly supported by "
+                        "any single source — confirm with a clinician._"
+                    )
+                })
+
+        # Total-redaction fallback. Two flavours:
+        #   1. Retrieval found relevant chunks (they cleared the 0.4 rerank
+        #      gate) but the LLM's generated prose failed NLI on every
+        #      sentence. The sources ARE relevant to the question — the
+        #      model just couldn't phrase an answer hard-enough-grounded.
+        #      Showing "no source in library" is misleading. Emit a softer
+        #      refusal AND surface the sources so the user can go read them.
+        #   2. No rows / below threshold — caught upstream at the refusal
+        #      gate, so we never reach here in that case.
         if not filtered_answer:
-            refusal_msg = (
-                "I don't have a source for that in my current library. "
-                "Please try rewording your question, or ask your doctor directly."
-            )
-            yield _sse("delta", {"text": refusal_msg})
+            if sources:
+                refusal_msg = (
+                    "I couldn't put together a clearly-grounded answer from my "
+                    "sources for this specific question. The sources below look "
+                    "relevant — you can read them directly, or ask your doctor "
+                    "for personalised advice."
+                )
+                yield _sse("delta", {"text": refusal_msg})
+                yield _sse("sources", {"sources": sources})
+                refusal_reason = "all_sentences_redacted_sources_shown"
+            else:
+                refusal_msg = (
+                    "I don't have a source for that in my current library. "
+                    "Please try rewording your question, or ask your doctor directly."
+                )
+                yield _sse("delta", {"text": refusal_msg})
+                refusal_reason = "all_sentences_redacted_no_sources"
             _log_query_safe(
                 user_id=None,
                 session_id=query.session_id,
@@ -2120,7 +2254,7 @@ async def query_document_stream(query: QueryRequest):
                 query_text=query.question,
                 response_text=refusal_msg,
                 refusal_triggered=True,
-                refusal_reason="all_sentences_redacted_by_guardrails",
+                refusal_reason=refusal_reason,
                 prompt_hash=_prompt_hash(messages),
                 nli_entailment_scores=nli_scores,
             )
@@ -2135,6 +2269,18 @@ async def query_document_stream(query: QueryRequest):
         # appending to it. Separate event type keeps the `sources`
         # contract single-shape.
         scope = classify_scope(filtered_answer)
+        # Informational questions ("what happens if…", "what are the symptoms
+        # of…", "how does X work?") should not trigger diagnostic-scope
+        # retraction — the LLM is describing a general phenomenon, not
+        # diagnosing the user. Prescriptive scope (dose / medication
+        # recommendation) still applies unconditionally, and NLI has
+        # already enforced source-grounding on every sentence.
+        if scope == "diagnostic" and is_informational_question(query.question):
+            print(
+                f"[scope-guard] diagnostic classification bypassed — "
+                f"question is informational: {query.question[:80]!r}"
+            )
+            scope = "safe"
         if scope in ("diagnostic", "prescriptive"):
             scope_refusal_text = SCOPE_REFUSAL_TEMPLATES[scope]
             print(f"[scope-guard] streamed answer classified as {scope}, overriding")

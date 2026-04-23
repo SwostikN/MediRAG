@@ -342,6 +342,56 @@ rules:
         - "started thinking about dying"
         - "started thinking the world would"
 
+  # source: Columbia Suicide Severity Rating Scale (C-SSRS) tier 4–5 —
+  #   ideation with plan, means, and/or stated intent. This rule captures
+  #   phrasings that describe means-on-hand or method-specific plans
+  #   without requiring an explicit "kill/suicide/end my life" keyword,
+  #   which the legacy `suicidal_active` rule relies on. Nepal-specific
+  #   methods (hanging, pesticide/kerosene self-poisoning per NHRC data)
+  #   are represented. Over-firing here is acceptable: false positive =
+  #   user sees crisis resources; false negative = lethal outcome.
+  - id: suicidal_means_plan
+    category: mental-health
+    response_template: redflag_mental_health_np
+    triggers:
+      any_of:
+        # Means on hand + readiness (high specificity phrases).
+        - "sleeping tablets ready"
+        - "i have a rope"
+        - "have the rope"
+        - "saving my medication"
+        - "saving my pills"
+        - "saving my sleeping pills"
+        - "saving up my pills"
+        - "saving up my medication"
+        - "saving up my sleeping pills"
+        - "been saving my medication"
+        - "been saving my pills"
+        - "drink the pesticide"
+        - "drink kerosene"
+        - "drink the poison"
+        - "drink poison tonight"
+        # Plan specificity — method explicitly stated.
+        - "know how many to take"
+        - "know how many pills"
+        - "know how many i need"
+        - "know exactly how many"
+        - "going to hang myself"
+        - "hang myself tonight"
+        - "jump off a bridge"
+        - "jump from the roof"
+        - "jump off the building"
+        - "written my suicide note"
+        - "wrote my suicide note"
+        - "writing my suicide note"
+        - "write a suicide note"
+        # Finality cues combined with readiness language.
+        - "tonight is the night"
+        - "tonight is my last"
+        - "this is my last night"
+        - "ready to do it tonight"
+        - "ready to end it tonight"
+
   # source: psychiatric-emergency literature — command auditory hallucinations
   #   directing harm to self or others carry imminent-danger risk; treat as
   #   mental-health emergency regardless of diagnosis.

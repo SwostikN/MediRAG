@@ -86,6 +86,28 @@ _MARKER_ALIASES: dict[str, list[str]] = {
     "Vitamin D":    ["vitamin D", "25-OH vitamin D", "25(OH)D", "vit D"],
     "Vitamin B12":  ["vitamin B12", "B12", "cobalamin"],
     "Ferritin":     ["ferritin", "serum ferritin"],
+    # Renal function panel — Nepali labs routinely bundle these in the
+    # RFT section. Parser was missing all of these before, so a real
+    # NARANATH-style RFT report returned zero markers and was wrongly
+    # classified as unreadable.
+    "Urea":         ["urea", "blood urea", "BUN", "blood urea nitrogen"],
+    "Sodium":       ["sodium", "Na+", "serum sodium"],
+    "Potassium":    ["potassium", "K+", "serum potassium"],
+    "Chloride":     ["chloride", "Cl-", "serum chloride"],
+    "eGFR":         ["eGFR", "estimated GFR", "estimated glomerular filtration rate"],
+    "Uric acid":    ["uric acid", "serum uric acid"],
+    # Common supplementary panels.
+    "Calcium":      ["calcium", "serum calcium", "Ca2+", "total calcium"],
+    "Phosphate":    ["phosphate", "phosphorus", "serum phosphate", "serum phosphorus"],
+    "Albumin":      ["albumin", "serum albumin"],
+    "Total protein": ["total protein", "serum protein"],
+    "Bilirubin":    ["bilirubin", "total bilirubin", "direct bilirubin", "indirect bilirubin"],
+    "ALP":          ["ALP", "alkaline phosphatase"],
+    "GGT":          ["GGT", "gamma GT", "gamma-glutamyl transferase"],
+    "CRP":          ["CRP", "C-reactive protein"],
+    "WBC":          ["WBC", "white blood cell", "total leucocyte count", "TLC"],
+    "RBC":          ["RBC", "red blood cell", "erythrocyte count"],
+    "Platelet":     ["platelet", "platelet count", "PLT"],
 }
 
 # Build one combined alias regex with named groups indexed by canonical
@@ -108,8 +130,15 @@ for canonical, aliases in _MARKER_ALIASES.items():
 #   "Hb       11.8  g/dL       12.0-15.5"
 _UNITS = (
     r"mg/dL|mg/dl|mmol/L|mmol/l|mIU/L|mIU/l|µIU/mL|uIU/mL|"
-    r"g/dL|g/dl|U/L|u/l|%|ng/mL|ng/ml|pg/mL|pg/ml|cells/[uµ]L|"
-    r"million/[uµ]L|10\^?[0-9]+/[uµ]L|/cmm|fl|fL|pg"
+    r"g/dL|g/dl|U/L|u/l|IU/L|iu/l|%|ng/mL|ng/ml|ng/dL|ng/dl|"
+    r"pg/mL|pg/ml|cells/[uµ]L|"
+    r"million/[uµ]L|10\^?[0-9]+/[uµ]L|/cmm|fl|fL|pg|"
+    # Electrolyte units used across Nepali and international labs.
+    # "mEq/l", "mEq/L", "meq/l" are the primary sodium/potassium units.
+    r"mEq/L|mEq/l|meq/l|meq/L|mEq|meq|"
+    # eGFR is often reported with "mL/min/1.73m2" or "ml/min/1.73m²".
+    r"mL/min/1\.73m2|mL/min/1\.73m²|ml/min/1\.73m2|ml/min/1\.73m²|"
+    r"mL/min|ml/min"
 )
 
 # Range can be "0.4 - 4.0" / "0.4-4.0" / "<4.5" / ">40" / "40 to 150".
@@ -257,7 +286,7 @@ RetrieveFn = Callable[[str], list[dict]]
 
 
 _PER_MARKER_SYSTEM_PROMPT = """\
-You are MediRAG's lab-results explainer for patients in Nepal. You are
+You are DocuMed AI's lab-results explainer for patients in Nepal. You are
 NOT a doctor. Your job is to explain ONE lab marker at a time using ONLY
 the supplied sources, in a way the user can take to their next clinical
 visit.

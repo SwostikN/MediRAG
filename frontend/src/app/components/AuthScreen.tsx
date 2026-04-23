@@ -46,6 +46,59 @@ export function AuthScreen({
   const passwordChecks = useMemo(() => evaluatePassword(password), [password]);
   const passwordValid = passwordChecks.every((c) => c.passed);
 
+  const switchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    // Previously, the email / password typed into sign-in persisted when
+    // the user flipped to the Create-account tab, which looked like the
+    // app was "auto-filling" fields across modes. Reset the form so each
+    // tab starts clean.
+    setEmail("");
+    setPassword("");
+    setFullName("");
+    setErrorMessage("");
+  };
+
+  const humanizeAuthError = (raw: string): string => {
+    const lower = raw.toLowerCase();
+    if (mode === "signin") {
+      // Supabase returns "Invalid login credentials" for BOTH "no
+      // account with this email" and "wrong password" — they don't
+      // disambiguate for account-enumeration safety. Surface that
+      // clearly so first-time users know they need to create an
+      // account first instead of assuming their password is wrong.
+      if (
+        lower.includes("invalid login credentials") ||
+        lower.includes("invalid credentials")
+      ) {
+        return (
+          "We couldn't sign you in with this email and password. " +
+          "If you don't have an account yet, please create one using " +
+          "the Create account tab. If you do, double-check your password."
+        );
+      }
+      if (lower.includes("email not confirmed")) {
+        return (
+          "Your account exists but the email isn't confirmed yet. " +
+          "Check your inbox for the confirmation link."
+        );
+      }
+    }
+    if (mode === "signup") {
+      if (
+        lower.includes("already registered") ||
+        lower.includes("user already exists") ||
+        lower.includes("email already") ||
+        lower.includes("duplicate")
+      ) {
+        return (
+          "An account with this email already exists. Switch to the " +
+          "Sign in tab to log in, or use a different email."
+        );
+      }
+    }
+    return raw;
+  };
+
   const handleSubmit = async () => {
     setErrorMessage("");
 
@@ -66,7 +119,8 @@ export function AuthScreen({
         }
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Authentication failed");
+      const raw = error instanceof Error ? error.message : "Authentication failed";
+      setErrorMessage(humanizeAuthError(raw));
     } finally {
       setIsSubmitting(false);
     }
@@ -195,7 +249,7 @@ export function AuthScreen({
 
               <div className="mb-6 flex rounded-full bg-muted/60 p-1">
                 <button
-                  onClick={() => setMode("signin")}
+                  onClick={() => switchMode("signin")}
                   className={`flex-1 rounded-full px-4 py-2 text-sm transition-all ${
                     mode === "signin" ? "bg-background shadow-sm" : "text-muted-foreground"
                   }`}
@@ -203,7 +257,7 @@ export function AuthScreen({
                   Sign in
                 </button>
                 <button
-                  onClick={() => setMode("signup")}
+                  onClick={() => switchMode("signup")}
                   className={`flex-1 rounded-full px-4 py-2 text-sm transition-all ${
                     mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"
                   }`}

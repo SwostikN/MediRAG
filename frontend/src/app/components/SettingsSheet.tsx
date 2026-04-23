@@ -3,7 +3,6 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "./ui/sheet";
@@ -44,9 +43,6 @@ export function SettingsSheet({
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
         <SheetHeader className="text-left">
           <SheetTitle>{t("settings")}</SheetTitle>
-          <SheetDescription>
-            {t("answer_language_note")}
-          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-8">

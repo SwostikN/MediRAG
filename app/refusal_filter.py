@@ -136,10 +136,17 @@ _DIAGNOSTIC_SCOPE_CUES = (
     "you are hypothyroid",
     "this is asthma",
     "this is diabetes",
-    # "You're experiencing symptoms of X" / "you are experiencing X" —
-    # caught after the baseline_v0 calibration run showed an LLM leak
-    # where this phrasing passed the classifier because it doesn't
-    # use "you have". Also cover "showing signs of" variants.
+)
+
+# "You're experiencing X" / "your symptoms suggest X" / "showing signs of X":
+# these phrasings ARE diagnostic when X is a named condition, but the cues
+# also fire on benign patient-ed framing like "if you're experiencing chest
+# pain, go to the nearest emergency" or "your symptoms suggest seeing a
+# doctor soon". We only treat these as diagnostic when a named condition
+# co-occurs in the same answer. This keeps the original v0 leak closed
+# (LLM emitting "you're experiencing symptoms of depression") without
+# retracting safe navigation prose (the 2026-04-21 regression).
+_CONTEXT_DIAGNOSTIC_CUES = (
     "you're experiencing",
     "you are experiencing",
     "you're showing signs",
@@ -147,6 +154,23 @@ _DIAGNOSTIC_SCOPE_CUES = (
     "your symptoms suggest",
     "your symptoms indicate",
     "your symptoms are consistent with",
+    "symptoms of",  # e.g. "symptoms of depression" when paired with a condition
+)
+
+_CONDITION_NAMES = (
+    "depression", "anxiety", "panic disorder", "bipolar",
+    "diabetes", "diabetic", "hypertension", "hypertensive",
+    "asthma", "copd", "bronchitis", "pneumonia",
+    "angina", "heart attack", "mi ", "myocardial",
+    "stroke", "tia",
+    "hypothyroid", "hyperthyroid",
+    "anaemia", "anemia", "anemic",
+    "migraine",
+    "covid", "influenza",
+    "anaphylaxis",
+    "sepsis", "meningitis",
+    "tuberculosis",
+    "cancer", "lymphoma", "leukaemia", "leukemia",
 )
 
 _PRESCRIPTIVE_SCOPE_CUES = (
@@ -170,15 +194,34 @@ _PRESCRIPTIVE_SCOPE_CUES = (
 # scope-guard MUST let it through even if phrasing would otherwise trip the
 # diagnostic cluster. Emergencies trump scope rules.
 _EMERGENCY_OVERRIDE_CUES = (
+    # Nepal emergency numbers (primary for this product)
     "call 102",
     "call 100",
+    "dial 102",
+    "dial 100",
+    # NHS- and US-sourced chunks come through with these; the LLM
+    # paraphrases rather than re-numbering, so we must recognise them.
+    "call 999",
+    "call 911",
+    "dial 999",
+    "dial 911",
     "nearest emergency",
+    "emergency department",
+    "emergency room",
+    "accident and emergency",
     "go to the er",
     "go to the emergency",
+    "go to a&e",
+    "go to a & e",
     "call an ambulance",
+    "get an ambulance",
     "red flag",
     "this is a medical emergency",
     "seek emergency care",
+    "seek immediate",
+    "immediate medical help",
+    "urgent medical attention",
+    "seek urgent medical",
 )
 
 # Dose-unit regex — paired with prescriptive cues to avoid false-positive on
@@ -204,6 +247,50 @@ SCOPE_REFUSAL_TEMPLATES = {
 }
 
 
+# Informational-vs-personal question classifier. "What happens if…",
+# "What are the symptoms of…", "How does X work?" are general-knowledge
+# questions — the LLM's answer is describing a phenomenon, not
+# diagnosing the user. Applying the diagnostic-scope refusal to those
+# answers is a user-hostile false positive.
+#
+# Personal-advice patterns override informational prefixes, so
+# "What medicine should I take for flu?" is still classified as
+# personal (and prescriptive scope-guard / safety layers still apply).
+_INFORMATIONAL_PREFIXES_RE = re.compile(
+    r"^\s*(?:what|how|why|when|where|which|who|"
+    r"does|do|is|are|can|could|would|will|"
+    r"tell me about|explain|describe)\b",
+    re.IGNORECASE,
+)
+
+_PERSONAL_ADVICE_RE = re.compile(
+    r"\b(?:"
+    r"do\s+i\s+have|am\s+i\s+(?:having|getting)|"
+    r"should\s+i\s+(?:take|have|eat|drink|stop|start|use|try|see|visit|go)|"
+    r"can\s+i\s+(?:take|have|eat|drink|stop|start|use|try)|"
+    r"what\s+(?:medicine|medication|drug|dose|pill)\s+should\s+i|"
+    r"which\s+(?:medicine|medication|drug|pill)\s+should\s+i|"
+    r"what\s+should\s+i\s+(?:take|do|eat|drink)|"
+    r"how\s+much\s+(?:should\s+i|of\s+\w+\s+should\s+i|can\s+i\s+take)|"
+    r"is\s+it\s+safe\s+(?:for\s+me|if\s+i)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def is_informational_question(question: str) -> bool:
+    """True when the question asks for general information rather than
+    personal medical advice. Informational questions should not trigger
+    diagnostic-scope retraction. NLI entailment still runs, so the
+    answer must still be source-grounded — safety is not softened."""
+    if not question or not question.strip():
+        return False
+    lower = question.lower().strip()
+    if _PERSONAL_ADVICE_RE.search(lower):
+        return False
+    return bool(_INFORMATIONAL_PREFIXES_RE.search(lower))
+
+
 def classify_scope(text: str) -> str:
     """Bucket an answer into: 'safe', 'diagnostic', 'prescriptive', or
     'emergency_override'.
@@ -227,6 +314,13 @@ def classify_scope(text: str) -> str:
 
     if any(cue in lower for cue in _DIAGNOSTIC_SCOPE_CUES):
         return "diagnostic"
+
+    # Context-sensitive cluster — only diagnostic when paired with a
+    # named condition. Stops "if you're experiencing chest pain, go to
+    # the ER" from tripping diagnostic retraction on navigation prose.
+    if any(cue in lower for cue in _CONTEXT_DIAGNOSTIC_CUES):
+        if any(cond in lower for cond in _CONDITION_NAMES):
+            return "diagnostic"
 
     has_dose_unit = bool(_DOSE_UNIT_RE.search(text))
     if has_dose_unit and any(cue in lower for cue in _PRESCRIPTIVE_SCOPE_CUES):

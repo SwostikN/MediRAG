@@ -103,7 +103,7 @@ def check(identity: str, endpoint: str) -> None:
                 raise HTTPException(
                     status_code=429,
                     detail=(
-                        f"MediRAG has hit its daily {endpoint} cap. "
+                        f"DocuMed AI has hit its daily {endpoint} cap. "
                         f"Please try again in {retry_after}s."
                     ),
                     headers={"Retry-After": str(retry_after)},

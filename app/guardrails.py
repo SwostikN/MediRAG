@@ -43,9 +43,22 @@ _THRESHOLD_RE = re.compile(
 _BP_BARE_RE = re.compile(r"\b\d{2,3}\s*/\s*\d{2,3}\b")
 
 # Diagnostic verbs. "You have hypertension", "diagnosed with diabetes",
-# "this is asthma". Kept narrow — generic "have" on its own is too loose.
+# "this is asthma". The older `this\s+is\s+(?:a|an)?\s*\w+` shape was
+# catastrophically broad — it matched "this is a common symptom",
+# "this is a warning sign", "this is a serious condition" — every
+# such sentence was promoted to a hard claim with a 0.5 entailment
+# floor and then redacted, leaving the total-redaction refusal shown
+# to users for anxiety / stress / trauma / allergy questions. Restrict
+# "this is <condition>" to an explicit disease list; generic patient-ed
+# framing is NOT a diagnosis.
+_DIAGNOSIS_CONDITIONS = (
+    "asthma|diabetes|hypertension|depression|anxiety|bronchitis|pneumonia|"
+    "covid|influenza|flu|migraine|stroke|heart\\s+attack|angina|"
+    "anaphylaxis|sepsis|meningitis|tuberculosis|tb|cancer"
+)
 _DIAGNOSIS_RE = re.compile(
-    r"\b(?:you\s+(?:have|are\s+having)|diagnosed\s+with|this\s+is\s+(?:a|an)?\s*\w+)\b",
+    rf"\b(?:you\s+(?:have|are\s+having)|diagnosed\s+with|"
+    rf"this\s+is\s+(?:a|an)?\s*(?:\w+\s+){{0,3}}(?:{_DIAGNOSIS_CONDITIONS}))\b",
     re.IGNORECASE,
 )
 
@@ -568,6 +581,79 @@ def apply_guardrails(
 
     filtered = " ".join(kept).strip()
     return filtered, score_log
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Phase-3B: post-stream fusion-drift check for /query/stream
+# ──────────────────────────────────────────────────────────────────────────
+#
+# `process_streaming_chunk` can only see one sentence at a time — it has no
+# way to pair consecutive claim sentences and NLI their concatenation (the
+# "ACE inhibitors cause cough in 5% of patients" shape where each half
+# entails its own chunk but the fusion is unsupported).
+#
+# To close that gap without rewriting the streaming pipeline, we run a
+# post-stream pass over the list of already-emitted sentences. We cannot
+# retroactively edit text that's already on the user's screen, so the
+# caller uses the returned records to emit a trailing fusion-drift
+# disclaimer delta + persists the records to query_log for offline audit.
+def post_stream_fusion_check(
+    emitted_sentences: list[str],
+    chunk_texts: list[str],
+    *,
+    verifier=None,
+    classifier=None,
+) -> list[dict]:
+    """Run `_fusion_drift_check` on consecutive claim-sentence pairs from
+    a completed stream. Returns a list of fusion-drift records, one per
+    flagged pair, each with keys:
+        - `sent_a_index`, `sent_b_index`: positions in `emitted_sentences`
+        - `p_fused`: max-entailment of the concatenated pair
+        - `flagged`: always True in returned records (non-flagged pairs omitted)
+
+    Empty list when no pairs flag. Safe to call with empty input.
+    """
+    if not emitted_sentences or not chunk_texts:
+        return []
+
+    verifier = verifier or verify_entailment
+    classifier = classifier or classify_claim
+
+    drifts: list[dict] = []
+    prev_claim_sent: str | None = None
+    prev_claim_idx: int | None = None
+
+    for idx, sent in enumerate(emitted_sentences):
+        if not sent or not sent.strip():
+            continue
+        # classify_claim returns a ClaimFeatures dataclass. Pair only
+        # sentences that carry NLI-worthy clinical claims; otherwise we
+        # flag benign framing-to-framing pairs and spray the spurious
+        # "combines claims from multiple sources" disclaimer on answers
+        # that never cross-source-fuse anything.
+        feats = classifier(sent)
+        is_claim = getattr(feats, "requires_nli", False)
+        if is_claim and prev_claim_sent is not None and prev_claim_idx is not None:
+            fails, p_fused = _fusion_drift_check(
+                prev_claim_sent, sent, chunk_texts, verifier=verifier
+            )
+            if fails:
+                drifts.append({
+                    "flagged": True,
+                    "sent_a_index": prev_claim_idx,
+                    "sent_b_index": idx,
+                    "p_fused": p_fused,
+                })
+        if is_claim:
+            prev_claim_sent = sent
+            prev_claim_idx = idx
+        else:
+            # Non-claim sentence breaks the chain — do not pair a framing
+            # sentence with the next claim (mirrors apply_guardrails).
+            prev_claim_sent = None
+            prev_claim_idx = None
+
+    return drifts
 
 
 # ──────────────────────────────────────────────────────────────────────────

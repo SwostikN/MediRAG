@@ -338,7 +338,7 @@ export function ChatMessage({
                 Call 102 (ambulance)
               </a>
               <span className={`text-[11px] ${banner.disclaimer}`}>
-                This is not a diagnosis. MediRAG is a navigator — seek in-person care.
+                This is not a diagnosis. DocuMed AI is a navigator — seek in-person care.
               </span>
             </div>
           </div>

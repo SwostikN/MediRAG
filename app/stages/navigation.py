@@ -53,7 +53,7 @@ print(f"[navigation] loaded {len(TIERS)} Nepal care tiers: {TIER_IDS}")
 
 
 _SYSTEM_PROMPT = """\
-You are MediRAG's care-navigation stage for patients in Nepal. Your job
+You are DocuMed AI's care-navigation stage for patients in Nepal. Your job
 is NOT to diagnose. Your job is to tell the user which tier of Nepal's
 health system is appropriate for the complaint they just described, and
 how urgently to go.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Session } from "@supabase/supabase-js";
 import {
@@ -15,6 +15,7 @@ import {
   LogOut,
   Trash2,
   X,
+  Home,
 } from "lucide-react";
 import { ChatMessage, type ChatMessageSource } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
@@ -243,6 +244,17 @@ function toUiMessages(rows: ChatMessageRecord[]): Message[] {
     content: row.content,
     timestamp: formatStoredTimestamp(row.created_at),
     renderMode: row.render_mode ?? "plain",
+    // Preserve red-flag + stage metadata so reloading a past chat from
+    // the sidebar renders the emergency banner / tier block exactly as
+    // the user first saw it, instead of collapsing to a plain bubble.
+    stage: row.stage ?? undefined,
+    redFlag: row.red_flag
+      ? {
+          ruleId: row.red_flag.ruleId,
+          category: row.red_flag.category,
+          urgency: row.red_flag.urgency,
+        }
+      : undefined,
   }));
 }
 
@@ -276,9 +288,20 @@ export default function App() {
   const [deleteInFlight, setDeleteInFlight] = useState(false);
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [clearAllInFlight, setClearAllInFlight] = useState(false);
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
+  const [signOutInFlight, setSignOutInFlight] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteAccountInFlight, setDeleteAccountInFlight] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const { t } = useSettings();
+
+  // Tracks the user id last seen by onAuthStateChange. Supabase v2
+  // emits SIGNED_IN (not just TOKEN_REFRESHED) on tab-focus token
+  // revalidation, so we can't trust the event type alone — we reset
+  // local conversation state only when the user IDENTITY actually
+  // changes (sign-in with a different/new user, or sign-out).
+  const lastAuthUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -324,7 +347,7 @@ export default function App() {
   const loadConversationMessages = async (chatSessionId: string) => {
     const { data, error } = await supabase
       .from("chat_messages")
-      .select("id, session_id, role, content, created_at, render_mode")
+      .select("id, session_id, role, content, created_at, render_mode, stage, red_flag")
       .eq("session_id", chatSessionId)
       .order("created_at", { ascending: true });
 
@@ -381,6 +404,11 @@ export default function App() {
     );
   };
 
+  // Pure sidebar refresh. Previously this ALSO called
+  // resetLocalConversation() in both branches, which meant every caller
+  // (including tab-focus-triggered auth events) wiped `messages` and
+  // `currentSessionId` — sending the user back to EmptyState. Resetting
+  // the local conversation is the caller's responsibility now.
   const loadConversationHistory = async (userId: string) => {
     const { data, error } = await supabase
       .from("chat_sessions")
@@ -394,13 +422,7 @@ export default function App() {
 
     const history = (data ?? []) as ChatSessionRecord[];
     setConversationHistory(history);
-
-    if (history.length === 0) {
-      resetLocalConversation("No saved sessions yet. Upload a PDF to begin.");
-      return;
-    }
-
-    resetLocalConversation("Signed in successfully.");
+    return history;
   };
 
   useEffect(() => {
@@ -422,6 +444,7 @@ export default function App() {
       const activeSession = data.session;
       setSession(activeSession);
       setAuthReady(true);
+      lastAuthUserIdRef.current = activeSession?.user.id ?? null;
 
       if (!activeSession) {
         setConversationHistory([]);
@@ -452,16 +475,38 @@ export default function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       setAuthReady(true);
 
+      // Supabase v2 emits SIGNED_IN (not just TOKEN_REFRESHED) on tab-
+      // focus token revalidation, so we can't key off the event type.
+      // The actual predicate for "should I wipe local conversation
+      // state?" is whether the USER IDENTITY changed. We track the
+      // last-seen user id in a ref and only reset on a genuine
+      // transition (sign-out, or sign-in with a different/new user).
+      const prevUserId = lastAuthUserIdRef.current;
+      const nextUserId = nextSession?.user.id ?? null;
+      lastAuthUserIdRef.current = nextUserId;
+
       if (!nextSession) {
+        // Genuine sign-out.
         setConversationHistory([]);
-        resetLocalConversation("Signed out. Local session cleared.");
+        if (prevUserId !== null) {
+          resetLocalConversation("Signed out. Local session cleared.");
+        }
         return;
       }
 
+      if (prevUserId === nextUserId) {
+        // Same user — this is a token refresh / tab-focus revalidation /
+        // USER_UPDATED. Do NOT touch messages, currentSessionId, or
+        // sidebar. Leave the user where they were.
+        return;
+      }
+
+      // New identity: different user (or first sign-in after cold
+      // boot without an active session). Run the full sign-in flow.
       void (async () => {
         try {
           await syncUserProfile(nextSession);
@@ -470,8 +515,13 @@ export default function App() {
         }
         try {
           setHistoryAvailable(true);
-          await loadConversationHistory(nextSession.user.id);
+          const history = await loadConversationHistory(nextSession.user.id);
           setShowAuthScreen(false);
+          if ((history?.length ?? 0) === 0) {
+            resetLocalConversation("No saved sessions yet. Upload a PDF to begin.");
+          } else {
+            resetLocalConversation("Signed in successfully.");
+          }
         } catch (historyError) {
           console.warn("Failed to refresh chat history", historyError);
           setHistoryAvailable(false);
@@ -1395,6 +1445,16 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleStartNewSession}
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/40"
+              aria-label="Return to home screen"
+              title="Home"
+            >
+              <Home className="w-4 h-4" />
+              <span>Home</span>
+            </button>
+
             <div className="hidden md:flex items-center gap-2 bg-muted/30 rounded-lg p-1">
               <button
                 onClick={() => setVariant("classic")}
@@ -1405,16 +1465,6 @@ export default function App() {
                 }`}
               >
                 {t("tab_classic")}
-              </button>
-              <button
-                onClick={() => setVariant("diagnostic")}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  variant === "diagnostic"
-                    ? "bg-background shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t("tab_diagnostic")}
               </button>
               <button
                 onClick={() => setVariant("research")}
@@ -1438,9 +1488,7 @@ export default function App() {
               </button>
             ) : (
               <button
-                onClick={() => {
-                  void handleSignOut();
-                }}
+                onClick={() => setSignOutConfirmOpen(true)}
                 className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <LogOut className="w-4 h-4" />
@@ -1939,11 +1987,113 @@ export default function App() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={signOutConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !signOutInFlight) {
+            setSignOutConfirmOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out of DocuMed AI?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block">
+                Your saved chats stay safe in your account and will be here
+                when you sign back in. You'll need to enter your email and
+                password again to access them.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={signOutInFlight}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={signOutInFlight}
+              onClick={(e) => {
+                e.preventDefault();
+                void (async () => {
+                  setSignOutInFlight(true);
+                  try {
+                    await handleSignOut();
+                  } finally {
+                    setSignOutInFlight(false);
+                    setSignOutConfirmOpen(false);
+                  }
+                })();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive"
+            >
+              {signOutInFlight ? "Signing out..." : "Sign out"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteAccountOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleteAccountInFlight) {
+            setDeleteAccountOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block">
+                This will permanently delete your DocuMed AI account,
+                including every saved chat, uploaded document, and lab
+                marker tied to it. This cannot be undone. You'll be
+                signed out as soon as the deletion completes.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAccountInFlight}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteAccountInFlight}
+              onClick={(e) => {
+                e.preventDefault();
+                void (async () => {
+                  setDeleteAccountInFlight(true);
+                  try {
+                    const { error } = await supabase.rpc("delete_current_user");
+                    if (error) {
+                      console.warn("delete_current_user rpc error:", error.message || error);
+                      setStatusMessage(
+                        "Account deletion failed. The delete_current_user RPC may not be deployed yet.",
+                      );
+                      setDeleteAccountInFlight(false);
+                      setDeleteAccountOpen(false);
+                      return;
+                    }
+                    // Force sign-out locally — the deleted JWT will no
+                    // longer validate against Supabase, and we don't
+                    // want a stale session lingering in localStorage.
+                    await supabase.auth.signOut();
+                    setStatusMessage("Your account has been deleted.");
+                  } finally {
+                    setDeleteAccountInFlight(false);
+                    setDeleteAccountOpen(false);
+                  }
+                })();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive"
+            >
+              {deleteAccountInFlight ? "Deleting..." : "Delete my account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <SettingsSheet
         open={showSettings}
         onOpenChange={setShowSettings}
         signedIn={!!session?.user?.id}
         onClearAllChats={() => setClearAllOpen(true)}
+        onDeleteAccount={() => setDeleteAccountOpen(true)}
       />
     </div>
   );
