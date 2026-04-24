@@ -208,25 +208,38 @@ _VALUE_UNIT_RE = re.compile(
 def extract_lab_markers(text: str) -> list[LabMarker]:
     """Parse a (lab report) text blob into a list of LabMarker objects.
 
-    Strategy is line-by-line: for each non-blank line, find the first
-    canonical alias and the first value+unit+range. If both are present
-    and on the same line, emit a marker. This matches Nepali lab
-    formatting where each marker is one line.
+    Two-pass strategy:
 
-    Multiple aliases for the same canonical marker on different lines
-    (e.g. "TSH" header followed by "Thyroid Stimulating Hormone" detail)
-    are deduplicated by canonical name — first occurrence wins.
+    1. **Same-line pass (fast path).** For each non-blank line, find the
+       first canonical alias and the first value+unit+range. If all three
+       are on the same line, emit. This matches the common Nepali lab
+       layout where each marker is one line.
 
-    The parser is deliberately conservative: it skips any line where it
-    can't bind a value to a single canonical marker, rather than
-    inferring. The cost of a missed marker (user sees fewer rows in the
-    explainer) is much lower than the cost of misattributing a value to
-    the wrong marker.
+    2. **Windowed pass (PDF-column fallback).** Some PDF extractors
+       (pdfminer's column-aware mode, pypdfium with table layout)
+       produce text where every marker NAME is in one column block and
+       every VALUE/UNIT is in another, so marker name and value land on
+       different lines. The same-line pass misses every marker in that
+       case. Fall back to scanning the full text: for each alias
+       anchored in the text, search the next ~400 characters (across
+       line breaks) for a value+unit, and the following ~200 chars for
+       a range.
+
+    Multiple aliases for the same canonical marker (e.g. "TSH" header
+    followed by "Thyroid Stimulating Hormone" detail) are deduplicated
+    by canonical name — first occurrence wins.
+
+    The parser is conservative: it skips a candidate where it can't
+    bind a value to a single canonical marker, rather than inferring.
+    The cost of a missed marker (fewer rows in the explainer) is much
+    lower than misattributing a value to the wrong marker.
     """
     if not text:
         return []
 
     seen: dict[str, LabMarker] = {}
+
+    # Pass 1 — same-line. Cheap and precise.
     for line in text.splitlines():
         line_stripped = line.strip()
         if not line_stripped:
@@ -271,6 +284,47 @@ def extract_lab_markers(text: str) -> list[LabMarker]:
             aliases_used=matched_alias or "",
         )
         seen[matched_canonical] = marker
+
+    # Pass 2 — windowed cross-line fallback. Triggered when the first
+    # pass found no markers OR when some aliases appeared in the text
+    # but had no value+unit on the same line (columnar PDF extraction).
+    # For each alias still unseen, anchor on its match position in the
+    # full text and scan the next 400 chars for value+unit, plus up to
+    # 200 chars after that for a reference range.
+    if len(seen) < len(_MARKER_ALIASES):
+        full_lower = text.lower()
+        for alias_lower, canonical in _ALIAS_TO_CANONICAL.items():
+            if canonical in seen:
+                continue
+            pattern = rf"\b{re.escape(alias_lower)}\b"
+            for alias_match in re.finditer(pattern, full_lower):
+                window_start = alias_match.end()
+                window_end = min(len(text), window_start + 400)
+                window = text[window_start:window_end]
+                vu = _VALUE_UNIT_RE.search(window)
+                if not vu:
+                    continue
+                try:
+                    value = float(vu.group("value"))
+                except ValueError:
+                    continue
+                # Range search window — up to 200 chars after the value+unit.
+                range_start = window_start + vu.end()
+                range_end = min(len(text), range_start + 200)
+                range_window = text[range_start:range_end]
+                range_match = _RANGE_RE.search(range_window)
+                range_str = range_match.group("range") if range_match else None
+                marker = LabMarker(
+                    name=canonical,
+                    value=value,
+                    unit=vu.group("unit"),
+                    reference_range=range_str,
+                    status=_classify_status(value, range_str),
+                    raw_match=(alias_match.group(0) + " ... " + vu.group(0))[:200],
+                    aliases_used=alias_lower,
+                )
+                seen[canonical] = marker
+                break
 
     return list(seen.values())
 
@@ -554,10 +608,17 @@ def compose_explainer(
             seen_source_keys.add(key)
             all_source_rows.append(r)
 
+    summary = _compose_report_summary(markers)
     body = "\n\n".join(blocks)
     sources_block = _format_sources_block(all_source_rows)
 
-    parts: list[str] = [body]
+    # Order: deterministic summary FIRST (at-a-glance picture of
+    # in-range / out-of-range markers), then the LLM per-marker
+    # explanations, then sources, then the escalation footer.
+    parts: list[str] = []
+    if summary:
+        parts.append(summary)
+    parts.append(body)
     if sources_block:
         parts.append(sources_block)
     parts.append(_ESCALATION_FOOTER)
@@ -621,4 +682,107 @@ def _markers_as_table(markers: list[LabMarker]) -> str:
             f"| {m.name} | {m.value} | {m.unit} | "
             f"{m.reference_range or '—'} | {m.status} |"
         )
+    return "\n".join(lines)
+
+
+def _compose_report_summary(markers: list[LabMarker]) -> str:
+    """Build the up-front **Report summary** + **What stands out**
+    sections.
+
+    Deliberately deterministic: every sentence is derived from the
+    parsed marker list (values, units, status flags set by
+    `_classify_status`). No LLM inference, so no diagnostic drift and
+    no scope-guard risk. The per-marker blocks below STILL run through
+    the LLM for the "what does this marker measure, what might a
+    doctor check" part — this summary just gives the user the
+    at-a-glance picture before the detail.
+
+    Status buckets rendered:
+      - **Within the reference range** — `status == "normal"`
+      - **Below the reference range** — `status == "low"`
+      - **Above the reference range** — `status == "high"`
+      - **No reference range on the report** — `status == "unknown"`
+    """
+    if not markers:
+        return ""
+
+    by_status: dict[str, list[LabMarker]] = {
+        "normal": [], "low": [], "high": [], "unknown": [],
+    }
+    for m in markers:
+        by_status.get(m.status, by_status["unknown"]).append(m)
+
+    def _fmt_list(ms: list[LabMarker]) -> str:
+        return ", ".join(
+            f"{m.name} ({m.value} {m.unit})" for m in ms
+        ) or "—"
+
+    lines: list[str] = ["**Report summary**", ""]
+    lines.append(
+        f"You uploaded a report and I was able to read {len(markers)} "
+        f"{'marker' if len(markers) == 1 else 'markers'} from it. "
+        "Here is the at-a-glance picture based on the reference ranges "
+        "printed on your report:"
+    )
+    lines.append("")
+    if by_status["normal"]:
+        lines.append(
+            f"- **Within the reference range:** {_fmt_list(by_status['normal'])}."
+        )
+    if by_status["low"]:
+        lines.append(
+            f"- **Below the reference range:** "
+            + ", ".join(
+                f"{m.name} — {m.value} {m.unit} (reference {m.reference_range})"
+                for m in by_status["low"]
+            )
+            + "."
+        )
+    if by_status["high"]:
+        lines.append(
+            f"- **Above the reference range:** "
+            + ", ".join(
+                f"{m.name} — {m.value} {m.unit} (reference {m.reference_range})"
+                for m in by_status["high"]
+            )
+            + "."
+        )
+    if by_status["unknown"]:
+        lines.append(
+            f"- **No reference range on the report (couldn't compare):** "
+            f"{_fmt_list(by_status['unknown'])}."
+        )
+
+    abnormal = by_status["low"] + by_status["high"]
+    lines.append("")
+    lines.append("**What stands out**")
+    lines.append("")
+    if not abnormal:
+        lines.append(
+            "Every marker I could read falls within its reference range. "
+            "This is the report's own comparison, not a clinical judgement "
+            "— your clinician may still want to review the full report in "
+            "context of your symptoms and history."
+        )
+    else:
+        lines.append(
+            f"{len(abnormal)} of your markers {'is' if len(abnormal) == 1 else 'are'} "
+            "outside the reference range printed on the report. Flag "
+            f"{'this one' if len(abnormal) == 1 else 'these'} for your clinician:"
+        )
+        for m in abnormal:
+            direction = "below" if m.status == "low" else "above"
+            lines.append(
+                f"- **{m.name}** — {m.value} {m.unit} is {direction} the "
+                f"reference range ({m.reference_range}). Ask your clinician "
+                "what the likely cause is and whether a repeat test or "
+                "follow-up is needed."
+            )
+        lines.append("")
+        lines.append(
+            "This is not a diagnosis. A single out-of-range value can be "
+            "lab variation, a one-off, or a genuine finding — only a "
+            "clinician who knows your history and symptoms can tell."
+        )
+
     return "\n".join(lines)

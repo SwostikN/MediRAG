@@ -66,7 +66,7 @@ try:
         flush_streaming_buffer,
         post_stream_fusion_check,
     )
-    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question
+    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -110,7 +110,7 @@ except ImportError:
         flush_streaming_buffer,
         post_stream_fusion_check,
     )
-    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question
+    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -878,14 +878,25 @@ async def upload_resolve(req: ResolveUploadRequest):
     if row.get("user_id") != req.user_id or row.get("session_id") != req.session_id:
         raise HTTPException(status_code=403, detail="Document does not belong to this session/user.")
 
-    if row.get("doc_type") != "other":
-        raise HTTPException(
-            status_code=409,
-            detail=f"Document is already classified as '{row.get('doc_type')}'; cannot resolve again.",
-        )
-
+    # Resolve-eligibility guard. The cached `extracted_text` is the
+    # honest signal that this row is awaiting a user choice — it is
+    # populated on the `other` bucket path AND on the lab_report
+    # zero-markers fallback path (where the parser recognised the doc
+    # as a lab report but couldn't lift specific markers). For fully-
+    # handled lab_report / research_paper rows the handlers clear
+    # extracted_text after success, so the guard below still blocks
+    # a re-classification attempt on a successfully-processed doc.
     text = row.get("extracted_text") or ""
     if not text:
+        current_type = row.get("doc_type")
+        if current_type in ("lab_report", "research_paper"):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Document is already processed as '{current_type}'; "
+                    "cannot resolve again."
+                ),
+            )
         raise HTTPException(
             status_code=410,
             detail="Extracted text is no longer available for this document; please re-upload.",
@@ -1627,15 +1638,26 @@ async def query_document(query: QueryRequest):
         _log_refusal("no_rows")
         return refusal
     top_rerank = rows[0].get("rerank_score")
-    print(f"[refusal-gate] top rerank_score={top_rerank} threshold={RERANK_REFUSAL_THRESHOLD}")
+    # Narrow-scope relax: when the user explicitly references their
+    # uploaded reports ("my lab results", "these reports", "based on
+    # the PDF"), drop the rerank gate to 0.3 so session-chunk retrieval
+    # from their own upload can pass. NLI still runs unchanged.
+    effective_threshold = RERANK_REFUSAL_THRESHOLD
+    if is_attached_doc_query(query.question):
+        effective_threshold = 0.3
+        print(
+            f"[refusal-gate] attached-doc query detected — threshold "
+            f"relaxed to {effective_threshold}"
+        )
+    print(f"[refusal-gate] top rerank_score={top_rerank} threshold={effective_threshold}")
     if top_rerank is None:
         print("[refusal-gate] refusing: rerank did not run, cannot judge relevance")
         _log_refusal("rerank_missing")
         return refusal
-    if top_rerank < RERANK_REFUSAL_THRESHOLD:
+    if top_rerank < effective_threshold:
         print(
             f"[refusal-gate] refusing: top rerank_score {top_rerank:.3f} "
-            f"< {RERANK_REFUSAL_THRESHOLD}"
+            f"< {effective_threshold}"
         )
         _log_refusal(f"below_threshold:{top_rerank:.3f}")
         return refusal
@@ -1729,6 +1751,10 @@ async def query_document(query: QueryRequest):
         use_inline_citations=INLINE_CITATIONS_ENABLED,
         check_fusion_drift=FUSION_DRIFT_ENABLED,
     )
+    # Localise 999/911/A&E → 102 / nearest emergency department. Runs
+    # after NLI so grounding is unaffected; only the call-to-action
+    # number / facility label is swapped.
+    filtered_answer = rewrite_emergency_numbers(filtered_answer)
     if not filtered_answer.strip():
         print("[guardrails] all claim sentences redacted, falling back to refusal")
         _log_query_safe(
@@ -2035,13 +2061,22 @@ async def query_document_stream(query: QueryRequest):
                 yield ev
             return
         top_rerank = rows[0].get("rerank_score")
-        print(f"[refusal-gate] top rerank_score={top_rerank} threshold={RERANK_REFUSAL_THRESHOLD}")
+        # Attached-doc query → relax rerank gate to 0.3 so the user's
+        # own uploaded PDF chunks aren't gated out by a strict 0.4.
+        effective_threshold = RERANK_REFUSAL_THRESHOLD
+        if is_attached_doc_query(query.question):
+            effective_threshold = 0.3
+            print(
+                f"[refusal-gate] attached-doc query detected — threshold "
+                f"relaxed to {effective_threshold}"
+            )
+        print(f"[refusal-gate] top rerank_score={top_rerank} threshold={effective_threshold}")
         if top_rerank is None:
             for ev in emit_refusal("rerank did not run, cannot judge relevance"):
                 yield ev
             return
-        if top_rerank < RERANK_REFUSAL_THRESHOLD:
-            for ev in emit_refusal(f"top rerank_score {top_rerank:.3f} < {RERANK_REFUSAL_THRESHOLD}"):
+        if top_rerank < effective_threshold:
+            for ev in emit_refusal(f"top rerank_score {top_rerank:.3f} < {effective_threshold}"):
                 yield ev
             return
 
@@ -2105,6 +2140,11 @@ async def query_document_stream(query: QueryRequest):
             )
             events = []
             for sent_out in emits:
+                # Localise emergency-number references before emitting.
+                # NHS chunks say "call 999"; we need "call 102" for
+                # Nepal. The claim is still source-grounded; only the
+                # call-to-action phone number is rewritten.
+                sent_out = rewrite_emergency_numbers(sent_out)
                 emitted_parts.append(sent_out)
                 streamed_any = True
                 # Re-introduce the separating space the splitter consumed.
@@ -2183,6 +2223,7 @@ async def query_document_stream(query: QueryRequest):
             nli_scores,
             use_inline_citations=INLINE_CITATIONS_ENABLED,
         ):
+            sent_out = rewrite_emergency_numbers(sent_out)
             emitted_parts.append(sent_out)
             streamed_any = True
             yield _sse("delta", {"text": sent_out})

@@ -63,6 +63,55 @@ SAFE_REFUSAL_TEMPLATE = (
 )
 
 
+# Emergency-number localisation. NHS-sourced chunks literally say "call
+# 999" and US-sourced chunks say "call 911". The LLM quotes verbatim,
+# which is clinically wrong for a Nepal-focused navigator — 999 / 911
+# don't route to an ambulance here. Rewrite the answer body (NOT the
+# source titles in the citations panel) so the user sees the correct
+# Nepal number. Source links stay honest.
+_NEPAL_EMERGENCY_REWRITES: list[tuple[str, str]] = [
+    # Most specific first so "call 999" is rewritten before "999" alone.
+    (r"\bcall\s*999\b", "call 102"),
+    (r"\bcall\s*911\b", "call 102"),
+    (r"\bdial\s*999\b", "dial 102"),
+    (r"\bdial\s*911\b", "dial 102"),
+    (r"\b999\s*straight\s*away\b", "102 straight away"),
+    (r"\b911\s*straight\s*away\b", "102 straight away"),
+    # "999 vs see GP" appears in NHS page titles — only rewrite body
+    # prose where the number stands alone and paired with a verb, so
+    # we don't rewrite "the 999-point scale" or source-titles the LLM
+    # quoted. Use a narrow post-verb pattern.
+    (r"\b(?:phone|ring|contact)\s*999\b", "call 102"),
+    (r"\b(?:phone|ring|contact)\s*911\b", "call 102"),
+    # A&E / emergency-room Britishisms / Americanisms → neutral phrasing
+    # that makes sense in Nepal.
+    (r"\bA&E\s+department\b", "nearest hospital emergency department"),
+    (r"\baccident\s+and\s+emergency\s+department\b", "nearest hospital emergency department"),
+    (r"\bgo\s+to\s+A&E\b", "go to the nearest hospital emergency department"),
+    (r"\bgo\s+to\s+a&e\b", "go to the nearest hospital emergency department"),
+]
+
+_NEPAL_EMERGENCY_COMPILED = [
+    (re.compile(pat, re.IGNORECASE), repl)
+    for pat, repl in _NEPAL_EMERGENCY_REWRITES
+]
+
+
+def rewrite_emergency_numbers(text: str) -> str:
+    """Post-generation rewrite so the user sees Nepal emergency numbers
+    (102 for ambulance) regardless of whether the retrieved source was
+    NHS (999) or US (911). Safety floor is unchanged — the LLM's claim
+    was already NLI-grounded against the source that literally says
+    'call 999'; we're localising the call-to-action, not inventing one.
+    """
+    if not text:
+        return text
+    out = text
+    for pat, repl in _NEPAL_EMERGENCY_COMPILED:
+        out = pat.sub(repl, out)
+    return out
+
+
 def has_forbidden_phrase(text: str) -> bool:
     """True if `text` contains any diagnostic or dosing phrase."""
     return bool(_FORBIDDEN_RE.search(text or ""))
@@ -276,6 +325,34 @@ _PERSONAL_ADVICE_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+
+
+_ATTACHED_DOC_QUERY_RE = re.compile(
+    r"\b("
+    r"my\s+(?:report|reports|result|results|lab|labs|blood\s+work|pdf|document|test|tests)"
+    r"|these\s+(?:report|reports|result|results|lab|labs|pdf|documents|tests)"
+    r"|the\s+(?:report|reports|result|results|lab|labs|pdf|document|uploaded\s+\w+)"
+    r"|uploaded\s+(?:report|reports|result|results|lab|labs|pdf|document)"
+    r"|based\s+on\s+(?:my|these|the|this)"
+    r"|from\s+(?:my|these|the|this)\s+(?:report|reports|result|results|lab|labs|pdf)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def is_attached_doc_query(question: str) -> bool:
+    """True when the user's question explicitly references their
+    uploaded lab reports / research PDFs. Used to gate a narrower
+    rerank-threshold relax (0.4 → 0.3) ONLY when the user is asking
+    about content they themselves attached — not when they're asking
+    a general health question that happens to have poor retrieval.
+
+    NLI entailment still runs unchanged. Only the coverage gate
+    (rerank_score) is relaxed, and only for this query class.
+    """
+    if not question or not question.strip():
+        return False
+    return bool(_ATTACHED_DOC_QUERY_RE.search(question))
 
 
 def is_informational_question(question: str) -> bool:

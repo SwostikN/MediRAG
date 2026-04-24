@@ -78,10 +78,27 @@ interface ChatMessageProps {
   // Disables the disambiguation buttons after a click so the user
   // can't fire the resolve twice while waiting on the response.
   resolvePending?: boolean;
+  // True for a transient placeholder bubble (e.g. during PDF upload
+  // before the backend /upload response returns). Renders animated
+  // loading dots appended to the message body so the user sees a
+  // clear "working on it" signal.
+  pending?: boolean;
 }
 
 function normalizeMarkdown(s: string): string {
-  return s.replace(/([.!?)])\s+(\*\*[^*\n]{3,80}:\*\*)/g, "$1\n\n$2");
+  // Force every bold header `**Xxxx:**` onto its own line with a
+  // blank line above it. The previous regex required the preceding
+  // char to be `.!?)`, which missed cases where the LLM ended the
+  // prior sentence with a cited marker like `[1]` or with no
+  // terminal punctuation at all. Broadened to match the header
+  // regardless of preceding character, with a guard so we don't
+  // split when the header is already at the start of a line.
+  //
+  // Step 1: collapse single newline before a header into double.
+  // Step 2: if a header is NOT at line start, insert \n\n before it.
+  let out = s.replace(/([^\n])\n(\*\*[^*\n]{3,80}:\*\*)/g, "$1\n\n$2");
+  out = out.replace(/([^\n])\s+(\*\*[^*\n]{3,80}:\*\*)/g, "$1\n\n$2");
+  return out;
 }
 
 const markdownComponents = {
@@ -278,6 +295,7 @@ export function ChatMessage({
   resolveActions,
   onResolveUpload,
   resolvePending,
+  pending,
 }: ChatMessageProps) {
   const isUser = role === "user";
   const shouldFormatQueryAnswer = !isUser && renderMode === "query";
@@ -376,6 +394,32 @@ export function ChatMessage({
               >
                 {content}
               </p>
+              {pending && !isUser && (
+                <div
+                  className="mt-3 flex items-center gap-2"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Processing document"
+                >
+                  <div className="flex gap-1">
+                    <span
+                      className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                      style={{ animationDelay: "180ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-accent animate-pulse"
+                      style={{ animationDelay: "360ms" }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Working on it…
+                  </span>
+                </div>
+              )}
               {resolveActions && onResolveUpload && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button

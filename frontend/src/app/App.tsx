@@ -16,6 +16,11 @@ import {
   Trash2,
   X,
   Home,
+  Pin,
+  PinOff,
+  Pencil,
+  Check,
+  Copy,
 } from "lucide-react";
 import { ChatMessage, type ChatMessageSource } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
@@ -75,6 +80,12 @@ interface Message {
     sessionDocId: string;
     filename: string;
   };
+  // Set on the placeholder assistant bubble inserted immediately
+  // after the user triggers a PDF upload. Renders animated loading
+  // dots so the user sees the backend is working during the 5–20s
+  // parse + classify + extract pipeline. Cleared when the real
+  // response replaces the placeholder.
+  pending?: boolean;
 }
 
 // Per-session attached document — populated from /upload responses and
@@ -92,6 +103,9 @@ interface ChatSessionRecord {
   created_at: string;
   updated_at: string;
   last_message_preview: string | null;
+  // Nullable ISO timestamp — NULL = not pinned. Populated by the
+  // sidebar pin toggle and persisted via supabase UPDATE with RLS.
+  pinned_at?: string | null;
 }
 
 interface ChatMessageRecord {
@@ -145,6 +159,7 @@ async function streamQuery(
   body: unknown,
   headers: HeadersInit,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
   const response = await fetch(url, {
     method: "POST",
@@ -154,6 +169,7 @@ async function streamQuery(
       Accept: "text/event-stream",
     },
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!response.ok) {
@@ -303,6 +319,14 @@ export default function App() {
   // changes (sign-in with a different/new user, or sign-out).
   const lastAuthUserIdRef = useRef<string | null>(null);
 
+  // Abort controller for the currently-streaming /query/stream call.
+  // Aborted on sign-out and on account deletion so the backend stops
+  // pushing deltas into React state that is about to be wiped.
+  // Previously: deleting the account mid-stream left the stream
+  // running; the assistant bubble finished populating from the old
+  // session's tokens even though the user was already logged out.
+  const activeStreamAbortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
@@ -374,7 +398,7 @@ export default function App() {
           .from("chat_sessions")
           .update({ title: newTitle })
           .eq("id", chatSessionId)
-          .select("id, title, created_at, updated_at, last_message_preview")
+          .select("id, title, created_at, updated_at, last_message_preview, pinned_at")
           .single();
         if (renamed) {
           upsertConversationHistory(renamed as ChatSessionRecord);
@@ -412,7 +436,7 @@ export default function App() {
   const loadConversationHistory = async (userId: string) => {
     const { data, error } = await supabase
       .from("chat_sessions")
-      .select("id, title, created_at, updated_at, last_message_preview")
+      .select("id, title, created_at, updated_at, last_message_preview, pinned_at")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
@@ -567,7 +591,7 @@ export default function App() {
     const { data, error } = await supabase
       .from("chat_sessions")
       .insert([payload])
-      .select("id, title, created_at, updated_at, last_message_preview")
+      .select("id, title, created_at, updated_at, last_message_preview, pinned_at")
       .single();
 
     if (error) {
@@ -631,7 +655,7 @@ export default function App() {
       .from("chat_sessions")
       .update(updatePayload)
       .eq("id", chatSessionId)
-      .select("id, title, created_at, updated_at, last_message_preview")
+      .select("id, title, created_at, updated_at, last_message_preview, pinned_at")
       .single();
 
     if (updateError) {
@@ -700,6 +724,26 @@ export default function App() {
         formData.append("file", file);
         formData.append("session_id", chatSessionId);
         formData.append("user_id", session.user.id);
+
+        // Insert a placeholder assistant bubble so the user sees
+        // something happening while the backend parses + classifies +
+        // extracts markers + composes the explainer. Without this the
+        // UI just freezes on `isLoading=true` for 5–20 seconds with no
+        // visible feedback. The placeholder is identified by a
+        // deterministic id so we can REPLACE it in-place once the
+        // /upload response lands (either with the real answer or with
+        // an error bubble on failure).
+        const placeholderId = `upload-pending-${Date.now()}-${file.name}`;
+        const placeholderMessage: Message = {
+          id: placeholderId,
+          role: "assistant",
+          content: `📄 Reading **${file.name}**…\n\nParsing pages, detecting lab values, and pulling sources. This usually takes 5–20 seconds for a lab report.`,
+          timestamp: getTimestamp(),
+          renderMode: "plain",
+          stage: "upload_pending",
+          pending: true,
+        };
+        setMessages((prev) => [...prev, placeholderMessage]);
 
         const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
           method: "POST",
@@ -791,7 +835,17 @@ export default function App() {
           };
         }
 
-        setMessages((prev) => [...prev, assistantMessage]);
+        // Replace the "Reading your document..." placeholder with the
+        // real response in-place. Falls back to append if the
+        // placeholder isn't in the list (defensive — e.g. user cleared
+        // chat mid-upload).
+        setMessages((prev) => {
+          const idx = prev.findIndex((m) => m.id === placeholderId);
+          if (idx === -1) return [...prev, assistantMessage];
+          const next = prev.slice();
+          next[idx] = assistantMessage;
+          return next;
+        });
         if (chatSessionId) {
           void persistConversationMessage(chatSessionId, assistantMessage);
         }
@@ -825,16 +879,26 @@ export default function App() {
       const message =
         error instanceof Error ? error.message : "Something went wrong while uploading the PDF";
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          role: "assistant",
-          content: `Error: ${message}`,
-          timestamp: getTimestamp(),
-          renderMode: "plain",
-        },
-      ]);
+      // Replace any lingering "Reading your document..." placeholders
+      // with the error bubble. There can be at most one because
+      // placeholders are inserted sequentially per-file and the catch
+      // block fires on the first failing iteration.
+      const errorBubble: Message = {
+        id: `upload-error-${Date.now()}`,
+        role: "assistant",
+        content: `❌ Error: ${message}`,
+        timestamp: getTimestamp(),
+        renderMode: "plain",
+      };
+      setMessages((prev) => {
+        const idx = prev.findIndex(
+          (m) => typeof m.id === "string" && m.id.startsWith("upload-pending-"),
+        );
+        if (idx === -1) return [...prev, errorBubble];
+        const next = prev.slice();
+        next[idx] = errorBubble;
+        return next;
+      });
       setStatusMessage("Upload failed");
     } finally {
       setIsLoading(false);
@@ -1069,6 +1133,11 @@ export default function App() {
         setMessages((prev) => [...prev, snapshot]);
       };
 
+      // Fresh abort controller for this stream; stash on the ref so
+      // delete-account / sign-out can cancel the in-flight stream.
+      const streamAbort = new AbortController();
+      activeStreamAbortRef.current = streamAbort;
+
       await streamQuery(
         `${API_BASE_URL}/query/stream`,
         queryBody,
@@ -1169,7 +1238,14 @@ export default function App() {
             );
           },
         },
+        streamAbort.signal,
       );
+
+      // Clear the ref once the stream resolves normally so a later
+      // sign-out doesn't try to abort a closed stream.
+      if (activeStreamAbortRef.current === streamAbort) {
+        activeStreamAbortRef.current = null;
+      }
 
       // Stream closed without ever sending a delta or error. Surface
       // something rather than leaving the dots loader stranded.
@@ -1291,11 +1367,107 @@ export default function App() {
   };
 
   const handleStartNewSession = () => {
+    // Home / "New session" should land the user on the default
+    // Classic layout — not leave them stuck on Research / other
+    // variants they happened to be viewing. Reset the layout too,
+    // not just the conversation.
+    setVariant("classic");
     resetLocalConversation(
       session?.user?.id
         ? "Ready for a new saved session."
         : "New local session ready. Sign in to save future history.",
     );
+  };
+
+  // Pin / unpin a chat session. RLS on chat_sessions already requires
+  // auth.uid() = user_id for UPDATE, so the .update is safe to call
+  // directly from the client.
+  const handleTogglePin = async (sessionId: string, currentlyPinned: boolean) => {
+    const nextPinnedAt = currentlyPinned ? null : new Date().toISOString();
+    // Optimistic update
+    setConversationHistory((prev) =>
+      prev.map((c) => (c.id === sessionId ? { ...c, pinned_at: nextPinnedAt } : c)),
+    );
+    const { error } = await supabase
+      .from("chat_sessions")
+      .update({ pinned_at: nextPinnedAt })
+      .eq("id", sessionId);
+    if (error) {
+      console.warn("toggle-pin failed:", error.message || error);
+      // Rollback
+      setConversationHistory((prev) =>
+        prev.map((c) =>
+          c.id === sessionId ? { ...c, pinned_at: currentlyPinned ? new Date().toISOString() : null } : c,
+        ),
+      );
+      setStatusMessage("Couldn't update pin — please try again.");
+    }
+  };
+
+  // Inline-rename state: which session id is being edited + the draft
+  // title. Commit on blur / Enter; cancel on Escape / empty.
+  const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState<string>("");
+
+  const handleStartRename = (session: ChatSessionRecord) => {
+    setRenameTarget(session.id);
+    setRenameDraft(session.title ?? "");
+  };
+
+  const handleCommitRename = async () => {
+    if (!renameTarget) return;
+    const draft = renameDraft.trim();
+    const target = renameTarget;
+    setRenameTarget(null);
+    if (!draft) return; // Empty draft = cancel.
+    const existing = conversationHistory.find((c) => c.id === target);
+    if (!existing || existing.title === draft) return;
+    // Optimistic update
+    setConversationHistory((prev) =>
+      prev.map((c) => (c.id === target ? { ...c, title: draft } : c)),
+    );
+    const { error } = await supabase
+      .from("chat_sessions")
+      .update({ title: draft })
+      .eq("id", target);
+    if (error) {
+      console.warn("rename failed:", error.message || error);
+      setConversationHistory((prev) =>
+        prev.map((c) => (c.id === target ? { ...c, title: existing.title } : c)),
+      );
+      setStatusMessage("Couldn't rename chat — please try again.");
+    }
+  };
+
+  // "Copy chat as text" — serialises the currently-open chat to a
+  // plain-text transcript suitable for pasting into WhatsApp, email,
+  // or a Google Doc the user can show a clinician. Intentionally NOT
+  // a share-link — see PRODUCTION_READINESS_REPORT.md § 9 for why we
+  // deferred public share links pending a clinical-privacy review.
+  const handleCopyChatAsText = async () => {
+    if (messages.length === 0) {
+      setStatusMessage("Nothing to copy — this chat is empty.");
+      return;
+    }
+    const header =
+      `DocuMed AI chat transcript — ` +
+      new Date().toLocaleString() +
+      "\n" +
+      "(Information only — not a diagnosis. Confirm with a clinician.)\n\n";
+    const body = messages
+      .map((m) => {
+        const who = m.role === "user" ? "You" : "DocuMed AI";
+        return `[${who} · ${m.timestamp}]\n${m.content}\n`;
+      })
+      .join("\n");
+    const full = header + body;
+    try {
+      await navigator.clipboard.writeText(full);
+      setStatusMessage("Chat copied — paste it where you need to.");
+    } catch (err) {
+      console.warn("clipboard write failed:", err);
+      setStatusMessage("Couldn't copy — your browser blocked the clipboard.");
+    }
   };
 
   const handleSignIn = async (email: string, password: string) => {
@@ -1339,6 +1511,15 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    // Cancel any in-flight streaming response so it doesn't keep
+    // feeding deltas into state while we're tearing the session
+    // down. onAuthStateChange's SIGNED_OUT branch will then wipe
+    // messages / currentSessionId / conversationHistory cleanly.
+    if (activeStreamAbortRef.current) {
+      activeStreamAbortRef.current.abort();
+      activeStreamAbortRef.current = null;
+    }
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -1454,6 +1635,18 @@ export default function App() {
               <Home className="w-4 h-4" />
               <span>Home</span>
             </button>
+
+            {messages.length > 0 && (
+              <button
+                onClick={() => void handleCopyChatAsText()}
+                className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/40"
+                aria-label="Copy this chat as plain text to the clipboard"
+                title="Copy chat as text"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Copy chat</span>
+              </button>
+            )}
 
             <div className="hidden md:flex items-center gap-2 bg-muted/30 rounded-lg p-1">
               <button
@@ -1602,8 +1795,120 @@ export default function App() {
                             return hay.includes(q);
                           })
                         : conversationHistory;
+                      const pinned = filtered.filter((c) => c.pinned_at);
+                      pinned.sort((a, b) =>
+                        (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""),
+                      );
+                      const unpinned = filtered.filter((c) => !c.pinned_at);
+
+                      const renderRow = (conversation: ChatSessionRecord) => {
+                        const isPinned = !!conversation.pinned_at;
+                        const isRenaming = renameTarget === conversation.id;
+                        return (
+                          <div
+                            key={conversation.id}
+                            className={`group relative w-full rounded-lg transition-colors ${
+                              currentSessionId === conversation.id
+                                ? "bg-accent/10 border border-accent/20"
+                                : "hover:bg-muted/50 border border-transparent"
+                            }`}
+                          >
+                            {isRenaming ? (
+                              <div className="px-3 py-3 pr-3">
+                                <input
+                                  autoFocus
+                                  value={renameDraft}
+                                  onChange={(e) => setRenameDraft(e.target.value)}
+                                  onBlur={() => void handleCommitRename()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      void handleCommitRename();
+                                    } else if (e.key === "Escape") {
+                                      setRenameTarget(null);
+                                    }
+                                  }}
+                                  className="w-full bg-background border border-accent/40 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:border-accent"
+                                />
+                                <div className="mt-2 text-[11px] text-muted-foreground/60">
+                                  Enter to save · Esc to cancel
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenConversation(conversation.id)}
+                                className="w-full text-left px-3 py-3 pr-20"
+                              >
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  {isPinned && (
+                                    <Pin className="w-3 h-3 text-accent flex-shrink-0" />
+                                  )}
+                                  <div className="text-sm font-medium line-clamp-1">
+                                    {conversation.title}
+                                  </div>
+                                </div>
+                                <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
+                                  {new Date(conversation.updated_at).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </div>
+                              </button>
+                            )}
+                            {!isRenaming && (
+                              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleTogglePin(conversation.id, isPinned);
+                                  }}
+                                  aria-label={isPinned ? `Unpin ${conversation.title}` : `Pin ${conversation.title}`}
+                                  title={isPinned ? "Unpin chat" : "Pin chat"}
+                                  className="p-1.5 rounded-md text-muted-foreground/70 hover:bg-accent/10 hover:text-accent transition-colors"
+                                >
+                                  {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartRename(conversation);
+                                  }}
+                                  aria-label={`Rename ${conversation.title}`}
+                                  title="Rename chat"
+                                  className="p-1.5 rounded-md text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    requestDeleteConversation(conversation);
+                                  }}
+                                  aria-label={`Delete chat: ${conversation.title}`}
+                                  title="Delete chat"
+                                  className="p-1.5 rounded-md text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      };
+
                       return (
                         <>
+                          {pinned.length > 0 && (
+                            <>
+                              <div className="text-xs font-medium text-accent uppercase tracking-wider mb-3 px-2 flex items-center gap-1.5">
+                                <Pin className="w-3 h-3" />
+                                Pinned
+                              </div>
+                              <div className="space-y-1 mb-4">
+                                {pinned.map(renderRow)}
+                              </div>
+                            </>
+                          )}
                           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
                             {t("saved_sessions")}
                           </div>
@@ -1612,43 +1917,14 @@ export default function App() {
                             <div className="px-2 py-6 text-center text-xs text-muted-foreground">
                               {t("no_chats_match")} “{sidebarSearch}”.
                             </div>
+                          ) : unpinned.length === 0 ? (
+                            <div className="px-2 py-3 text-center text-xs text-muted-foreground/70">
+                              All saved chats are pinned.
+                            </div>
                           ) : (
-                            filtered.map((conversation) => (
-                        <div
-                          key={conversation.id}
-                          className={`group relative w-full rounded-lg transition-colors ${
-                            currentSessionId === conversation.id
-                              ? "bg-accent/10 border border-accent/20"
-                              : "hover:bg-muted/50 border border-transparent"
-                          }`}
-                        >
-                          <button
-                            onClick={() => handleOpenConversation(conversation.id)}
-                            className="w-full text-left px-3 py-3 pr-10"
-                          >
-                            <div className="text-sm font-medium mb-1 line-clamp-1">
-                              {conversation.title}
+                            <div className="space-y-1">
+                              {unpinned.map(renderRow)}
                             </div>
-                            <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">
-                              {new Date(conversation.updated_at).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </div>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              requestDeleteConversation(conversation);
-                            }}
-                            aria-label={`Delete chat: ${conversation.title}`}
-                            title="Delete chat"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground/70 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                            ))
                           )}
                         </>
                       );
@@ -2059,6 +2335,13 @@ export default function App() {
                 void (async () => {
                   setDeleteAccountInFlight(true);
                   try {
+                    // Abort any in-flight /query/stream FIRST so the
+                    // user doesn't see deltas from the old session
+                    // land after their account is gone.
+                    if (activeStreamAbortRef.current) {
+                      activeStreamAbortRef.current.abort();
+                      activeStreamAbortRef.current = null;
+                    }
                     const { error } = await supabase.rpc("delete_current_user");
                     if (error) {
                       console.warn("delete_current_user rpc error:", error.message || error);
@@ -2069,6 +2352,14 @@ export default function App() {
                       setDeleteAccountOpen(false);
                       return;
                     }
+                    // Wipe local chat + history state immediately so
+                    // the answer from the now-deleted session can't
+                    // keep rendering.
+                    setMessages([]);
+                    setConversationHistory([]);
+                    setCurrentSessionId(null);
+                    setAttachedDocs([]);
+                    setUploadedDocuments([]);
                     // Force sign-out locally — the deleted JWT will no
                     // longer validate against Supabase, and we don't
                     // want a stale session lingering in localStorage.
