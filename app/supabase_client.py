@@ -471,6 +471,25 @@ def insert_session_chunk(
     return _post_table("session_chunks", [payload])
 
 
+def insert_session_chunks_batch(rows: List[Dict[str, Any]]) -> Optional[dict]:
+    """Batch-insert many session_chunks rows in a single PostgREST call.
+
+    The per-row path is ~30–60 ms per chunk because each call is one
+    HTTP round-trip; for a 40-chunk paper that's 1–2 s of sequential
+    latency the user sees as "frozen UI" after clicking
+    'Treat as research paper'. PostgREST accepts a JSON array on
+    POST /rest/v1/session_chunks, so one request replaces N.
+
+    `rows` should already be shaped like insert_session_chunk's payload
+    (session_doc_id, ord, content, optional section_heading,
+    token_count, embedding). Returns the PostgREST response (a list
+    of inserted rows, or {"error": ...} on failure).
+    """
+    if not rows:
+        return {"data": []}
+    return _post_table("session_chunks", rows)
+
+
 def match_session_chunks(
     p_session_id: str,
     query_embedding: str,

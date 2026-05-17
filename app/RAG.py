@@ -37,6 +37,7 @@ try:
         get_session_document,
         update_session_document,
         insert_session_chunk,
+        insert_session_chunks_batch,
         match_session_chunks,
         insert_user_lab_markers,
         get_session_attached_documents,
@@ -66,7 +67,7 @@ try:
         flush_streaming_buffer,
         post_stream_fusion_check,
     )
-    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query
+    from .refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query, is_summarisation_query
 except ImportError:
     from middleware import add_cors_middleware
     from supabase_client import (
@@ -81,6 +82,7 @@ except ImportError:
         get_session_document,
         update_session_document,
         insert_session_chunk,
+        insert_session_chunks_batch,
         match_session_chunks,
         insert_user_lab_markers,
         get_session_attached_documents,
@@ -110,7 +112,7 @@ except ImportError:
         flush_streaming_buffer,
         post_stream_fusion_check,
     )
-    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query
+    from refusal_filter import classify_scope, SCOPE_REFUSAL_TEMPLATES, is_informational_question, rewrite_emergency_numbers, is_attached_doc_query, is_summarisation_query
 
 from ingest.medcpt import ArticleEncoder, QueryEncoder, to_pgvector_literal
 
@@ -141,7 +143,7 @@ if not COHERE_API_KEY:
 co = cohere.ClientV2(api_key=COHERE_API_KEY)
 
 # Optional Groq client for the generate step. When GROQ_API_KEY is set
-# and the SDK is installed, /query uses Groq's Llama 3.3 70B (300–600ms
+# and the SDK is installed, /query uses 's Llama 3.3 70B (300–600ms
 # generate) instead of Cohere Chat (1800–4500ms). Falls back to Cohere
 # automatically if either is missing. Cohere Rerank is untouched.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -288,6 +290,72 @@ def build_system_prompt() -> str:
     if INLINE_CITATIONS_ENABLED:
         return MEDIRAG_SYSTEM_PROMPT + _INLINE_CITATION_PROMPT_SUFFIX
     return MEDIRAG_SYSTEM_PROMPT
+
+
+# Distinct system prompt for the summarisation branch — when the user
+# has uploaded a document and is asking ABOUT it (e.g. "what is the
+# paper about?"). The default prompt assumes a patient clinical query
+# and mandates a "While you wait" self-care section + a care-tier
+# banner; neither makes sense for a document summary, and emitting
+# them produces a stitched-on "I don't have specific self-care steps"
+# trailer underneath an otherwise correct paper summary.
+MEDIRAG_SUMMARISATION_PROMPT = (
+    "You are DocuMed AI. The user has uploaded a document and is "
+    "asking you to summarise or explain it. Use ONLY the provided "
+    "document excerpts as your source — do not draw on outside "
+    "knowledge.\n\n"
+    "Task: describe what the document says — its main argument, "
+    "key findings, methods if relevant, and recommendations as "
+    "stated. Frame everything as 'the paper says…', 'the study "
+    "reports…', 'the authors recommend…' — describe the document, "
+    "do not address advice to the reader.\n\n"
+    "Safety rules (still in force):\n"
+    "- Do NOT translate the document's content into personal "
+    "medical advice for the reader.\n"
+    "- Do NOT extract or restate specific drug doses as "
+    "recommendations. If the document discusses dosing, describe "
+    "its argument in general terms (e.g. 'the paper argues for "
+    "more individualised dose recommendations across patient "
+    "groups'), not specific numbers.\n"
+    "- Do NOT diagnose the reader.\n\n"
+    "MANDATORY — source-binding rule:\n"
+    "Every claim you emit MUST be directly supported by the "
+    "provided excerpts. Do NOT paraphrase from memory. Do NOT fill "
+    "gaps with general knowledge.\n\n"
+    "Formatting (follow strictly):\n"
+    "- Use Markdown. Open with a one-sentence lead-in (no header "
+    "above it).\n"
+    "- Group related points under short bold headers, e.g. "
+    "`**Main argument:**`, `**Key findings:**`, "
+    "`**Recommendations:**`.\n"
+    "- Under each header, use Markdown bullets. EACH BULLET MUST "
+    "START ON ITS OWN LINE, beginning with `- ` (hyphen, space) at "
+    "the very start of the line. Put a newline before every `- `. "
+    "NEVER use `-` as an inline separator between sentences on the "
+    "same line.\n"
+    "- One idea per bullet. End each bullet with a period and a "
+    "newline, then start the next bullet on a fresh line.\n"
+    "- Do NOT include a `**While you wait:**` section, a "
+    "care-tier banner, or 'see your doctor' framing — this is a "
+    "document summary, not a clinical query.\n\n"
+    "Example shape (use this layout exactly):\n"
+    "The paper argues that <one-sentence lead-in>.\n\n"
+    "**Main argument:**\n"
+    "- First point on its own line.\n"
+    "- Second point on its own line.\n\n"
+    "**Key findings:**\n"
+    "- First finding on its own line.\n"
+    "- Second finding on its own line."
+)
+
+
+def build_summarisation_system_prompt() -> str:
+    """System prompt for the summarisation branch — drops the
+    clinical-complaint scaffolding (While-you-wait, care-tier banner)
+    that doesn't apply to 'summarise this paper' queries."""
+    if INLINE_CITATIONS_ENABLED:
+        return MEDIRAG_SUMMARISATION_PROMPT + _INLINE_CITATION_PROMPT_SUFFIX
+    return MEDIRAG_SUMMARISATION_PROMPT
 
 @app.on_event("startup")
 async def warm_query_encoder():
@@ -798,17 +866,42 @@ def _handle_research_paper(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"MedCPT embedding failed: {exc}")
 
-    chunk_errors = 0
+    # Batch the inserts: one HTTP POST instead of N sequential ones.
+    # For a typical research paper (~30–50 chunks) this trims 1–2 s off
+    # the post-click latency users see after pressing "Treat as research
+    # paper". Falls back to per-row on failure so a single bad row
+    # cannot lose the whole upload.
+    batch_payload: list = []
     for ord_index, (chunk_text, vec) in enumerate(zip(chunks, vectors)):
-        res = insert_session_chunk(
-            session_doc_id,
-            ord_index,
-            chunk_text,
-            token_count=len(chunk_text.split()),
-            embedding=to_pgvector_literal(vec),
+        batch_payload.append({
+            "session_doc_id": session_doc_id,
+            "ord": ord_index,
+            "content": chunk_text,
+            "section_heading": None,
+            "token_count": len(chunk_text.split()),
+            "embedding": to_pgvector_literal(vec),
+        })
+
+    chunk_errors = 0
+    batch_res = insert_session_chunks_batch(batch_payload)
+    if isinstance(batch_res, dict) and batch_res.get("error"):
+        # Fall back to per-row inserts so a single malformed row in a
+        # batch doesn't drop the whole document. Slower path, used only
+        # on failure.
+        print(
+            f"[research-paper] batch insert failed, falling back per-row: "
+            f"{batch_res.get('error')!r}"
         )
-        if isinstance(res, dict) and res.get("error"):
-            chunk_errors += 1
+        for row in batch_payload:
+            res = insert_session_chunk(
+                row["session_doc_id"],
+                row["ord"],
+                row["content"],
+                token_count=row.get("token_count"),
+                embedding=row.get("embedding"),
+            )
+            if isinstance(res, dict) and res.get("error"):
+                chunk_errors += 1
 
     return {
         "stage": "upload",
@@ -1600,11 +1693,38 @@ async def query_document(query: QueryRequest):
             retrieval_query = expanded
     rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
+    has_session_chunks = any(r.get("is_session_chunk") for r in rows)
+
+    # Summarisation branch: meta-questions ("what is the paper about?",
+    # "summarise this study") cannot be coverage-gated by rerank score
+    # because no individual chunk semantically matches the meta-question.
+    # When the user has uploaded a document and is asking ABOUT it,
+    # promote session chunks to the front and skip the rerank coverage
+    # gate. NLI still runs unchanged downstream.
+    summarisation_branch = (
+        is_summarisation_query(query.question) and has_session_chunks
+    )
+    if summarisation_branch:
+        print(
+            "[summarisation] meta-question + session chunks present — "
+            "bypassing rerank coverage gate"
+        )
+        session_rows = [r for r in rows if r.get("is_session_chunk")]
+        other_rows = [r for r in rows if not r.get("is_session_chunk")]
+        session_rows.sort(key=lambda r: r.get("rerank_score") or 0.0, reverse=True)
+        rows = session_rows + other_rows
+
+    refusal_text = (
+        "I have your uploaded document indexed, but I couldn't find a "
+        "section that closely matches your question. Try asking about a "
+        "specific topic from it, or say \"summarise this paper\" or "
+        "\"what is this paper about?\" for an overview."
+    ) if has_session_chunks else (
+        "I don't have a source for that in my current library. "
+        "Please try rewording your question, or ask your doctor directly."
+    )
     refusal = {
-        "answer": (
-            "I don't have a source for that in my current library. "
-            "Please try rewording your question, or ask your doctor directly."
-        ),
+        "answer": refusal_text,
         "sources": [],
         # Frontend uses this marker to drop the (user-question, refusal)
         # pair from conversation history before the next /query call. If we
@@ -1650,11 +1770,11 @@ async def query_document(query: QueryRequest):
             f"relaxed to {effective_threshold}"
         )
     print(f"[refusal-gate] top rerank_score={top_rerank} threshold={effective_threshold}")
-    if top_rerank is None:
+    if top_rerank is None and not summarisation_branch:
         print("[refusal-gate] refusing: rerank did not run, cannot judge relevance")
         _log_refusal("rerank_missing")
         return refusal
-    if top_rerank < effective_threshold:
+    if (top_rerank is not None) and (top_rerank < effective_threshold) and not summarisation_branch:
         print(
             f"[refusal-gate] refusing: top rerank_score {top_rerank:.3f} "
             f"< {effective_threshold}"
@@ -1665,7 +1785,16 @@ async def query_document(query: QueryRequest):
     # Gate passed. Now also drop any low-score chunks from the LLM context
     # so the model never sees junk it could pivot to. If filtering empties
     # the context (shouldn't happen given gate #3 already cleared), refuse.
-    rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
+    # Summarisation branch keeps all session chunks even if low-scored,
+    # because they ARE the answer here, not background.
+    if summarisation_branch:
+        rows = [
+            r for r in rows
+            if r.get("is_session_chunk")
+            or (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN
+        ]
+    else:
+        rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
     if not rows:
         print(
             f"[refusal-gate] refusing: no chunks above RERANK_CONTEXT_MIN "
@@ -1684,7 +1813,12 @@ async def query_document(query: QueryRequest):
 
     sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
 
-    messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
+    system_content = (
+        build_summarisation_system_prompt()
+        if summarisation_branch
+        else build_system_prompt()
+    )
+    messages: list[dict] = [{"role": "system", "content": system_content}]
     if query.history:
         for h in query.history[-HISTORY_MAX_TURNS:]:
             if h.role in ("user", "assistant") and h.content:
@@ -2034,25 +2168,55 @@ async def query_document_stream(query: QueryRequest):
                 retrieval_query = expanded
         rows = _retrieve_ranked(retrieval_query, session_id=query.session_id)
 
-        refusal_text = (
-            "I don't have a source for that in my current library. "
-            "Please try rewording your question, or ask your doctor directly."
+        has_session_chunks = any(r.get("is_session_chunk") for r in rows)
+
+        # Summarisation branch: meta-questions ("what is the paper about?",
+        # "summarise this study") cannot be coverage-gated by rerank score
+        # because no individual chunk semantically matches the meta-question.
+        # When the user has uploaded a document and is asking ABOUT it, promote
+        # session chunks to the front of the context pool and skip the rerank
+        # coverage gate. NLI still runs unchanged downstream.
+        summarisation_branch = (
+            is_summarisation_query(query.question) and has_session_chunks
         )
+        if summarisation_branch:
+            print(
+                "[summarisation] meta-question + session chunks present — "
+                "bypassing rerank coverage gate"
+            )
+            session_rows = [r for r in rows if r.get("is_session_chunk")]
+            other_rows = [r for r in rows if not r.get("is_session_chunk")]
+            session_rows.sort(key=lambda r: r.get("rerank_score") or 0.0, reverse=True)
+            rows = session_rows + other_rows
+
+        def _refusal_text_for(has_session: bool) -> str:
+            if has_session:
+                return (
+                    "I have your uploaded document indexed, but I couldn't find a "
+                    "section that closely matches your question. Try asking about a "
+                    "specific topic from it, or say \"summarise this paper\" or "
+                    "\"what is this paper about?\" for an overview."
+                )
+            return (
+                "I don't have a source for that in my current library. "
+                "Please try rewording your question, or ask your doctor directly."
+            )
 
         def emit_refusal(reason: str):
             print(f"[refusal-gate] refusing ({reason})")
+            text = _refusal_text_for(has_session_chunks)
             _log_query_safe(
                 user_id=None,
                 session_id=query.session_id,
                 stage="routine",
                 query_text=query.question,
-                response_text=refusal_text,
+                response_text=text,
                 refusal_triggered=True,
                 refusal_reason=reason,
             )
             return [
                 _sse("meta", {"stage": "routine", "coverage": "no_source"}),
-                _sse("delta", {"text": refusal_text}),
+                _sse("delta", {"text": text}),
                 _sse("done", {}),
             ]
 
@@ -2071,16 +2235,26 @@ async def query_document_stream(query: QueryRequest):
                 f"relaxed to {effective_threshold}"
             )
         print(f"[refusal-gate] top rerank_score={top_rerank} threshold={effective_threshold}")
-        if top_rerank is None:
+        if top_rerank is None and not summarisation_branch:
             for ev in emit_refusal("rerank did not run, cannot judge relevance"):
                 yield ev
             return
-        if top_rerank < effective_threshold:
+        if (top_rerank is not None) and (top_rerank < effective_threshold) and not summarisation_branch:
             for ev in emit_refusal(f"top rerank_score {top_rerank:.3f} < {effective_threshold}"):
                 yield ev
             return
 
-        rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
+        # Drop low-score chunks from the LLM context, EXCEPT in the
+        # summarisation branch — there we keep all session chunks even if
+        # their rerank score is low (they're the answer, not background).
+        if summarisation_branch:
+            rows = [
+                r for r in rows
+                if r.get("is_session_chunk")
+                or (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN
+            ]
+        else:
+            rows = [r for r in rows if (r.get("rerank_score") or 0.0) >= RERANK_CONTEXT_MIN]
         if not rows:
             for ev in emit_refusal(f"no chunks above RERANK_CONTEXT_MIN ({RERANK_CONTEXT_MIN}) after filter"):
                 yield ev
@@ -2095,7 +2269,12 @@ async def query_document_stream(query: QueryRequest):
         context_text = "\n\n".join(context_blocks)
         sources = _format_sources(_dedupe_sources(rows)[:DISPLAY_SOURCES])
 
-        messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
+        system_content = (
+            build_summarisation_system_prompt()
+            if summarisation_branch
+            else build_system_prompt()
+        )
+        messages: list[dict] = [{"role": "system", "content": system_content}]
         if query.history:
             for h in query.history[-HISTORY_MAX_TURNS:]:
                 if h.role in ("user", "assistant") and h.content:

@@ -578,49 +578,19 @@ def compose_explainer(
             "stage": "results",
         }
 
-    blocks: list[str] = []
+    # Stage 4 ships ONLY the deterministic at-a-glance summary +
+    # escalation footer. The per-marker LLM blocks (what-it-measures /
+    # what-to-ask-your-doctor) used to be appended after the summary, but
+    # they (a) duplicated the table the frontend already renders, (b) ran
+    # 8 LLM calls per upload for low-marginal-value generic prose, and
+    # (c) widened the hallucination surface compared to the deterministic
+    # summary, which is generated from the parsed marker values alone.
     all_source_rows: list[dict] = []
-    seen_source_keys: set = set()
-
-    for marker in markers:
-        retrieval_query = _retrieval_query_for(marker)
-        try:
-            rows = retrieve_fn(retrieval_query)
-        except Exception as exc:
-            print(f"[results] retrieve_fn failed for {marker.name}: {exc}")
-            rows = []
-        block, rows_used = _compose_one_marker(
-            marker,
-            rows,
-            groq_client=groq_client,
-            groq_model=groq_model,
-            cohere_client=cohere_client,
-            cohere_model=cohere_model,
-            max_tokens=max_tokens_per_marker,
-        )
-        blocks.append(block)
-
-        # Collect deduplicated sources across markers.
-        for r in rows_used[:3]:
-            key = r.get("doc_source_url") or (r.get("doc_title"), r.get("doc_source"))
-            if key in seen_source_keys:
-                continue
-            seen_source_keys.add(key)
-            all_source_rows.append(r)
-
     summary = _compose_report_summary(markers)
-    body = "\n\n".join(blocks)
-    sources_block = _format_sources_block(all_source_rows)
 
-    # Order: deterministic summary FIRST (at-a-glance picture of
-    # in-range / out-of-range markers), then the LLM per-marker
-    # explanations, then sources, then the escalation footer.
     parts: list[str] = []
     if summary:
         parts.append(summary)
-    parts.append(body)
-    if sources_block:
-        parts.append(sources_block)
     parts.append(_ESCALATION_FOOTER)
     full_answer = "\n\n".join(parts)
 

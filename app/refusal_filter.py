@@ -289,9 +289,12 @@ SCOPE_REFUSAL_TEMPLATES = {
         "questions for your visit."
     ),
     "prescriptive": (
-        "I can't recommend a specific medicine or dose — prescribing is a clinician's "
-        "job and depends on your history, allergies, and other meds. I can explain what "
-        "a class of medicines does in general, or help you frame what to ask a doctor."
+        "I can't recommend a specific medicine or dose — that depends on your weight, "
+        "allergies, other medicines you take, and conditions like liver or kidney disease "
+        "or pregnancy. Any pharmacist in Nepal can give you this guidance for free — "
+        "bring the medicine box (or its name) and tell them your weight and any other "
+        "medicines you take. I can also explain what a class of medicines is used for in "
+        "general, or help you frame what to ask the pharmacist or doctor."
     ),
 }
 
@@ -327,17 +330,83 @@ _PERSONAL_ADVICE_RE = re.compile(
 )
 
 
+# Vocabulary covering both lab-report uploads (patient flow) and
+# research-paper uploads (researcher / doctor flow). The earlier regex
+# only knew the patient vocab (report/result/lab/pdf/document) and
+# missed the natural words a researcher uses for what they uploaded:
+# "the paper", "this study", "the article", etc. Adding those words
+# closes the failure where "what is the paper about?" returned a
+# generic "I don't have a source" refusal despite 39 indexed chunks.
+_ATTACHED_DOC_NOUNS = (
+    r"(?:report|reports|result|results|lab|labs|blood\s+work|pdf|document|documents|test|tests|"
+    r"paper|papers|study|studies|article|articles|research|trial|trials|preprint|pre-print|manuscript)"
+)
+
 _ATTACHED_DOC_QUERY_RE = re.compile(
     r"\b("
-    r"my\s+(?:report|reports|result|results|lab|labs|blood\s+work|pdf|document|test|tests)"
-    r"|these\s+(?:report|reports|result|results|lab|labs|pdf|documents|tests)"
-    r"|the\s+(?:report|reports|result|results|lab|labs|pdf|document|uploaded\s+\w+)"
-    r"|uploaded\s+(?:report|reports|result|results|lab|labs|pdf|document)"
+    rf"my\s+{_ATTACHED_DOC_NOUNS}"
+    rf"|these\s+{_ATTACHED_DOC_NOUNS}"
+    rf"|this\s+{_ATTACHED_DOC_NOUNS}"
+    rf"|the\s+{_ATTACHED_DOC_NOUNS}"
+    r"|the\s+uploaded\s+\w+"
+    rf"|uploaded\s+{_ATTACHED_DOC_NOUNS}"
     r"|based\s+on\s+(?:my|these|the|this)"
-    r"|from\s+(?:my|these|the|this)\s+(?:report|reports|result|results|lab|labs|pdf)"
+    rf"|from\s+(?:my|these|the|this)\s+{_ATTACHED_DOC_NOUNS}"
+    rf"|in\s+(?:my|these|the|this)\s+{_ATTACHED_DOC_NOUNS}"
     r")\b",
     re.IGNORECASE,
 )
+
+
+# Summarisation / meta-question detection. These ask ABOUT the attached
+# document rather than for a specific fact within it. Rerank-based
+# coverage scoring is the wrong gate for these — the LLM should
+# summarise from the document's opening chunks instead.
+_SUMMARISATION_DOC_NOUN = (
+    r"(?:paper|papers|study|studies|article|articles|research|"
+    r"document|documents|report|reports|trial|trials|preprint|pre-print|manuscript|thing|it)"
+)
+
+_SUMMARISATION_QUERY_RE = re.compile(
+    r"(?:"
+    # Bare verbs / nouns of summary
+    r"\bsummari[sz]e\b"
+    r"|\bsummari[sz]ation\b"
+    r"|\bsummary\b"
+    r"|\btl;?dr\b"
+    r"|\bgist\b"
+    r"|\boverview\b"
+    # "main idea / key takeaway / main finding" patterns
+    r"|\bmain\s+(?:idea|point|argument|finding|conclusion|takeaway|message)s?\b"
+    r"|\b(?:overall|key|main|core|central)\s+(?:point|takeaway|finding|message|argument|conclusion|idea)s?\b"
+    # "what is (this|the [paper]) about/saying/arguing"
+    rf"|\bwhat\s+is\s+(?:this|the|that|it)(?:\s+{_SUMMARISATION_DOC_NOUN})?\s+(?:about|saying|arguing|claiming|proposing|discussing)\b"
+    rf"|\bwhat['’]s\s+(?:this|the|that|it)(?:\s+{_SUMMARISATION_DOC_NOUN})?\s+(?:about|saying|arguing|claiming|proposing|discussing)\b"
+    # "what does this paper say/argue/claim/conclude/recommend/find/propose/discuss/cover"
+    rf"|\bwhat\s+(?:does|do)\s+(?:this|the|these|that|it)\s+{_SUMMARISATION_DOC_NOUN}\s+(?:say|argue|claim|conclude|recommend|find|propose|discuss|cover|address)\b"
+    # "tell me about / give me an overview of / what is in <the paper>"
+    rf"|\btell\s+me\s+about\s+(?:the|this|these|my)\s+{_SUMMARISATION_DOC_NOUN}\b"
+    rf"|\b(?:overview|summary|gist)\s+of\s+(?:the|this|these|my)\s+{_SUMMARISATION_DOC_NOUN}\b"
+    rf"|\bwhat\s+(?:is|are)\s+in\s+(?:the|this|these|my)\s+{_SUMMARISATION_DOC_NOUN}\b"
+    rf"|\bwhat\s+does\s+(?:the|this|my)\s+{_SUMMARISATION_DOC_NOUN}\s+contain\b"
+    # "explain the paper" / "explain this study"
+    rf"|\bexplain\s+(?:the|this|these|my)\s+{_SUMMARISATION_DOC_NOUN}\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def is_summarisation_query(question: str) -> bool:
+    """True when the user is asking for a summary / overview of an
+    attached document rather than a specific factual lookup. Used to
+    bypass the rerank-based coverage gate, which is the wrong gate
+    for meta-questions: no chunk in a paper semantically *matches*
+    'what is the paper about?', but the right answer is still to
+    summarise from the opening chunks of the attached document.
+    """
+    if not question or not question.strip():
+        return False
+    return bool(_SUMMARISATION_QUERY_RE.search(question))
 
 
 def is_attached_doc_query(question: str) -> bool:

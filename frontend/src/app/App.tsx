@@ -121,6 +121,7 @@ interface ChatMessageRecord {
     category: string;
     urgency: string;
   } | null;
+  markers?: LabMarker[] | null;
 }
 
 type DesignVariant = "classic" | "diagnostic" | "research";
@@ -271,6 +272,9 @@ function toUiMessages(rows: ChatMessageRecord[]): Message[] {
           urgency: row.red_flag.urgency,
         }
       : undefined,
+    // Stage-4 marker list — without this, reloading a lab-report session
+    // would drop the LOW/NORMAL pill table and leave only the prose.
+    markers: Array.isArray(row.markers) ? row.markers : undefined,
   }));
 }
 
@@ -371,7 +375,7 @@ export default function App() {
   const loadConversationMessages = async (chatSessionId: string) => {
     const { data, error } = await supabase
       .from("chat_messages")
-      .select("id, session_id, role, content, created_at, render_mode, stage, red_flag")
+      .select("id, session_id, role, content, created_at, render_mode, stage, red_flag, markers")
       .eq("session_id", chatSessionId)
       .order("created_at", { ascending: true });
 
@@ -606,7 +610,7 @@ export default function App() {
 
   const persistConversationMessage = async (
     chatSessionId: string,
-    message: Pick<Message, "role" | "content" | "renderMode" | "redFlag" | "stage">,
+    message: Pick<Message, "role" | "content" | "renderMode" | "redFlag" | "stage" | "markers">,
   ) => {
     const now = new Date().toISOString();
     const preview = message.content.slice(0, 140);
@@ -625,6 +629,8 @@ export default function App() {
               urgency: message.redFlag.urgency,
             }
           : null,
+        // Stage-4 lab-report markers, so reload restores the pill table.
+        markers: message.markers && message.markers.length > 0 ? message.markers : null,
       },
     ]);
 

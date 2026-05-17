@@ -1,0 +1,1756 @@
+{
+  "timestamp": "2026-05-02T03:40:31.917374+00:00",
+  "gold_file": "coverage.jsonl",
+  "n_cases_planned": 20,
+  "n_cases_completed": 10,
+  "quota_exhausted": true,
+  "top_k_chunks": 4,
+  "nli_thresholds": {
+    "redact_below": 0.2,
+    "soften_below": 0.5
+  },
+  "vanilla": {
+    "n_sentences_total": 118,
+    "n_claim_sentences": 18,
+    "n_failed_sentences_claim_mode": 17,
+    "n_failed_sentences_all_mode": 109,
+    "hallucination_rate_per_1000_emitted_all": 923.73,
+    "hallucination_rate_per_1000_emitted_claim_mode": 144.07,
+    "all_sentences_distribution": {
+      "n": 118,
+      "redact": 0.8983,
+      "soften": 0.0254,
+      "ship": 0.0763,
+      "share_high_conf": 0.0508,
+      "share_hard_halluc": 0.8729,
+      "mean": 0.0819,
+      "median": 0.0028,
+      "p25": 0.0013,
+      "p75": 0.0104
+    },
+    "claim_only_distribution": {
+      "n": 18,
+      "redact": 0.8889,
+      "soften": 0.0556,
+      "ship": 0.0556,
+      "share_high_conf": 0.0556,
+      "share_hard_halluc": 0.8889,
+      "mean": 0.0753,
+      "median": 0.006,
+      "p25": 0.0018,
+      "p75": 0.0119
+    },
+    "raw_all_scores": [
+      0.0041,
+      0.0106,
+      0.0037,
+      0.0015,
+      0.0022,
+      0.0017,
+      0.0038,
+      0.0026,
+      0.0007,
+      0.0003,
+      0.0021,
+      0.001,
+      0.1139,
+      0.0006,
+      0.0023,
+      0.0041,
+      0.0033,
+      0.0032,
+      0.0036,
+      0.0021,
+      0.0084,
+      0.0104,
+      0.0016,
+      0.0015,
+      0.0051,
+      0.0015,
+      0.0028,
+      0.0039,
+      0.0012,
+      0.0029,
+      0.0083,
+      0.0026,
+      0.0009,
+      0.0007,
+      0.001,
+      0.9969,
+      0.001,
+      0.9894,
+      0.0008,
+      0.0007,
+      0.0944,
+      0.0009,
+      0.0007,
+      0.0004,
+      0.0006,
+      0.0006,
+      0.0006,
+      0.0004,
+      0.0007,
+      0.9953,
+      0.0087,
+      0.3438,
+      0.0101,
+      0.9863,
+      0.046,
+      0.0116,
+      0.1267,
+      0.0011,
+      0.9591,
+      0.4348,
+      0.0021,
+      0.6117,
+      0.0008,
+      0.0012,
+      0.0013,
+      0.6816,
+      0.0066,
+      0.0111,
+      0.0013,
+      0.0254,
+      0.0336,
+      0.0009,
+      0.0131,
+      0.0104,
+      0.0006,
+      0.0038,
+      0.0026,
+      0.0022,
+      0.0115,
+      0.9892,
+      0.2738,
+      0.007,
+      0.5595,
+      0.0172,
+      0.0232,
+      0.0119,
+      0.0212,
+      0.0028,
+      0.006,
+      0.0018,
+      0.0018,
+      0.0079,
+      0.0083,
+      0.0075,
+      0.006,
+      0.0119,
+      0.0062,
+      0.0058,
+      0.002,
+      0.0027,
+      0.0023,
+      0.0029,
+      0.0018,
+      0.0029,
+      0.0027,
+      0.0019,
+      0.0024,
+      0.0013,
+      0.0014,
+      0.0009,
+      0.0016,
+      0.0036,
+      0.0021,
+      0.0011,
+      0.0008,
+      0.0016,
+      0.0007,
+      0.0008
+    ],
+    "raw_claim_scores": [
+      0.9894,
+      0.0131,
+      0.2738,
+      0.0119,
+      0.0212,
+      0.0028,
+      0.006,
+      0.0018,
+      0.0083,
+      0.0075,
+      0.006,
+      0.0018,
+      0.0027,
+      0.0009,
+      0.0036,
+      0.0021,
+      0.0011,
+      0.0007
+    ]
+  },
+  "medirag": {
+    "n_sentences_total": 112,
+    "n_claim_sentences": 12,
+    "n_failed_sentences_claim_mode": 10,
+    "n_failed_sentences_all_mode": 92,
+    "hallucination_rate_per_1000_emitted_all": 821.43,
+    "hallucination_rate_per_1000_emitted_claim_mode": 89.29,
+    "all_sentences_distribution": {
+      "n": 112,
+      "redact": 0.8036,
+      "soften": 0.0179,
+      "ship": 0.1786,
+      "share_high_conf": 0.1071,
+      "share_hard_halluc": 0.7321,
+      "mean": 0.1692,
+      "median": 0.0046,
+      "p25": 0.0022,
+      "p75": 0.073
+    },
+    "claim_only_distribution": {
+      "n": 12,
+      "redact": 0.8333,
+      "soften": 0.0,
+      "ship": 0.1667,
+      "share_high_conf": 0.0,
+      "share_hard_halluc": 0.8333,
+      "mean": 0.12,
+      "median": 0.0059,
+      "p25": 0.002,
+      "p75": 0.0273
+    },
+    "raw_all_scores": [
+      0.0017,
+      0.0024,
+      0.0032,
+      0.0034,
+      0.0022,
+      0.0037,
+      0.002,
+      0.0019,
+      0.0026,
+      0.002,
+      0.0021,
+      0.0013,
+      0.0031,
+      0.7819,
+      0.0268,
+      0.039,
+      0.9747,
+      0.0041,
+      0.115,
+      0.0281,
+      0.2655,
+      0.0109,
+      0.0223,
+      0.0668,
+      0.0486,
+      0.0674,
+      0.073,
+      0.0196,
+      0.0043,
+      0.994,
+      0.0041,
+      0.0199,
+      0.0034,
+      0.0017,
+      0.0014,
+      0.0009,
+      0.0006,
+      0.0012,
+      0.9913,
+      0.9931,
+      0.0007,
+      0.0025,
+      0.0027,
+      0.0016,
+      0.0008,
+      0.9961,
+      0.085,
+      0.2087,
+      0.7187,
+      0.861,
+      0.5532,
+      0.6979,
+      0.0113,
+      0.99,
+      0.9242,
+      0.649,
+      0.0037,
+      0.006,
+      0.9962,
+      0.0046,
+      0.9677,
+      0.0005,
+      0.9943,
+      0.0061,
+      0.0224,
+      0.0923,
+      0.0011,
+      0.0009,
+      0.0024,
+      0.0008,
+      0.0037,
+      0.0021,
+      0.002,
+      0.1138,
+      0.0216,
+      0.0451,
+      0.0035,
+      0.0133,
+      0.0744,
+      0.0073,
+      0.006,
+      0.0126,
+      0.0035,
+      0.0239,
+      0.9932,
+      0.0044,
+      0.0027,
+      0.698,
+      0.0273,
+      0.0039,
+      0.7147,
+      0.0059,
+      0.0026,
+      0.0023,
+      0.0021,
+      0.0018,
+      0.0027,
+      0.003,
+      0.0033,
+      0.0023,
+      0.0126,
+      0.0123,
+      0.0317,
+      0.0035,
+      0.001,
+      0.0007,
+      0.001,
+      0.6879,
+      0.0046,
+      0.0011,
+      0.0005,
+      0.0007
+    ],
+    "raw_claim_scores": [
+      0.002,
+      0.0013,
+      0.649,
+      0.0073,
+      0.0239,
+      0.0273,
+      0.7147,
+      0.0059,
+      0.0026,
+      0.001,
+      0.0007,
+      0.0046
+    ]
+  },
+  "per_case": [
+    {
+      "id": "cov-001",
+      "query": "What can cause a persistent dry cough lasting more than 3 weeks?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "A persistent dry cough lasting more than 3 weeks can be caused by several factors. Some common causes include:\n\n* Respiratory infections, such as bronchitis or pneumonia\n* Allergies, such as hay fever or dust mite allergy\n* Acid reflux (GERD), where stomach acid flows up into the throat\n* Asthma or chronic obstructive pulmonary disease (COPD)\n* Environmental factors, such as exposure to pollution, smoke, or dust\n* Medications, such as ACE inhibitors used to treat high blood pressure\n* Infections, such as whooping cough or tuberculosis (although these are less common)\n\nIt's also possible for a dry cough to be a symptom of an underlying condition, such as a lung tumor or heart failure. If you're experiencing a persistent dry cough, it's a good idea to see a doctor to rule out any underlying conditions and get a proper diagnosis. They may perform tests, such as a chest X-ray or lung function test, to determine the cause of your cough.",
+        "provider": "groq",
+        "n_sentences": 12,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 12,
+        "per_sentence": [
+          {
+            "text": "A persistent dry cough lasting more than 3 weeks can be caused by several factors.",
+            "claim": false,
+            "max_entail": 0.0041
+          },
+          {
+            "text": "Some common causes include:",
+            "claim": false,
+            "max_entail": 0.0106
+          },
+          {
+            "text": "Respiratory infections, such as bronchitis or pneumonia",
+            "claim": false,
+            "max_entail": 0.0037
+          },
+          {
+            "text": "Allergies, such as hay fever or dust mite allergy",
+            "claim": false,
+            "max_entail": 0.0015
+          },
+          {
+            "text": "Acid reflux (GERD), where stomach acid flows up into the throat",
+            "claim": false,
+            "max_entail": 0.0022
+          },
+          {
+            "text": "Asthma or chronic obstructive pulmonary disease (COPD)",
+            "claim": false,
+            "max_entail": 0.0017
+          },
+          {
+            "text": "Environmental factors, such as exposure to pollution, smoke, or dust",
+            "claim": false,
+            "max_entail": 0.0038
+          },
+          {
+            "text": "Medications, such as ACE inhibitors used to treat high blood pressure",
+            "claim": false,
+            "max_entail": 0.0026
+          },
+          {
+            "text": "Infections, such as whooping cough or tuberculosis (although these are less common)",
+            "claim": false,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "It's also possible for a dry cough to be a symptom of an underlying condition, such as a lung tumor or heart failure.",
+            "claim": false,
+            "max_entail": 0.0003
+          },
+          {
+            "text": "If you're experiencing a persistent dry cough, it's a good idea to see a doctor to rule out any underlying conditions and get a proper diagnosis.",
+            "claim": false,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "They may perform tests, such as a chest X-ray or lung function test, to determine the cause of your cough.",
+            "claim": false,
+            "max_entail": 0.001
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "A persistent dry cough lasting more than 3 weeks can be caused by various factors, including **smoking**, **heartburn (acid reflux)**, **allergies**, and **infections like bronchitis or COVID-19**.\n**Causes of Persistent Cough:**\n- **Chronic bronchitis**\n- **Asthma**\n- **Allergies**\n- **COPD (chronic obstructive pulmonary disease)**\n- **GERD (gastroesophageal reflux disease)**\n- **Smoking**\n- **Throat disorders**, such as croup in young children\n- **Mucus dripping down the throat from the back of the nose**\n**When to see a doctor:**\n- If you've had a cough for more than 3 weeks (persistent cough)\n- If you're losing weight for no reason\n- If you have a weakened immune system\n**While you wait:**\n- **Water can help ease your cough** - whether you drink it or add it to the air with a steamy shower or vaporizer\n- If you have a cold or the flu, **antihistamines may work better than non-prescription cough medicines**\n- For children over four,",
+        "provider": "groq",
+        "n_sentences": 13,
+        "n_claim": 2,
+        "n_failed": 2,
+        "n_failed_all": 13,
+        "per_sentence": [
+          {
+            "text": "A persistent dry cough lasting more than 3 weeks can be caused by various factors, including smoking, heartburn (acid reflux), allergies, and infections like bronchitis or COVID-19.",
+            "claim": false,
+            "max_entail": 0.0017
+          },
+          {
+            "text": "Causes of Persistent Cough:",
+            "claim": false,
+            "max_entail": 0.0024
+          },
+          {
+            "text": "COPD (chronic obstructive pulmonary disease)",
+            "claim": false,
+            "max_entail": 0.0032
+          },
+          {
+            "text": "GERD (gastroesophageal reflux disease)",
+            "claim": false,
+            "max_entail": 0.0034
+          },
+          {
+            "text": "Throat disorders, such as croup in young children",
+            "claim": false,
+            "max_entail": 0.0022
+          },
+          {
+            "text": "Mucus dripping down the throat from the back of the nose",
+            "claim": false,
+            "max_entail": 0.0037
+          },
+          {
+            "text": "When to see a doctor:",
+            "claim": false,
+            "max_entail": 0.002
+          },
+          {
+            "text": "If you've had a cough for more than 3 weeks (persistent cough)",
+            "claim": false,
+            "max_entail": 0.0019
+          },
+          {
+            "text": "If you're losing weight for no reason",
+            "claim": false,
+            "max_entail": 0.0026
+          },
+          {
+            "text": "If you have a weakened immune system",
+            "claim": true,
+            "max_entail": 0.002
+          },
+          {
+            "text": "Water can help ease your cough - whether you drink it or add it to the air with a steamy shower or vaporizer",
+            "claim": false,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "If you have a cold or the flu, antihistamines may work better than non-prescription cough medicines",
+            "claim": true,
+            "max_entail": 0.0013
+          },
+          {
+            "text": "For children over four,",
+            "claim": false,
+            "max_entail": 0.0031
+          }
+        ]
+      },
+      "elapsed_s": 31.38
+    },
+    {
+      "id": "cov-002",
+      "query": "Why do I feel dizzy when I stand up quickly?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Feeling dizzy when standing up quickly is a common experience, and it's usually harmless. This dizziness is called orthostatic hypotension. It happens when your body takes a little time to adjust to the change in position.\n\nWhen you're sitting or lying down, your blood vessels are relaxed, and your blood pressure is stable. But when you stand up quickly, your body needs to work harder to get blood to your brain against gravity. Sometimes, it takes a few seconds for your blood vessels to constrict and your heart to pump faster to catch up. During this brief delay, your brain doesn't get enough blood flow, and you might feel dizzy or lightheaded.\n\nThis can be more likely to happen if you're dehydrated, haven't eaten recently, or are taking certain medications. To avoid feeling dizzy, try standing up slowly, taking deep breaths, and holding onto something for support if needed. If you experience frequent or severe dizziness, it's always a good idea to talk to your doctor to rule out any underlying health issues.",
+        "provider": "groq",
+        "n_sentences": 10,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 10,
+        "per_sentence": [
+          {
+            "text": "Feeling dizzy when standing up quickly is a common experience, and it's usually harmless.",
+            "claim": false,
+            "max_entail": 0.1139
+          },
+          {
+            "text": "This dizziness is called orthostatic hypotension.",
+            "claim": false,
+            "max_entail": 0.0006
+          },
+          {
+            "text": "It happens when your body takes a little time to adjust to the change in position.",
+            "claim": false,
+            "max_entail": 0.0023
+          },
+          {
+            "text": "When you're sitting or lying down, your blood vessels are relaxed, and your blood pressure is stable.",
+            "claim": false,
+            "max_entail": 0.0041
+          },
+          {
+            "text": "But when you stand up quickly, your body needs to work harder to get blood to your brain against gravity.",
+            "claim": false,
+            "max_entail": 0.0033
+          },
+          {
+            "text": "Sometimes, it takes a few seconds for your blood vessels to constrict and your heart to pump faster to catch up.",
+            "claim": false,
+            "max_entail": 0.0032
+          },
+          {
+            "text": "During this brief delay, your brain doesn't get enough blood flow, and you might feel dizzy or lightheaded.",
+            "claim": false,
+            "max_entail": 0.0036
+          },
+          {
+            "text": "This can be more likely to happen if you're dehydrated, haven't eaten recently, or are taking certain medications.",
+            "claim": false,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "To avoid feeling dizzy, try standing up slowly, taking deep breaths, and holding onto something for support if needed.",
+            "claim": false,
+            "max_entail": 0.0084
+          },
+          {
+            "text": "If you experience frequent or severe dizziness, it's always a good idea to talk to your doctor to rule out any underlying health issues.",
+            "claim": false,
+            "max_entail": 0.0104
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "When you stand up quickly, you may feel dizzy due to a sudden drop in blood pressure, also known as **postural hypotension**.\n**Symptoms:** \n- Dizziness or lightheadedness when standing up or changing positions\n- Feeling off-balance or giddy\n- Blurred vision\n- Generally feeling weak\n**What to do:**\n- If you're feeling dizzy, **lie down until the dizziness passes**, then get up slowly\n- **Move slowly and carefully** to avoid falls\n- **Get plenty of rest** and **drink plenty of fluids**, especially water\n- **Avoid coffee, cigarettes, alcohol, and drugs** that can exacerbate dizziness\n**While you wait:** \n* Lie down until the dizziness passes, then get up slowly\n* Move slowly and carefully\n* Get plenty of rest\n* Drink plenty of fluids, especially water\n* Avoid bending down suddenly or getting up suddenly after sitting or lying down\nIt's essential to see a GP if you're worried about your dizziness or if it persists, as it may be a symptom of an underlying condition, such as **low blood pressure**.",
+        "provider": "groq",
+        "n_sentences": 13,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 11,
+        "per_sentence": [
+          {
+            "text": "When you stand up quickly, you may feel dizzy due to a sudden drop in blood pressure, also known as postural hypotension.",
+            "claim": false,
+            "max_entail": 0.7819
+          },
+          {
+            "text": "Dizziness or lightheadedness when standing up or changing positions",
+            "claim": false,
+            "max_entail": 0.0268
+          },
+          {
+            "text": "Feeling off-balance or giddy",
+            "claim": false,
+            "max_entail": 0.039
+          },
+          {
+            "text": "If you're feeling dizzy, lie down until the dizziness passes, then get up slowly",
+            "claim": false,
+            "max_entail": 0.9747
+          },
+          {
+            "text": "Move slowly and carefully to avoid falls",
+            "claim": false,
+            "max_entail": 0.0041
+          },
+          {
+            "text": "Get plenty of rest and drink plenty of fluids, especially water",
+            "claim": false,
+            "max_entail": 0.115
+          },
+          {
+            "text": "Avoid coffee, cigarettes, alcohol, and drugs that can exacerbate dizziness",
+            "claim": false,
+            "max_entail": 0.0281
+          },
+          {
+            "text": "Lie down until the dizziness passes, then get up slowly",
+            "claim": false,
+            "max_entail": 0.2655
+          },
+          {
+            "text": "Move slowly and carefully",
+            "claim": false,
+            "max_entail": 0.0109
+          },
+          {
+            "text": "Get plenty of rest",
+            "claim": false,
+            "max_entail": 0.0223
+          },
+          {
+            "text": "Drink plenty of fluids, especially water",
+            "claim": false,
+            "max_entail": 0.0668
+          },
+          {
+            "text": "Avoid bending down suddenly or getting up suddenly after sitting or lying down",
+            "claim": false,
+            "max_entail": 0.0486
+          },
+          {
+            "text": "It's essential to see a GP if you're worried about your dizziness or if it persists, as it may be a symptom of an underlying condition, such as low blood pressure.",
+            "claim": false,
+            "max_entail": 0.0674
+          }
+        ]
+      },
+      "elapsed_s": 29.74
+    },
+    {
+      "id": "cov-003",
+      "query": "What are the common causes of evening-time fatigue?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Evening-time fatigue is a common phenomenon where people feel extremely tired and sluggish in the evening, despite having a full day of rest and activity. Some common causes of evening-time fatigue include:\n\n* Poor sleep habits, such as irregular sleep schedules or inadequate sleep\n* Dehydration and electrolyte imbalances\n* Low blood sugar levels, often due to skipping meals or eating a large meal too close to bedtime\n* Sedentary lifestyle, leading to a lack of physical activity and energy crashes\n* Certain medications, such as sedatives or antidepressants, that can cause drowsiness\n* Underlying medical conditions, such as anemia, hypothyroidism, or diabetes\n* Stress and anxiety, which can lead to emotional exhaustion and fatigue\n* Consumption of heavy meals or caffeine close to bedtime, disrupting sleep patterns\n\nIt's essential to identify the underlying cause of evening-time fatigue to address it effectively. Making lifestyle changes, such as establishing a consistent sleep schedule, staying hydrated, and engaging in regular physical activity, can help alleviate fatigue and improve overall energy levels. If fatigue persists, it's best to consult with a healthcare professional to rule out any underlying medical conditions.",
+        "provider": "groq",
+        "n_sentences": 13,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 13,
+        "per_sentence": [
+          {
+            "text": "Evening-time fatigue is a common phenomenon where people feel extremely tired and sluggish in the evening, despite having a full day of rest and activity.",
+            "claim": false,
+            "max_entail": 0.0016
+          },
+          {
+            "text": "Some common causes of evening-time fatigue include:",
+            "claim": false,
+            "max_entail": 0.0015
+          },
+          {
+            "text": "Poor sleep habits, such as irregular sleep schedules or inadequate sleep",
+            "claim": false,
+            "max_entail": 0.0051
+          },
+          {
+            "text": "Dehydration and electrolyte imbalances",
+            "claim": false,
+            "max_entail": 0.0015
+          },
+          {
+            "text": "Low blood sugar levels, often due to skipping meals or eating a large meal too close to bedtime",
+            "claim": false,
+            "max_entail": 0.0028
+          },
+          {
+            "text": "Sedentary lifestyle, leading to a lack of physical activity and energy crashes",
+            "claim": false,
+            "max_entail": 0.0039
+          },
+          {
+            "text": "Certain medications, such as sedatives or antidepressants, that can cause drowsiness",
+            "claim": false,
+            "max_entail": 0.0012
+          },
+          {
+            "text": "Underlying medical conditions, such as anemia, hypothyroidism, or diabetes",
+            "claim": false,
+            "max_entail": 0.0029
+          },
+          {
+            "text": "Stress and anxiety, which can lead to emotional exhaustion and fatigue",
+            "claim": false,
+            "max_entail": 0.0083
+          },
+          {
+            "text": "Consumption of heavy meals or caffeine close to bedtime, disrupting sleep patterns",
+            "claim": false,
+            "max_entail": 0.0026
+          },
+          {
+            "text": "It's essential to identify the underlying cause of evening-time fatigue to address it effectively.",
+            "claim": false,
+            "max_entail": 0.0009
+          },
+          {
+            "text": "Making lifestyle changes, such as establishing a consistent sleep schedule, staying hydrated, and engaging in regular physical activity, can help alleviate fatigue and improve overall energy levels.",
+            "claim": false,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "If fatigue persists, it's best to consult with a healthcare professional to rule out any underlying medical conditions.",
+            "claim": false,
+            "max_entail": 0.001
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "Fatigue is a symptom that can be associated with various conditions, including hormonal disorders.\n**Possible Causes:** \n- Cushing's syndrome, a hormonal disorder caused by long-term exposure to too much cortisol, can lead to **severe fatigue and muscle weakness**.\n- Addison disease, a condition where the adrenal glands don't make enough hormones, can cause **fatigue that gets worse over time**.\n- Hyperthyroidism, a condition where the thyroid gland is overactive, can lead to **fatigue** as one of its symptoms.\n**When to see a doctor:** \n- If you experience persistent or severe fatigue, it is essential to consult a doctor to determine the underlying cause.\n**What to ask your doctor:** \n- You may want to ask your doctor about the possible causes of your fatigue and what tests, such as the **TSH test**, can be done to diagnose any underlying conditions.\n**While you wait:** \n- If you are experiencing fatigue, you can try to **rest** and **stay hydrated** to help manage your symptoms.\n- It is also essential to **avoid triggers** that can exacerbate fatigue, such as certain medications or underlying medical conditions.\n- However, as the sources do not provide specific",
+        "provider": "groq",
+        "n_sentences": 11,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 10,
+        "per_sentence": [
+          {
+            "text": "Fatigue is a symptom that can be associated with various conditions, including hormonal disorders.",
+            "claim": false,
+            "max_entail": 0.073
+          },
+          {
+            "text": "Cushing's syndrome, a hormonal disorder caused by long-term exposure to too much cortisol, can lead to severe fatigue and muscle weakness.",
+            "claim": false,
+            "max_entail": 0.0196
+          },
+          {
+            "text": "Addison disease, a condition where the adrenal glands don't make enough hormones, can cause fatigue that gets worse over time.",
+            "claim": false,
+            "max_entail": 0.0043
+          },
+          {
+            "text": "Hyperthyroidism, a condition where the thyroid gland is overactive, can lead to fatigue as one of its symptoms.",
+            "claim": false,
+            "max_entail": 0.994
+          },
+          {
+            "text": "When to see a doctor:",
+            "claim": false,
+            "max_entail": 0.0041
+          },
+          {
+            "text": "If you experience persistent or severe fatigue, it is essential to consult a doctor to determine the underlying cause.",
+            "claim": false,
+            "max_entail": 0.0199
+          },
+          {
+            "text": "What to ask your doctor:",
+            "claim": false,
+            "max_entail": 0.0034
+          },
+          {
+            "text": "You may want to ask your doctor about the possible causes of your fatigue and what tests, such as the TSH test, can be done to diagnose any underlying conditions.",
+            "claim": false,
+            "max_entail": 0.0017
+          },
+          {
+            "text": "If you are experiencing fatigue, you can try to rest and stay hydrated to help manage your symptoms.",
+            "claim": false,
+            "max_entail": 0.0014
+          },
+          {
+            "text": "It is also essential to avoid triggers that can exacerbate fatigue, such as certain medications or underlying medical conditions.",
+            "claim": false,
+            "max_entail": 0.0009
+          },
+          {
+            "text": "However, as the sources do not provide specific",
+            "claim": false,
+            "max_entail": 0.0006
+          }
+        ]
+      },
+      "elapsed_s": 29.73
+    },
+    {
+      "id": "cov-004",
+      "query": "What is type 2 diabetes and how is it usually managed?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Type 2 diabetes is a condition where your body doesn't use insulin properly, and as a result, your blood sugar levels become too high. Insulin is a hormone that helps your body turn food into energy. When you have type 2 diabetes, your body either resists the effects of insulin or doesn't produce enough of it.\n\nManaging type 2 diabetes usually involves a combination of lifestyle changes and medication. Lifestyle changes include:\n\n* Eating a healthy, balanced diet that's low in sugar and saturated fat\n* Getting regular physical activity, such as walking or other exercises\n* Losing weight, if you're overweight\n* Quitting smoking, if you smoke\n\nMedications may also be prescribed to help lower your blood sugar levels. These can include:\n\n* Metformin, which helps your body use insulin more effectively\n* Sulfonylureas, which stimulate your pancreas to produce more insulin\n* Other medications that help your body produce more insulin or reduce glucose production in the liver\n\nIn some cases, insulin injections may also be necessary. The goal of managing type 2 diabetes is to keep your blood sugar levels under control, which can help prevent complications such as heart disease, kidney damage, and nerve damage. Regular check-ups",
+        "provider": "groq",
+        "n_sentences": 14,
+        "n_claim": 1,
+        "n_failed": 0,
+        "n_failed_all": 12,
+        "per_sentence": [
+          {
+            "text": "Type 2 diabetes is a condition where your body doesn't use insulin properly, and as a result, your blood sugar levels become too high.",
+            "claim": false,
+            "max_entail": 0.9969
+          },
+          {
+            "text": "Insulin is a hormone that helps your body turn food into energy.",
+            "claim": false,
+            "max_entail": 0.001
+          },
+          {
+            "text": "When you have type 2 diabetes, your body either resists the effects of insulin or doesn't produce enough of it.",
+            "claim": true,
+            "max_entail": 0.9894
+          },
+          {
+            "text": "Managing type 2 diabetes usually involves a combination of lifestyle changes and medication.",
+            "claim": false,
+            "max_entail": 0.0008
+          },
+          {
+            "text": "Eating a healthy, balanced diet that's low in sugar and saturated fat",
+            "claim": false,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "Getting regular physical activity, such as walking or other exercises",
+            "claim": false,
+            "max_entail": 0.0944
+          },
+          {
+            "text": "Losing weight, if you're overweight",
+            "claim": false,
+            "max_entail": 0.0009
+          },
+          {
+            "text": "Quitting smoking, if you smoke",
+            "claim": false,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "Medications may also be prescribed to help lower your blood sugar levels.",
+            "claim": false,
+            "max_entail": 0.0004
+          },
+          {
+            "text": "Metformin, which helps your body use insulin more effectively",
+            "claim": false,
+            "max_entail": 0.0006
+          },
+          {
+            "text": "Sulfonylureas, which stimulate your pancreas to produce more insulin",
+            "claim": false,
+            "max_entail": 0.0006
+          },
+          {
+            "text": "Other medications that help your body produce more insulin or reduce glucose production in the liver",
+            "claim": false,
+            "max_entail": 0.0006
+          },
+          {
+            "text": "In some cases, insulin injections may also be necessary.",
+            "claim": false,
+            "max_entail": 0.0004
+          },
+          {
+            "text": "The goal of managing type 2 diabetes is to keep your blood sugar levels under control, which can help prevent complications such as heart disease, kidney damage, and nerve damage.",
+            "claim": false,
+            "max_entail": 0.0007
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "Type 2 diabetes is a disease in which your blood glucose, or blood sugar, levels are too high, caused by a combination of factors including being overweight or having obesity, not being physically active, genetics, and family history.\n**What is type 2 diabetes:**\n- It is a condition where your body doesn't make enough insulin or doesn't use insulin well, leading to high blood glucose levels.\n- Glucose is your main source of energy, and insulin helps it get into your cells to give them energy.\n**Management:**\n- You can take steps to manage your diabetes and try to prevent health problems.\n- Early diagnosis is important to prevent the worst effects of type 2 diabetes, and regular check-ups and blood tests with a healthcare provider can help detect diabetes early.\n**While you wait:**\n- I don't have specific self-care steps from my sources for managing type 2 diabetes \u2014 please follow any advice your healthcare provider gives you.\nIt's essential to discuss your condition and management plan with your doctor to determine the best course of action for your specific situation.",
+        "provider": "groq",
+        "n_sentences": 8,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 6,
+        "per_sentence": [
+          {
+            "text": "Type 2 diabetes is a disease in which your blood glucose, or blood sugar, levels are too high, caused by a combination of factors including being overweight or having obesity, not being physically active, genetics, and family history.",
+            "claim": false,
+            "max_entail": 0.0012
+          },
+          {
+            "text": "What is type 2 diabetes:",
+            "claim": false,
+            "max_entail": 0.9913
+          },
+          {
+            "text": "It is a condition where your body doesn't make enough insulin or doesn't use insulin well, leading to high blood glucose levels.",
+            "claim": false,
+            "max_entail": 0.9931
+          },
+          {
+            "text": "Glucose is your main source of energy, and insulin helps it get into your cells to give them energy.",
+            "claim": false,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "You can take steps to manage your diabetes and try to prevent health problems.",
+            "claim": false,
+            "max_entail": 0.0025
+          },
+          {
+            "text": "Early diagnosis is important to prevent the worst effects of type 2 diabetes, and regular check-ups and blood tests with a healthcare provider can help detect diabetes early.",
+            "claim": false,
+            "max_entail": 0.0027
+          },
+          {
+            "text": "I don't have specific self-care steps from my sources for managing type 2 diabetes \u2014 please follow any advice your healthcare provider gives you.",
+            "claim": false,
+            "max_entail": 0.0016
+          },
+          {
+            "text": "It's essential to discuss your condition and management plan with your doctor to determine the best course of action for your specific situation.",
+            "claim": false,
+            "max_entail": 0.0008
+          }
+        ]
+      },
+      "elapsed_s": 17.94
+    },
+    {
+      "id": "cov-005",
+      "query": "How does high blood pressure damage the body over time?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "High blood pressure, also known as hypertension, can damage the body over time in several ways. When blood pressure is consistently high, it puts extra strain on blood vessels, making them weaker and more prone to damage. This can lead to:\n\n* Hardening and narrowing of arteries (atherosclerosis), which can reduce blood flow to vital organs\n* Damage to the heart, making it work harder to pump blood, which can lead to heart failure\n* Kidney damage, reducing their ability to filter waste and excess fluids\n* Vision problems, including blurred vision and even blindness, due to damage to the blood vessels in the eyes\n* Increased risk of stroke, heart attack, and other cardiovascular diseases\n\nOver time, high blood pressure can also cause damage to other organs and systems, such as the brain, liver, and kidneys. If left uncontrolled, high blood pressure can lead to serious and potentially life-threatening complications. It's essential to work with a healthcare provider to manage high blood pressure through lifestyle changes, such as a healthy diet and regular exercise, and medication if necessary. Early detection and treatment can help prevent long-term damage and reduce the risk of complications.",
+        "provider": "groq",
+        "n_sentences": 12,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 9,
+        "per_sentence": [
+          {
+            "text": "High blood pressure, also known as hypertension, can damage the body over time in several ways.",
+            "claim": false,
+            "max_entail": 0.9953
+          },
+          {
+            "text": "When blood pressure is consistently high, it puts extra strain on blood vessels, making them weaker and more prone to damage.",
+            "claim": false,
+            "max_entail": 0.0087
+          },
+          {
+            "text": "This can lead to:",
+            "claim": false,
+            "max_entail": 0.3438
+          },
+          {
+            "text": "Hardening and narrowing of arteries (atherosclerosis), which can reduce blood flow to vital organs",
+            "claim": false,
+            "max_entail": 0.0101
+          },
+          {
+            "text": "Damage to the heart, making it work harder to pump blood, which can lead to heart failure",
+            "claim": false,
+            "max_entail": 0.9863
+          },
+          {
+            "text": "Kidney damage, reducing their ability to filter waste and excess fluids",
+            "claim": false,
+            "max_entail": 0.046
+          },
+          {
+            "text": "Vision problems, including blurred vision and even blindness, due to damage to the blood vessels in the eyes",
+            "claim": false,
+            "max_entail": 0.0116
+          },
+          {
+            "text": "Increased risk of stroke, heart attack, and other cardiovascular diseases",
+            "claim": false,
+            "max_entail": 0.1267
+          },
+          {
+            "text": "Over time, high blood pressure can also cause damage to other organs and systems, such as the brain, liver, and kidneys.",
+            "claim": false,
+            "max_entail": 0.0011
+          },
+          {
+            "text": "If left uncontrolled, high blood pressure can lead to serious and potentially life-threatening complications.",
+            "claim": false,
+            "max_entail": 0.9591
+          },
+          {
+            "text": "It's essential to work with a healthcare provider to manage high blood pressure through lifestyle changes, such as a healthy diet and regular exercise, and medication if necessary.",
+            "claim": false,
+            "max_entail": 0.4348
+          },
+          {
+            "text": "Early detection and treatment can help prevent long-term damage and reduce the risk of complications.",
+            "claim": false,
+            "max_entail": 0.0021
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "High blood pressure, also known as **hypertension**, can cause serious damage to the body over time if left uncontrolled.\n**Complications of Uncontrolled Hypertension:**\n- Excessive pressure can harden **arteries**, decreasing the flow of blood and oxygen to the heart.\n- This elevated pressure and reduced blood flow can cause **chest pain**, also called **angina**.\n- **Heart attack** can occur when the blood supply to the heart is blocked and heart muscle cells die from lack of oxygen.\n- **Heart failure** can occur when the heart cannot pump enough blood and oxygen to other vital body organs.\n- **Irregular heart beat** can lead to a sudden death.\n**While you wait:**\n- If you are experiencing **chest pain**, sit down and rest, loosen tight clothing, stay calm, and do not drive yourself.\n- Consider reducing and managing **stress**.\n- Regularly check your **blood pressure**.\n- If you have been prescribed medication, take it as directed by your healthcare professional.\nIt is essential to discuss your specific situation with a doctor to understand how high blood pressure may be affecting your body and to determine the best course of action for your care.",
+        "provider": "groq",
+        "n_sentences": 12,
+        "n_claim": 1,
+        "n_failed": 0,
+        "n_failed_all": 4,
+        "per_sentence": [
+          {
+            "text": "High blood pressure, also known as hypertension, can cause serious damage to the body over time if left uncontrolled.",
+            "claim": false,
+            "max_entail": 0.9961
+          },
+          {
+            "text": "Complications of Uncontrolled Hypertension:",
+            "claim": false,
+            "max_entail": 0.085
+          },
+          {
+            "text": "Excessive pressure can harden arteries, decreasing the flow of blood and oxygen to the heart.",
+            "claim": false,
+            "max_entail": 0.2087
+          },
+          {
+            "text": "This elevated pressure and reduced blood flow can cause chest pain, also called angina.",
+            "claim": false,
+            "max_entail": 0.7187
+          },
+          {
+            "text": "Heart attack can occur when the blood supply to the heart is blocked and heart muscle cells die from lack of oxygen.",
+            "claim": false,
+            "max_entail": 0.861
+          },
+          {
+            "text": "Heart failure can occur when the heart cannot pump enough blood and oxygen to other vital body organs.",
+            "claim": false,
+            "max_entail": 0.5532
+          },
+          {
+            "text": "Irregular heart beat can lead to a sudden death.",
+            "claim": false,
+            "max_entail": 0.6979
+          },
+          {
+            "text": "If you are experiencing chest pain, sit down and rest, loosen tight clothing, stay calm, and do not drive yourself.",
+            "claim": false,
+            "max_entail": 0.0113
+          },
+          {
+            "text": "Consider reducing and managing stress.",
+            "claim": false,
+            "max_entail": 0.99
+          },
+          {
+            "text": "Regularly check your blood pressure.",
+            "claim": false,
+            "max_entail": 0.9242
+          },
+          {
+            "text": "If you have been prescribed medication, take it as directed by your healthcare professional.",
+            "claim": true,
+            "max_entail": 0.649
+          },
+          {
+            "text": "It is essential to discuss your specific situation with a doctor to understand how high blood pressure may be affecting your body and to determine the best course of action for your care.",
+            "claim": false,
+            "max_entail": 0.0037
+          }
+        ]
+      },
+      "elapsed_s": 28.21
+    },
+    {
+      "id": "cov-006",
+      "query": "What's the difference between type 1 and type 2 diabetes?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Type 1 and type 2 diabetes are two different conditions that affect how your body regulates blood sugar. The main difference is how they develop and how they're treated.\n\nType 1 diabetes is an autoimmune disease where your body's immune system attacks the cells in your pancreas that produce insulin, a hormone that helps regulate blood sugar. This means your body can't make insulin, and you need to take it through injections or a pump. Type 1 diabetes usually develops in children and young adults.\n\nType 2 diabetes is a condition where your body becomes resistant to insulin or doesn't make enough of it. This can be caused by a combination of factors, including genetics, obesity, and an inactive lifestyle. Type 2 diabetes is more common and often develops in adults, especially after age 45.\n\nWhile both types of diabetes require managing blood sugar levels, the treatment approaches differ. Type 1 diabetes requires insulin therapy, while type 2 diabetes may be managed through lifestyle changes, such as diet and exercise, and sometimes medication or insulin therapy. Early diagnosis and treatment can help manage both types of diabetes and prevent complications.",
+        "provider": "groq",
+        "n_sentences": 11,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 9,
+        "per_sentence": [
+          {
+            "text": "Type 1 and type 2 diabetes are two different conditions that affect how your body regulates blood sugar.",
+            "claim": false,
+            "max_entail": 0.6117
+          },
+          {
+            "text": "The main difference is how they develop and how they're treated.",
+            "claim": false,
+            "max_entail": 0.0008
+          },
+          {
+            "text": "Type 1 diabetes is an autoimmune disease where your body's immune system attacks the cells in your pancreas that produce insulin, a hormone that helps regulate blood sugar.",
+            "claim": false,
+            "max_entail": 0.0012
+          },
+          {
+            "text": "This means your body can't make insulin, and you need to take it through injections or a pump.",
+            "claim": false,
+            "max_entail": 0.0013
+          },
+          {
+            "text": "Type 1 diabetes usually develops in children and young adults.",
+            "claim": false,
+            "max_entail": 0.6816
+          },
+          {
+            "text": "Type 2 diabetes is a condition where your body becomes resistant to insulin or doesn't make enough of it.",
+            "claim": false,
+            "max_entail": 0.0066
+          },
+          {
+            "text": "This can be caused by a combination of factors, including genetics, obesity, and an inactive lifestyle.",
+            "claim": false,
+            "max_entail": 0.0111
+          },
+          {
+            "text": "Type 2 diabetes is more common and often develops in adults, especially after age 45.",
+            "claim": false,
+            "max_entail": 0.0013
+          },
+          {
+            "text": "While both types of diabetes require managing blood sugar levels, the treatment approaches differ.",
+            "claim": false,
+            "max_entail": 0.0254
+          },
+          {
+            "text": "Type 1 diabetes requires insulin therapy, while type 2 diabetes may be managed through lifestyle changes, such as diet and exercise, and sometimes medication or insulin therapy.",
+            "claim": false,
+            "max_entail": 0.0336
+          },
+          {
+            "text": "Early diagnosis and treatment can help manage both types of diabetes and prevent complications.",
+            "claim": false,
+            "max_entail": 0.0009
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "The main difference between type 1 and type 2 diabetes lies in the body's ability to produce and use insulin, a hormone that regulates blood sugar levels.\n**Type 1 Diabetes:**\n- Characterized by deficient insulin production\n- Requires daily administration of insulin\n- Typically develops in childhood, but can occur at any age\n- Has no known cause or means of prevention\n**Type 2 Diabetes:**\n- Occurs when the body does not make or use insulin well\n- Can be managed with healthy food choices and physical activity, but may also require medication\n- Often develops in adults, but can also occur in children\n- Is caused by a combination of genetic and lifestyle factors, including being overweight or physically inactive\n**While you wait:**\n- If you are experiencing symptoms such as feeling very thirsty, needing to urinate more often than usual, or blurred vision, it is essential to discuss these with your doctor.\n- In the meantime, staying hydrated by drinking plenty of water may help alleviate some symptoms.\n- Maintaining a healthy diet and engaging in regular physical activity can also help manage blood sugar levels.\n- It is crucial to consult with your doctor to determine the best course of action for your specific situation.",
+        "provider": "groq",
+        "n_sentences": 13,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 10,
+        "per_sentence": [
+          {
+            "text": "The main difference between type 1 and type 2 diabetes lies in the body's ability to produce and use insulin, a hormone that regulates blood sugar levels.",
+            "claim": false,
+            "max_entail": 0.006
+          },
+          {
+            "text": "Characterized by deficient insulin production",
+            "claim": false,
+            "max_entail": 0.9962
+          },
+          {
+            "text": "Requires daily administration of insulin",
+            "claim": false,
+            "max_entail": 0.0046
+          },
+          {
+            "text": "Typically develops in childhood, but can occur at any age",
+            "claim": false,
+            "max_entail": 0.9677
+          },
+          {
+            "text": "Has no known cause or means of prevention",
+            "claim": false,
+            "max_entail": 0.0005
+          },
+          {
+            "text": "Occurs when the body does not make or use insulin well",
+            "claim": false,
+            "max_entail": 0.9943
+          },
+          {
+            "text": "Can be managed with healthy food choices and physical activity, but may also require medication",
+            "claim": false,
+            "max_entail": 0.0061
+          },
+          {
+            "text": "Often develops in adults, but can also occur in children",
+            "claim": false,
+            "max_entail": 0.0224
+          },
+          {
+            "text": "Is caused by a combination of genetic and lifestyle factors, including being overweight or physically inactive",
+            "claim": false,
+            "max_entail": 0.0923
+          },
+          {
+            "text": "If you are experiencing symptoms such as feeling very thirsty, needing to urinate more often than usual, or blurred vision, it is essential to discuss these with your doctor.",
+            "claim": false,
+            "max_entail": 0.0011
+          },
+          {
+            "text": "In the meantime, staying hydrated by drinking plenty of water may help alleviate some symptoms.",
+            "claim": false,
+            "max_entail": 0.0009
+          },
+          {
+            "text": "Maintaining a healthy diet and engaging in regular physical activity can also help manage blood sugar levels.",
+            "claim": false,
+            "max_entail": 0.0024
+          },
+          {
+            "text": "It is crucial to consult with your doctor to determine the best course of action for your specific situation.",
+            "claim": false,
+            "max_entail": 0.0008
+          }
+        ]
+      },
+      "elapsed_s": 25.35
+    },
+    {
+      "id": "cov-007",
+      "query": "Should I go to a health post or a district hospital for a persistent fever?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "If you have a persistent fever, it's generally best to start by visiting a health post. A health post is usually staffed by a nurse or a healthcare worker who can assess your condition and provide basic treatment. They can check your temperature, blood pressure, and other vital signs, and may prescribe medication to help manage your fever.\n\nIf your condition is more severe or the health post staff are unsure of the cause of your fever, they may refer you to a district hospital for further evaluation and treatment. A district hospital has more advanced facilities and specialist doctors who can provide more comprehensive care.\n\nHowever, if you experience any of the following symptoms, you should go directly to a district hospital:\n\n* Severe headache or confusion\n* Difficulty breathing\n* Chest pain or cough\n* Severe abdominal pain\n* Vomiting or diarrhea\n* Fever above 103\u00b0F (39.4\u00b0C)\n\nRemember, if you're unsure about the severity of your symptoms or where to go, it's always best to err on the side of caution and seek medical attention at a health post or district hospital.",
+        "provider": "groq",
+        "n_sentences": 10,
+        "n_claim": 2,
+        "n_failed": 2,
+        "n_failed_all": 9,
+        "per_sentence": [
+          {
+            "text": "If you have a persistent fever, it's generally best to start by visiting a health post.",
+            "claim": true,
+            "max_entail": 0.0131
+          },
+          {
+            "text": "A health post is usually staffed by a nurse or a healthcare worker who can assess your condition and provide basic treatment.",
+            "claim": false,
+            "max_entail": 0.0104
+          },
+          {
+            "text": "They can check your temperature, blood pressure, and other vital signs, and may prescribe medication to help manage your fever.",
+            "claim": false,
+            "max_entail": 0.0006
+          },
+          {
+            "text": "If your condition is more severe or the health post staff are unsure of the cause of your fever, they may refer you to a district hospital for further evaluation and treatment.",
+            "claim": false,
+            "max_entail": 0.0038
+          },
+          {
+            "text": "A district hospital has more advanced facilities and specialist doctors who can provide more comprehensive care.",
+            "claim": false,
+            "max_entail": 0.0026
+          },
+          {
+            "text": "However, if you experience any of the following symptoms, you should go directly to a district hospital:",
+            "claim": false,
+            "max_entail": 0.0022
+          },
+          {
+            "text": "Severe headache or confusion",
+            "claim": false,
+            "max_entail": 0.0115
+          },
+          {
+            "text": "Chest pain or cough",
+            "claim": false,
+            "max_entail": 0.9892
+          },
+          {
+            "text": "Fever above 103\u00b0F (39.4\u00b0C)",
+            "claim": true,
+            "max_entail": 0.2738
+          },
+          {
+            "text": "Remember, if you're unsure about the severity of your symptoms or where to go, it's always best to err on the side of caution and seek medical attention at a health post or district hospital.",
+            "claim": false,
+            "max_entail": 0.007
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "When deciding where to seek medical attention for a persistent fever, it's essential to consider the severity of your symptoms and the resources available at different healthcare facilities.\n**Seeking Medical Attention:**\n- For a persistent fever, it's crucial to consult a healthcare professional for proper evaluation and treatment.\n- A health post may be able to provide initial assessment and treatment, but if your symptoms are severe or worsen over time, you may need to visit a district hospital for more comprehensive care.\n**While you wait:**\n- Drink plenty of fluids to stay hydrated.\n- Rest and avoid strenuous activities.\n- Monitor your temperature every few hours.\n- If your fever is accompanied by other symptoms such as difficulty breathing, chest pain, or severe headache, seek immediate medical attention at a district hospital.",
+        "provider": "groq",
+        "n_sentences": 7,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 7,
+        "per_sentence": [
+          {
+            "text": "When deciding where to seek medical attention for a persistent fever, it's essential to consider the severity of your symptoms and the resources available at different healthcare facilities.",
+            "claim": false,
+            "max_entail": 0.0037
+          },
+          {
+            "text": "For a persistent fever, it's crucial to consult a healthcare professional for proper evaluation and treatment.",
+            "claim": false,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "A health post may be able to provide initial assessment and treatment, but if your symptoms are severe or worsen over time, you may need to visit a district hospital for more comprehensive care.",
+            "claim": false,
+            "max_entail": 0.002
+          },
+          {
+            "text": "Drink plenty of fluids to stay hydrated.",
+            "claim": false,
+            "max_entail": 0.1138
+          },
+          {
+            "text": "Rest and avoid strenuous activities.",
+            "claim": false,
+            "max_entail": 0.0216
+          },
+          {
+            "text": "Monitor your temperature every few hours.",
+            "claim": false,
+            "max_entail": 0.0451
+          },
+          {
+            "text": "If your fever is accompanied by other symptoms such as difficulty breathing, chest pain, or severe headache, seek immediate medical attention at a district hospital.",
+            "claim": false,
+            "max_entail": 0.0035
+          }
+        ]
+      },
+      "elapsed_s": 19.47
+    },
+    {
+      "id": "cov-008",
+      "query": "When is abdominal pain an emergency versus something to watch at home?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Abdominal pain can be a sign of a serious condition, so it's essential to know when to seek medical help. Here are some guidelines:\n\n**Seek emergency care if:**\n\n* You have severe, sudden pain that doesn't go away\n* You have pain with vomiting blood, black tarry stools, or bloody urine\n* You have a fever over 101.5\u00b0F (38.6\u00b0C)\n* You have difficulty breathing or rapid heartbeat\n* You have a history of abdominal surgery or underlying medical conditions (e.g., liver or kidney disease)\n* You are pregnant or think you might be pregnant\n\n**Watch at home if:**\n\n* You have mild, crampy pain that comes and goes\n* You have bloating, gas, or diarrhea\n* You have a known condition like irritable bowel syndrome (IBS) or menstrual cramps\n\nIf you're unsure, it's always best to err on the side of caution and seek medical attention. If your symptoms worsen or you experience any of the emergency signs, go to the emergency room or call 911. Remember, it's always better to be safe than sorry when it comes to abdominal pain.",
+        "provider": "groq",
+        "n_sentences": 16,
+        "n_claim": 8,
+        "n_failed": 8,
+        "n_failed_all": 15,
+        "per_sentence": [
+          {
+            "text": "Abdominal pain can be a sign of a serious condition, so it's essential to know when to seek medical help.",
+            "claim": false,
+            "max_entail": 0.5595
+          },
+          {
+            "text": "Here are some guidelines:",
+            "claim": false,
+            "max_entail": 0.0172
+          },
+          {
+            "text": "Seek emergency care if:",
+            "claim": false,
+            "max_entail": 0.0232
+          },
+          {
+            "text": "You have severe, sudden pain that doesn't go away",
+            "claim": true,
+            "max_entail": 0.0119
+          },
+          {
+            "text": "You have pain with vomiting blood, black tarry stools, or bloody urine",
+            "claim": true,
+            "max_entail": 0.0212
+          },
+          {
+            "text": "You have a fever over 101.5\u00b0F (38.6\u00b0C)",
+            "claim": true,
+            "max_entail": 0.0028
+          },
+          {
+            "text": "You have difficulty breathing or rapid heartbeat",
+            "claim": true,
+            "max_entail": 0.006
+          },
+          {
+            "text": "You have a history of abdominal surgery or underlying medical conditions (e.g., liver or kidney disease)",
+            "claim": true,
+            "max_entail": 0.0018
+          },
+          {
+            "text": "You are pregnant or think you might be pregnant",
+            "claim": false,
+            "max_entail": 0.0018
+          },
+          {
+            "text": "Watch at home if:",
+            "claim": false,
+            "max_entail": 0.0079
+          },
+          {
+            "text": "You have mild, crampy pain that comes and goes",
+            "claim": true,
+            "max_entail": 0.0083
+          },
+          {
+            "text": "You have bloating, gas, or diarrhea",
+            "claim": true,
+            "max_entail": 0.0075
+          },
+          {
+            "text": "You have a known condition like irritable bowel syndrome (IBS) or menstrual cramps",
+            "claim": true,
+            "max_entail": 0.006
+          },
+          {
+            "text": "If you're unsure, it's always best to err on the side of caution and seek medical attention.",
+            "claim": false,
+            "max_entail": 0.0119
+          },
+          {
+            "text": "If your symptoms worsen or you experience any of the emergency signs, go to the emergency room or call 911.",
+            "claim": false,
+            "max_entail": 0.0062
+          },
+          {
+            "text": "Remember, it's always better to be safe than sorry when it comes to abdominal pain.",
+            "claim": false,
+            "max_entail": 0.0058
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "Abdominal pain can be a symptom of various conditions, and it's essential to determine when it's an emergency and when it can be monitored at home. \n**When to seek emergency care:**\n- You have abdominal pain that is sudden and sharp\n- You also have pain in your chest, neck, or shoulder\n- You're vomiting blood or have blood in your stool\n- Your abdomen is stiff, hard, and tender to touch\n- You have severe pain in your abdomen, confusion, blotchy or paler than usual skin, or difficulty breathing, which could be signs of sepsis\n- A stomach ache came on very suddenly or is severe\n- It hurts when you touch your stomach\n- You're vomiting blood or your vomit looks like ground coffee\n**When to seek urgent care:**\n- You have pain in your abdomen that is gradually getting worse or does not go away\n- The pain moves to the lower right side of your abdomen\n- You have a stomach ache that gets much worse, does not go away, or keeps coming back\n- You have bloating that does not go away or keeps coming back\n- You have problems with swallowing food\n- You're pregnant\n- You're",
+        "provider": "groq",
+        "n_sentences": 16,
+        "n_claim": 6,
+        "n_failed": 5,
+        "n_failed_all": 13,
+        "per_sentence": [
+          {
+            "text": "Abdominal pain can be a symptom of various conditions, and it's essential to determine when it's an emergency and when it can be monitored at home.",
+            "claim": false,
+            "max_entail": 0.0133
+          },
+          {
+            "text": "When to seek emergency care:",
+            "claim": false,
+            "max_entail": 0.0744
+          },
+          {
+            "text": "You have abdominal pain that is sudden and sharp",
+            "claim": true,
+            "max_entail": 0.0073
+          },
+          {
+            "text": "You also have pain in your chest, neck, or shoulder",
+            "claim": false,
+            "max_entail": 0.006
+          },
+          {
+            "text": "You're vomiting blood or have blood in your stool",
+            "claim": false,
+            "max_entail": 0.0126
+          },
+          {
+            "text": "Your abdomen is stiff, hard, and tender to touch",
+            "claim": false,
+            "max_entail": 0.0035
+          },
+          {
+            "text": "You have severe pain in your abdomen, confusion, blotchy or paler than usual skin, or difficulty breathing, which could be signs of sepsis",
+            "claim": true,
+            "max_entail": 0.0239
+          },
+          {
+            "text": "A stomach ache came on very suddenly or is severe",
+            "claim": false,
+            "max_entail": 0.9932
+          },
+          {
+            "text": "It hurts when you touch your stomach",
+            "claim": false,
+            "max_entail": 0.0044
+          },
+          {
+            "text": "You're vomiting blood or your vomit looks like ground coffee",
+            "claim": false,
+            "max_entail": 0.0027
+          },
+          {
+            "text": "When to seek urgent care:",
+            "claim": false,
+            "max_entail": 0.698
+          },
+          {
+            "text": "You have pain in your abdomen that is gradually getting worse or does not go away",
+            "claim": true,
+            "max_entail": 0.0273
+          },
+          {
+            "text": "The pain moves to the lower right side of your abdomen",
+            "claim": false,
+            "max_entail": 0.0039
+          },
+          {
+            "text": "You have a stomach ache that gets much worse, does not go away, or keeps coming back",
+            "claim": true,
+            "max_entail": 0.7147
+          },
+          {
+            "text": "You have bloating that does not go away or keeps coming back",
+            "claim": true,
+            "max_entail": 0.0059
+          },
+          {
+            "text": "You have problems with swallowing food",
+            "claim": true,
+            "max_entail": 0.0026
+          }
+        ]
+      },
+      "elapsed_s": 32.6
+    },
+    {
+      "id": "cov-009",
+      "query": "What should I pack or prepare before my visit to a diabetic clinic?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Before visiting a diabetic clinic, it's a good idea to prepare a few things to make the most of your appointment. Here are some suggestions:\n\n* Bring a list of your medications, including the names, dosages, and frequencies\n* Keep a record of your blood sugar levels, including the dates, times, and results\n* Write down any questions or concerns you have about your diabetes management\n* Bring a snack or drink with you, in case your appointment runs long or you need to take medication\n* Wear a glucose monitor or bring a log of your readings, if you have one\n* Bring a family member or friend, if possible, to provide support and help remember important information\n* Bring any relevant medical records, such as lab results or hospital discharge summaries\n\nIt's also a good idea to arrive 10-15 minutes before your scheduled appointment time to fill out any necessary paperwork. By being prepared, you'll be able to get the most out of your visit and have a more productive conversation with your healthcare provider.",
+        "provider": "groq",
+        "n_sentences": 11,
+        "n_claim": 2,
+        "n_failed": 2,
+        "n_failed_all": 11,
+        "per_sentence": [
+          {
+            "text": "Before visiting a diabetic clinic, it's a good idea to prepare a few things to make the most of your appointment.",
+            "claim": false,
+            "max_entail": 0.002
+          },
+          {
+            "text": "Here are some suggestions:",
+            "claim": false,
+            "max_entail": 0.0027
+          },
+          {
+            "text": "Bring a list of your medications, including the names, dosages, and frequencies",
+            "claim": false,
+            "max_entail": 0.0023
+          },
+          {
+            "text": "Keep a record of your blood sugar levels, including the dates, times, and results",
+            "claim": false,
+            "max_entail": 0.0029
+          },
+          {
+            "text": "Write down any questions or concerns you have about your diabetes management",
+            "claim": true,
+            "max_entail": 0.0018
+          },
+          {
+            "text": "Bring a snack or drink with you, in case your appointment runs long or you need to take medication",
+            "claim": false,
+            "max_entail": 0.0029
+          },
+          {
+            "text": "Wear a glucose monitor or bring a log of your readings, if you have one",
+            "claim": true,
+            "max_entail": 0.0027
+          },
+          {
+            "text": "Bring a family member or friend, if possible, to provide support and help remember important information",
+            "claim": false,
+            "max_entail": 0.0019
+          },
+          {
+            "text": "Bring any relevant medical records, such as lab results or hospital discharge summaries",
+            "claim": false,
+            "max_entail": 0.0024
+          },
+          {
+            "text": "It's also a good idea to arrive 10-15 minutes before your scheduled appointment time to fill out any necessary paperwork.",
+            "claim": false,
+            "max_entail": 0.0013
+          },
+          {
+            "text": "By being prepared, you'll be able to get the most out of your visit and have a more productive conversation with your healthcare provider.",
+            "claim": false,
+            "max_entail": 0.0014
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "When preparing for a visit to a diabetic clinic, it's essential to gather relevant information and materials to ensure a productive consultation with your healthcare provider.\n**Before the Visit:**\n- Make a list of questions to ask your doctor or other healthcare professional, including what to expect during the visit, treatment options, and any concerns you may have.\n- Bring a record of your medical history, including any previous diagnoses, medications, and test results.\n- Keep a log of your blood glucose levels, including the dates, times, and results of any tests.\n- Prepare to discuss your lifestyle habits, including your diet, physical activity level, and any challenges you're facing in managing your condition.\n**What to Ask Your Doctor:**\n- What are my target blood sugar levels, and how often should I check them?\n- What are the best ways to manage my blood sugar levels through diet and exercise?\n- What are the potential side effects of any prescribed medications, and how will they interact with other medicines I'm taking?\n**While you wait:**\n- Continue to follow a **healthy eating plan** and engage in **regular physical activity** to help manage your blood glucose levels.\n- If you're experiencing any symptoms or concerns, be sure to **write",
+        "provider": "groq",
+        "n_sentences": 11,
+        "n_claim": 0,
+        "n_failed": 0,
+        "n_failed_all": 11,
+        "per_sentence": [
+          {
+            "text": "When preparing for a visit to a diabetic clinic, it's essential to gather relevant information and materials to ensure a productive consultation with your healthcare provider.",
+            "claim": false,
+            "max_entail": 0.0023
+          },
+          {
+            "text": "Make a list of questions to ask your doctor or other healthcare professional, including what to expect during the visit, treatment options, and any concerns you may have.",
+            "claim": false,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "Bring a record of your medical history, including any previous diagnoses, medications, and test results.",
+            "claim": false,
+            "max_entail": 0.0018
+          },
+          {
+            "text": "Keep a log of your blood glucose levels, including the dates, times, and results of any tests.",
+            "claim": false,
+            "max_entail": 0.0027
+          },
+          {
+            "text": "Prepare to discuss your lifestyle habits, including your diet, physical activity level, and any challenges you're facing in managing your condition.",
+            "claim": false,
+            "max_entail": 0.003
+          },
+          {
+            "text": "What to Ask Your Doctor:",
+            "claim": false,
+            "max_entail": 0.0033
+          },
+          {
+            "text": "What are my target blood sugar levels, and how often should I check them?",
+            "claim": false,
+            "max_entail": 0.0023
+          },
+          {
+            "text": "What are the best ways to manage my blood sugar levels through diet and exercise?",
+            "claim": false,
+            "max_entail": 0.0126
+          },
+          {
+            "text": "What are the potential side effects of any prescribed medications, and how will they interact with other medicines I'm taking?",
+            "claim": false,
+            "max_entail": 0.0123
+          },
+          {
+            "text": "Continue to follow a healthy eating plan and engage in regular physical activity to help manage your blood glucose levels.",
+            "claim": false,
+            "max_entail": 0.0317
+          },
+          {
+            "text": "If you're experiencing any symptoms or concerns, be sure to **write",
+            "claim": false,
+            "max_entail": 0.0035
+          }
+        ]
+      },
+      "elapsed_s": 21.82
+    },
+    {
+      "id": "cov-010",
+      "query": "My HbA1c is 6.8%. What does that mean in general terms?",
+      "n_chunks": 4,
+      "vanilla": {
+        "answer": "Your HbA1c result of 6.8% is a measure of your average blood sugar levels over the past 2-3 months. In general terms, it indicates that your blood sugar levels are higher than normal, but not extremely high.\n\nA normal HbA1c range is typically considered to be below 5.7%. A result between 5.7% and 6.4% may indicate prediabetes, while a result of 6.5% or higher is often used to diagnose diabetes.\n\nAn HbA1c of 6.8% suggests that you may be at risk of developing diabetes or may already have diabetes. However, it's essential to consult with your doctor to determine the best course of action. They will consider your HbA1c result along with other factors, such as your medical history, symptoms, and other test results, to make a diagnosis and recommend treatment.\n\nIn general, an HbA1c of 6.8% may require lifestyle changes, such as a healthy diet and regular exercise, to help manage your blood sugar levels. Your doctor may also recommend further testing or monitoring to determine the best approach for your specific situation.",
+        "provider": "groq",
+        "n_sentences": 9,
+        "n_claim": 5,
+        "n_failed": 5,
+        "n_failed_all": 9,
+        "per_sentence": [
+          {
+            "text": "Your HbA1c result of 6.8% is a measure of your average blood sugar levels over the past 2-3 months.",
+            "claim": true,
+            "max_entail": 0.0009
+          },
+          {
+            "text": "In general terms, it indicates that your blood sugar levels are higher than normal, but not extremely high.",
+            "claim": false,
+            "max_entail": 0.0016
+          },
+          {
+            "text": "A normal HbA1c range is typically considered to be below 5.7%.",
+            "claim": true,
+            "max_entail": 0.0036
+          },
+          {
+            "text": "A result between 5.7% and 6.4% may indicate prediabetes, while a result of 6.5% or higher is often used to diagnose diabetes.",
+            "claim": true,
+            "max_entail": 0.0021
+          },
+          {
+            "text": "An HbA1c of 6.8% suggests that you may be at risk of developing diabetes or may already have diabetes.",
+            "claim": true,
+            "max_entail": 0.0011
+          },
+          {
+            "text": "However, it's essential to consult with your doctor to determine the best course of action.",
+            "claim": false,
+            "max_entail": 0.0008
+          },
+          {
+            "text": "They will consider your HbA1c result along with other factors, such as your medical history, symptoms, and other test results, to make a diagnosis and recommend treatment.",
+            "claim": false,
+            "max_entail": 0.0016
+          },
+          {
+            "text": "In general, an HbA1c of 6.8% may require lifestyle changes, such as a healthy diet and regular exercise, to help manage your blood sugar levels.",
+            "claim": true,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "Your doctor may also recommend further testing or monitoring to determine the best approach for your specific situation.",
+            "claim": false,
+            "max_entail": 0.0008
+          }
+        ]
+      },
+      "medirag": {
+        "answer": "Your HbA1c result of 6.8% is above the normal range, indicating that your average blood glucose levels have been higher than normal over the past 3 months.\n**What it means:**\n- An HbA1c level of 6.8% is considered to be in the range for **diabetes**, as it is above 6.5%.\n- This result suggests that you may have **type 2 diabetes**, but it's essential to discuss your results with your doctor to determine the best course of action.\n**Next steps:**\n- Your doctor will interpret your results in the context of your overall health and may order additional tests to confirm the diagnosis.\n- If you have diabetes, your doctor will work with you to develop a **diabetes care plan**, which may include lifestyle changes, monitoring, and medication.\n**While you wait:**\n- You may want to discuss your diet and exercise routine with your doctor to see if there are any changes you can make to help manage your blood glucose levels.\n- It's also essential to ask your doctor about any additional tests or monitoring you may need to undergo.\n- In the meantime, you can ask your doctor about general tips for managing blood sugar levels",
+        "provider": "groq",
+        "n_sentences": 8,
+        "n_claim": 3,
+        "n_failed": 3,
+        "n_failed_all": 7,
+        "per_sentence": [
+          {
+            "text": "Your HbA1c result of 6.8% is above the normal range, indicating that your average blood glucose levels have been higher than normal over the past 3 months.",
+            "claim": true,
+            "max_entail": 0.001
+          },
+          {
+            "text": "An HbA1c level of 6.8% is considered to be in the range for diabetes, as it is above 6.5%.",
+            "claim": true,
+            "max_entail": 0.0007
+          },
+          {
+            "text": "This result suggests that you may have type 2 diabetes, but it's essential to discuss your results with your doctor to determine the best course of action.",
+            "claim": false,
+            "max_entail": 0.001
+          },
+          {
+            "text": "Your doctor will interpret your results in the context of your overall health and may order additional tests to confirm the diagnosis.",
+            "claim": false,
+            "max_entail": 0.6879
+          },
+          {
+            "text": "If you have diabetes, your doctor will work with you to develop a diabetes care plan, which may include lifestyle changes, monitoring, and medication.",
+            "claim": true,
+            "max_entail": 0.0046
+          },
+          {
+            "text": "You may want to discuss your diet and exercise routine with your doctor to see if there are any changes you can make to help manage your blood glucose levels.",
+            "claim": false,
+            "max_entail": 0.0011
+          },
+          {
+            "text": "It's also essential to ask your doctor about any additional tests or monitoring you may need to undergo.",
+            "claim": false,
+            "max_entail": 0.0005
+          },
+          {
+            "text": "In the meantime, you can ask your doctor about general tips for managing blood sugar levels",
+            "claim": false,
+            "max_entail": 0.0007
+          }
+        ]
+      },
+      "elapsed_s": 23.19
+    }
+  ]
+}

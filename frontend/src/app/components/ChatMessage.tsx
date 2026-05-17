@@ -394,7 +394,7 @@ export function ChatMessage({
               >
                 {content}
               </p>
-              {pending && !isUser && (
+              {(pending || resolvePending) && !isUser && (
                 <div
                   className="mt-3 flex items-center gap-2"
                   role="status"
@@ -416,7 +416,9 @@ export function ChatMessage({
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    Working on it…
+                    {resolvePending
+                      ? "Indexing your document…"
+                      : "Working on it…"}
                   </span>
                 </div>
               )}
