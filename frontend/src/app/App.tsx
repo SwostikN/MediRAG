@@ -122,6 +122,7 @@ interface ChatMessageRecord {
     urgency: string;
   } | null;
   markers?: LabMarker[] | null;
+  sources?: ChatMessageSource[] | null;
 }
 
 type DesignVariant = "classic" | "diagnostic" | "research";
@@ -275,6 +276,9 @@ function toUiMessages(rows: ChatMessageRecord[]): Message[] {
     // Stage-4 marker list — without this, reloading a lab-report session
     // would drop the LOW/NORMAL pill table and leave only the prose.
     markers: Array.isArray(row.markers) ? row.markers : undefined,
+    // Citation chips — without this, switching chats and coming back
+    // drops the SOURCES strip and the answer renders un-cited.
+    sources: Array.isArray(row.sources) ? row.sources : undefined,
   }));
 }
 
@@ -375,7 +379,7 @@ export default function App() {
   const loadConversationMessages = async (chatSessionId: string) => {
     const { data, error } = await supabase
       .from("chat_messages")
-      .select("id, session_id, role, content, created_at, render_mode, stage, red_flag, markers")
+      .select("id, session_id, role, content, created_at, render_mode, stage, red_flag, markers, sources")
       .eq("session_id", chatSessionId)
       .order("created_at", { ascending: true });
 
@@ -610,7 +614,7 @@ export default function App() {
 
   const persistConversationMessage = async (
     chatSessionId: string,
-    message: Pick<Message, "role" | "content" | "renderMode" | "redFlag" | "stage" | "markers">,
+    message: Pick<Message, "role" | "content" | "renderMode" | "redFlag" | "stage" | "markers" | "sources">,
   ) => {
     const now = new Date().toISOString();
     const preview = message.content.slice(0, 140);
@@ -631,6 +635,8 @@ export default function App() {
           : null,
         // Stage-4 lab-report markers, so reload restores the pill table.
         markers: message.markers && message.markers.length > 0 ? message.markers : null,
+        // Citation chips, so reload restores the SOURCES strip.
+        sources: message.sources && message.sources.length > 0 ? message.sources : null,
       },
     ]);
 

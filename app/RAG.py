@@ -1841,7 +1841,7 @@ async def query_document(query: QueryRequest):
             groq_resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
-                max_tokens=250,
+                max_tokens=700,
                 temperature=MAIN_QUERY_TEMPERATURE,
             )
             answer = groq_resp.choices[0].message.content
@@ -1851,7 +1851,7 @@ async def query_document(query: QueryRequest):
             response = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
-                max_tokens=250,
+                max_tokens=700,
                 temperature=MAIN_QUERY_TEMPERATURE,
             )
             try:
@@ -1863,7 +1863,7 @@ async def query_document(query: QueryRequest):
         response = co.chat(
             model="command-r-08-2024",
             messages=messages,
-            max_tokens=250,
+            max_tokens=700,
             temperature=MAIN_QUERY_TEMPERATURE,
         )
         try:
@@ -1872,6 +1872,11 @@ async def query_document(query: QueryRequest):
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to parse Cohere response")
     print(f"[llm_provider] /query emitted via provider={llm_provider}")
+
+    # Drop section headers with no body (token cap fired mid-answer or LLM
+    # formatted sloppily). Runs before guardrails so NLI doesn't waste a
+    # pass on a "**Lifestyle Changes:**" line that has nothing to verify.
+    answer = strip_orphan_headers(answer)
 
     # Week 10 guardrails: classify + NLI-verify each sentence. On
     # contradiction we redact; on weak support we soften; dose / diagnosis
@@ -1973,6 +1978,370 @@ async def query_document(query: QueryRequest):
 #
 # /query (non-streaming JSON) is preserved unchanged for backward compat —
 # evals (`eval/test_redflag.py` etc.) and any external consumer keep working.
+
+
+_ORPHAN_HEADER_PAT = r"\*\*[^*\n]{1,80}:\*\*"
+
+
+def strip_orphan_headers(text: str) -> str:
+    """Drop markdown section headers that have no body underneath.
+
+    Two failure modes the LLM hits when max_tokens cuts it off mid-answer
+    or it formats sloppily:
+      1. trailing orphan — answer ends with **Lifestyle Changes:** and no
+         bullets follow (token cap fired right after the header).
+      2. back-to-back orphan — **Header A:** is immediately followed by
+         **Header B:** with no body in between.
+
+    Both render in the UI as a lonely bold line, which looks broken. We
+    strip them post-hoc; cheaper than constraining the prompt."""
+    if not text:
+        return text
+    # Trailing orphan(s): peel from the end until the tail is real content.
+    while True:
+        new = re.sub(rf"\s*{_ORPHAN_HEADER_PAT}\s*$", "", text)
+        if new == text:
+            break
+        text = new
+    # Back-to-back orphan: header followed (after only whitespace) by
+    # another header — drop the first.
+    text = re.sub(rf"{_ORPHAN_HEADER_PAT}\s*(?={_ORPHAN_HEADER_PAT})", "", text)
+    return text.rstrip()
+
+
+# Patterns that flag a question as PROCEDURAL — the user is asking what to
+# do, who to see, what to watch for, or whether something is urgent. These
+# arrive most often as follow-ups: the user already has context (a lab
+# report rendered, symptoms discussed) and now wants action. Routine RAG
+# refuses them with "no source in library" because the question itself is
+# too vague to score against any chunk above the rerank gate — but the
+# user isn't asking for a fact, they're asking for next steps. We
+# substitute a constrained LLM call (no diagnosis, no dosing) instead of
+# refusing. Patterns kept conservative; anything that mentions a specific
+# condition or treatment is NOT procedural — it's a real RAG question.
+_PROCEDURAL_PATTERNS = [
+    r"\bwhat\s+(should|do|can|must)\s+i\s+do\b",
+    r"\bwhat\s+(do|would)\s+you\s+(suggest|recommend|advise)\b",
+    r"\bwhat\s+do\s+you\s+suggest\s+me\s+to\s+do\b",
+    r"\bwhat\s+(now|next)\b",
+    r"\bwhat'?s\s+(my\s+)?next\s+step\b",
+    r"\bshould\s+i\s+(worry|be\s+worried|see\s+a\s+doctor|see\s+the\s+gp|"
+        r"go\s+to\s+the?\s*(hospital|er|emergency)|"
+        r"go\s+to\s+(hospital|er|emergency))\b",
+    r"\bis\s+(this|it)\s+(serious|urgent|dangerous|bad|"
+        r"something\s+to\s+worry|something\s+i\s+should\s+worry)\b",
+    r"\bhow\s+(serious|urgent|worried|concerned)\b",
+    r"\bdo\s+i\s+need\s+to\b",
+    r"\bwhat\s+does\s+this\s+mean\s+for\s+me\b",
+    r"\bany\s+(advice|suggestions|recommendations|tips)\b",
+    r"\bhelp\s+me\s+(understand|figure\s+out)\s+what\s+to\s+do\b",
+]
+_PROCEDURAL_RE = re.compile("|".join(_PROCEDURAL_PATTERNS), re.IGNORECASE)
+
+
+def is_procedural_question(text: str) -> bool:
+    if not text or len(text.strip()) < 3:
+        return False
+    return bool(_PROCEDURAL_RE.search(text))
+
+
+_PROCEDURAL_GUIDANCE_SYSTEM = (
+    "You are DocuMed AI, a health navigator (not a clinician). The user is "
+    "asking a PROCEDURAL question — they want to know what to do, who to "
+    "see, what to watch for, or whether something is urgent. They are NOT "
+    "asking for a medical fact.\n\n"
+    "You do NOT have a corpus source for this exact question, but you can "
+    "still give safe, useful action-oriented guidance based on the "
+    "conversation context (what the user said earlier, any uploaded report "
+    "you have already responded to, any symptoms they mentioned).\n\n"
+    "STRICT RULES — violating these makes you unsafe:\n"
+    "- DO NOT diagnose. Never say \"you likely have X\", \"this means you "
+    "have Y\", or attribute a specific cause to any finding.\n"
+    "- DO NOT prescribe. No medication names, no dosages, no \"take N mg\".\n"
+    "- DO NOT invent specific clinical thresholds, numbers, or guidelines.\n"
+    "- DO NOT mention emergency numbers other than 102 (Nepal ambulance).\n\n"
+    "WHAT YOU SHOULD DO:\n"
+    "- Recommend talking to a clinician — a GP, the relevant specialist if "
+    "the context implies one, or emergency care if symptoms suggest urgency.\n"
+    "- Suggest what to bring or prepare (the lab report, a symptom diary, "
+    "a list of current medications).\n"
+    "- Suggest what to monitor — symptoms that, if they appear or worsen, "
+    "warrant urgent care.\n"
+    "- Acknowledge the limit: you can't tell them what their specific "
+    "numbers mean or what is causing a finding — only a clinician with "
+    "their full history can.\n\n"
+    "FORMAT:\n"
+    "- Open with one acknowledging sentence (e.g. \"Based on what you've "
+    "shared, here's what I'd suggest:\").\n"
+    "- Use a short bullet list of 3–5 concrete next steps.\n"
+    "- Close with one sentence reminding them to follow up with a clinician.\n"
+    "- Keep the whole response under 180 words. Bullets and occasional "
+    "**bold** only — no section headers."
+)
+
+
+def generate_procedural_guidance(
+    question: str,
+    history: Optional[list],
+) -> Optional[str]:
+    """LLM call with strict no-medical-claims prompt, scoped to procedural
+    next-steps guidance. Uses conversation history so the response is
+    contextual (e.g. references the lab report the user just uploaded)
+    rather than generic. Returns None on failure → caller falls back to the
+    standard refusal."""
+    messages: list[dict] = [
+        {"role": "system", "content": _PROCEDURAL_GUIDANCE_SYSTEM}
+    ]
+    if history:
+        for h in history[-HISTORY_MAX_TURNS:]:
+            if h.role in ("user", "assistant") and h.content:
+                messages.append({"role": h.role, "content": h.content})
+    messages.append({"role": "user", "content": question})
+
+    text: Optional[str] = None
+    try:
+        if groq_client is not None:
+            resp = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=messages,
+                max_tokens=320,
+                temperature=0.2,
+            )
+            text = (resp.choices[0].message.content or "").strip() or None
+        if text is None:
+            resp = co.chat(
+                model="command-r-08-2024",
+                messages=messages,
+                max_tokens=320,
+                temperature=0.2,
+            )
+            try:
+                text = (resp.message.content[0].text or "").strip() or None
+            except Exception:
+                text = None
+    except Exception as exc:
+        print(f"[procedural-guidance] generation failed: {exc}")
+        return None
+
+    if not text:
+        return None
+
+    # Defensive scope check — if the model slipped into diagnostic /
+    # prescriptive language despite the system prompt, abandon the guidance
+    # and let the caller fall back to the standard refusal. NLI is
+    # intentionally not run here (the output has no chunks to verify
+    # against — it's procedural, not factual).
+    try:
+        if classify_scope(text) in ("diagnostic", "prescriptive"):
+            print("[procedural-guidance] output failed scope check — dropping")
+            return None
+    except Exception as exc:
+        print(f"[procedural-guidance] scope check raised, fail-soft: {exc}")
+
+    return rewrite_emergency_numbers(text)
+
+
+_FOLLOWUP_QUERY_DERIVATION_SYSTEM = (
+    "Given a short conversation between a user and a health-information "
+    "assistant, write a SHORT search query (3 to 8 words) that would "
+    "retrieve the most relevant educational content from a medical corpus "
+    "to help the user's follow-up question. The user's follow-up is "
+    "usually vague (\"what should I do?\", \"any advice?\"), so derive the "
+    "topic from what was discussed earlier — flagged lab markers, "
+    "symptoms, conditions named. Output ONLY the search query — no "
+    "preamble, no quotes, no explanation. If the conversation has no "
+    "discernible medical topic, output the single word: NONE."
+)
+
+
+def derive_followup_search_query(
+    question: str,
+    history: Optional[list],
+) -> Optional[str]:
+    """LLM-extract a focused retrieval query from conversation context.
+
+    The user's procedural follow-up ("what should I do?") is too vague to
+    score against any chunk, but the *prior turns* usually have a clear
+    topic (a lab marker, a condition, a symptom). We run a quick Groq
+    pass over the conversation and pull out a search-friendly string.
+    None on failure or when the model returns NONE — caller falls back."""
+    if not history:
+        return None
+    messages: list[dict] = [
+        {"role": "system", "content": _FOLLOWUP_QUERY_DERIVATION_SYSTEM}
+    ]
+    for h in history[-HISTORY_MAX_TURNS:]:
+        if h.role in ("user", "assistant") and h.content:
+            messages.append({"role": h.role, "content": h.content})
+    messages.append(
+        {"role": "user", "content": f"Follow-up question: {question}"}
+    )
+    try:
+        if groq_client is not None:
+            resp = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=messages,
+                max_tokens=40,
+                temperature=0.1,
+            )
+            text = (resp.choices[0].message.content or "").strip()
+        else:
+            resp = co.chat(
+                model="command-r-08-2024",
+                messages=messages,
+                max_tokens=40,
+                temperature=0.1,
+            )
+            text = (resp.message.content[0].text or "").strip()
+    except Exception as exc:
+        print(f"[procedural-guidance] topic derivation failed: {exc}")
+        return None
+    if not text or text.strip().upper() == "NONE" or len(text) > 120:
+        return None
+    return text
+
+
+_GROUNDED_FOLLOWUP_SYSTEM = (
+    "You are DocuMed AI, a health navigator. The user is asking an action-"
+    "oriented follow-up question. They want CONCRETE next steps — what to "
+    "do, what to monitor, what helps — given the context of the earlier "
+    "conversation (any lab report shown, condition discussed, symptoms "
+    "mentioned).\n\n"
+    "You have been given retrieved sources from a medical educational "
+    "corpus. Use them to ground your substantive suggestions.\n\n"
+    "WHAT TO PROVIDE:\n"
+    "- Procedural steps (talk to a clinician, what to bring, what to "
+    "monitor, red-flag symptoms that warrant urgent care). These do not "
+    "need a citation.\n"
+    "- Substantive suggestions backed by the retrieved sources (lifestyle, "
+    "diet, self-management, when to seek care). EVERY substantive bullet "
+    "MUST end with a [N] citation marker where N is the source number. "
+    "If a suggestion cannot be cited to a source, OMIT it.\n\n"
+    "STRICT RULES — violations are unsafe:\n"
+    "- DO NOT diagnose. Never say \"you have X\" or \"this means you "
+    "have Y\". The user has a finding, not a diagnosis.\n"
+    "- DO NOT prescribe medication, dosages, or specific treatments.\n"
+    "- DO NOT invent claims unsupported by a source.\n"
+    "- Use 102 (Nepal ambulance) for emergencies, never 999/911.\n\n"
+    "FORMAT (target ~180 words):\n"
+    "- Open with ONE acknowledging sentence (e.g. \"Based on what you've "
+    "shared, here's what often helps and what to do next:\").\n"
+    "- A bullet list mixing procedural and substantive items. Use `-` "
+    "bullets, one idea per bullet. Cite substantive bullets with [N].\n"
+    "- Close with ONE sentence: \"These are general educational "
+    "suggestions — your clinician will tailor them to your situation.\"\n"
+    "- No section headers. Bold sparingly for emphasis only."
+)
+
+
+def generate_grounded_followup_answer(
+    question: str,
+    history: Optional[list],
+    top_rows: list[dict],
+) -> Optional[tuple[str, list]]:
+    """Generate a source-backed action-oriented answer for a procedural
+    follow-up. Returns (text, formatted_sources) on success, None when:
+      - generation fails
+      - NLI strips so much of the answer that nothing substantive remains
+      - scope check trips diagnostic/prescriptive output
+
+    Different from `generate_procedural_guidance`: this version HAS retrieved
+    chunks and is allowed to make source-cited substantive suggestions
+    (lifestyle, diet, monitoring) — not just \"talk to your doctor\"."""
+    if not top_rows:
+        return None
+    context_blocks = []
+    for i, r in enumerate(top_rows[:CONTEXT_CHUNKS], start=1):
+        body = r.get("content") or ""
+        if body:
+            context_blocks.append(f"[{i}] {body.strip()}")
+    if not context_blocks:
+        return None
+    context_text = "\n\n".join(context_blocks)
+
+    messages: list[dict] = [
+        {"role": "system", "content": _GROUNDED_FOLLOWUP_SYSTEM}
+    ]
+    if history:
+        for h in history[-HISTORY_MAX_TURNS:]:
+            if h.role in ("user", "assistant") and h.content:
+                messages.append({"role": h.role, "content": h.content})
+    messages.append({
+        "role": "user",
+        "content": f"Sources:\n{context_text}\n\nFollow-up question: {question}",
+    })
+
+    text: Optional[str] = None
+    try:
+        if groq_client is not None:
+            resp = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=messages,
+                max_tokens=500,
+                temperature=MAIN_QUERY_TEMPERATURE,
+            )
+            text = (resp.choices[0].message.content or "").strip() or None
+        if text is None:
+            resp = co.chat(
+                model="command-r-08-2024",
+                messages=messages,
+                max_tokens=500,
+                temperature=MAIN_QUERY_TEMPERATURE,
+            )
+            try:
+                text = (resp.message.content[0].text or "").strip() or None
+            except Exception:
+                text = None
+    except Exception as exc:
+        print(f"[grounded-followup] generation failed: {exc}")
+        return None
+
+    if not text:
+        return None
+
+    text = strip_orphan_headers(text)
+
+    # NLI-verify every claim sentence — same gate as routine RAG. If the
+    # model invented unsupported substantive bullets, they get redacted.
+    try:
+        filtered, _scores = apply_guardrails(
+            text,
+            top_rows[:CONTEXT_CHUNKS],
+            use_inline_citations=INLINE_CITATIONS_ENABLED,
+            check_fusion_drift=False,
+        )
+    except Exception as exc:
+        print(f"[grounded-followup] guardrails raised, fail-soft: {exc}")
+        filtered = text
+
+    if not filtered or len(filtered.strip()) < 60:
+        # Almost everything redacted — not worth showing. Fall back.
+        return None
+
+    # Scope check is a WARNING in this path, not a drop. The cues
+    # ("it could be", "most likely", "sounds like") trip on educational
+    # summaries of corpus chunks even though the claims are general,
+    # source-grounded ([N] cited), and NLI-verified. Other layers already
+    # enforce safety: the system prompt explicitly forbids diagnosis,
+    # NLI confirms each sentence has a chunk to entail it, the corpus is
+    # patient-ed (no dose specifics to leak), and emergency numbers are
+    # rewritten below. Logging the trip so audits can spot patterns.
+    try:
+        scope = classify_scope(filtered)
+        if scope in ("diagnostic", "prescriptive"):
+            print(
+                f"[grounded-followup] scope-check would have flagged "
+                f"({scope}) — emitting anyway because of strict prompt + "
+                f"NLI verification on cited claims"
+            )
+    except Exception as exc:
+        print(f"[grounded-followup] scope check raised, fail-soft: {exc}")
+
+    filtered = rewrite_emergency_numbers(filtered)
+    sources_payload = _format_sources(
+        _dedupe_sources(top_rows)[:DISPLAY_SOURCES]
+    )
+    return filtered, sources_payload
 
 
 def _sse(event: str, payload: dict) -> bytes:
@@ -2204,6 +2573,109 @@ async def query_document_stream(query: QueryRequest):
 
         def emit_refusal(reason: str):
             print(f"[refusal-gate] refusing ({reason})")
+            # Procedural-question fallback: questions like "what should I do?"
+            # / "should I see a doctor?" / "is this serious?" don't have a
+            # corpus answer because they aren't fact lookups — they're
+            # next-step questions. Refusing them feels broken, especially
+            # right after a lab-report or symptom turn. We try a two-tier
+            # fallback before falling back to the standard refusal:
+            #   Tier 1 (grounded): derive a focused retrieval query from
+            #     the conversation context, retrieve + rerank, and if any
+            #     chunks come back above a relaxed gate, generate a
+            #     source-cited action-oriented answer with NLI-verified
+            #     substantive suggestions plus procedural steps. Sources
+            #     are emitted so the chip strip renders.
+            #   Tier 2 (procedural-only): pure procedural guidance with
+            #     no corpus claims (talk to clinician, monitor, watch for
+            #     red flags). No sources.
+            # Any failure at either tier drops to the next tier.
+            if is_procedural_question(query.question):
+                # Tier 1: grounded answer with retrieved sources.
+                topic_q = derive_followup_search_query(
+                    query.question, query.history
+                )
+                if topic_q:
+                    print(
+                        f"[procedural-guidance] derived followup search "
+                        f"query: {topic_q!r}"
+                    )
+                    try:
+                        topic_rows = _retrieve_ranked(
+                            topic_q, session_id=query.session_id
+                        )
+                    except Exception as exc:
+                        print(
+                            f"[procedural-guidance] tier-1 retrieval "
+                            f"failed, falling back: {exc}"
+                        )
+                        topic_rows = []
+                    # Relaxed gate: 0.2 instead of 0.4 — the user is
+                    # already in conversational context, retrieval just
+                    # needs to find adjacent educational content. NLI
+                    # downstream prevents off-topic chunks from leaking
+                    # unsupported claims into the answer.
+                    if topic_rows:
+                        top_score = topic_rows[0].get("rerank_score") or 0.0
+                        print(
+                            f"[procedural-guidance] tier-1 retrieval "
+                            f"top_rerank={top_score:.3f} threshold=0.2"
+                        )
+                        if top_score >= 0.2:
+                            grounded = generate_grounded_followup_answer(
+                                query.question, query.history, topic_rows
+                            )
+                            if grounded:
+                                gtext, gsources = grounded
+                                print(
+                                    f"[procedural-guidance] tier-1 grounded "
+                                    f"answer emitted "
+                                    f"(top_rerank={top_score:.3f})"
+                                )
+                                _log_query_safe(
+                                    user_id=None,
+                                    session_id=query.session_id,
+                                    stage="procedural_guidance_grounded",
+                                    query_text=query.question,
+                                    response_text=gtext,
+                                    citations=gsources,
+                                    retrieved_chunk_ids=[
+                                        r.get("id") for r in topic_rows[:CONTEXT_CHUNKS]
+                                        if r.get("id")
+                                    ],
+                                )
+                                return [
+                                    _sse("meta", {"stage": "routine"}),
+                                    _sse("delta", {"text": gtext}),
+                                    _sse("sources", {"sources": gsources}),
+                                    _sse("done", {}),
+                                ]
+                # Tier 2: pure procedural guidance, no sources.
+                guidance = generate_procedural_guidance(
+                    query.question, query.history
+                )
+                if guidance:
+                    print(
+                        f"[procedural-guidance] tier-2 substituted for "
+                        f"refusal (original_reason={reason})"
+                    )
+                    _log_query_safe(
+                        user_id=None,
+                        session_id=query.session_id,
+                        stage="procedural_guidance",
+                        query_text=query.question,
+                        response_text=guidance,
+                        refusal_triggered=False,
+                        refusal_reason=None,
+                    )
+                    return [
+                        # coverage=no_source so the frontend marks this
+                        # turn as no-coverage (drops it from next
+                        # retrieval rewrite — procedural answers must not
+                        # pollute future RAG queries).
+                        _sse("meta", {"stage": "routine", "coverage": "no_source"}),
+                        _sse("delta", {"text": guidance}),
+                        _sse("done", {}),
+                    ]
             text = _refusal_text_for(has_session_chunks)
             _log_query_safe(
                 user_id=None,
@@ -2339,7 +2811,7 @@ async def query_document_stream(query: QueryRequest):
                 stream = groq_client.chat.completions.create(
                     model=GROQ_MODEL,
                     messages=messages,
-                    max_tokens=250,
+                    max_tokens=700,
                     stream=True,
                     temperature=MAIN_QUERY_TEMPERATURE,
                 )
@@ -2373,7 +2845,7 @@ async def query_document_stream(query: QueryRequest):
                 cohere_stream = co.chat_stream(
                     model="command-r-08-2024",
                     messages=messages,
-                    max_tokens=250,
+                    max_tokens=700,
                     temperature=MAIN_QUERY_TEMPERATURE,
                 )
                 source = "cohere"
@@ -2403,11 +2875,17 @@ async def query_document_stream(query: QueryRequest):
             use_inline_citations=INLINE_CITATIONS_ENABLED,
         ):
             sent_out = rewrite_emergency_numbers(sent_out)
+            # Skip orphan trailing headers: when max_tokens cuts the LLM
+            # off right after "**Lifestyle Changes:**" with no bullets, the
+            # buffered header would otherwise flush as the final sentence
+            # and render as a lonely bold line.
+            if not strip_orphan_headers(sent_out).strip():
+                continue
             emitted_parts.append(sent_out)
             streamed_any = True
             yield _sse("delta", {"text": sent_out})
 
-        filtered_answer = " ".join(emitted_parts).strip()
+        filtered_answer = strip_orphan_headers(" ".join(emitted_parts).strip())
 
         # Phase-3B post-stream fusion-drift pass: streaming guardrails NLI
         # one sentence at a time and cannot catch two-source fusion errors
@@ -2461,19 +2939,36 @@ async def query_document_stream(query: QueryRequest):
                 yield _sse("sources", {"sources": sources})
                 refusal_reason = "all_sentences_redacted_sources_shown"
             else:
-                refusal_msg = (
-                    "I don't have a source for that in my current library. "
-                    "Please try rewording your question, or ask your doctor directly."
-                )
-                yield _sse("delta", {"text": refusal_msg})
-                refusal_reason = "all_sentences_redacted_no_sources"
+                # Procedural fallback before the hard refusal: if the user
+                # asked "what should I do?" / "should I worry?" and all
+                # grounded sentences got redacted, still try the
+                # context-aware guidance path. Failure here also falls
+                # through to the standard refusal.
+                guidance = None
+                if is_procedural_question(query.question):
+                    guidance = generate_procedural_guidance(query.question, query.history)
+                if guidance:
+                    print(
+                        "[procedural-guidance] substituted for "
+                        "all-sentences-redacted-no-sources refusal"
+                    )
+                    yield _sse("delta", {"text": guidance})
+                    refusal_msg = guidance
+                    refusal_reason = None
+                else:
+                    refusal_msg = (
+                        "I don't have a source for that in my current library. "
+                        "Please try rewording your question, or ask your doctor directly."
+                    )
+                    yield _sse("delta", {"text": refusal_msg})
+                    refusal_reason = "all_sentences_redacted_no_sources"
             _log_query_safe(
                 user_id=None,
                 session_id=query.session_id,
-                stage="routine",
+                stage="procedural_guidance" if refusal_reason is None else "routine",
                 query_text=query.question,
                 response_text=refusal_msg,
-                refusal_triggered=True,
+                refusal_triggered=refusal_reason is not None,
                 refusal_reason=refusal_reason,
                 prompt_hash=_prompt_hash(messages),
                 nli_entailment_scores=nli_scores,
