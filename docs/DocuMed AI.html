@@ -1,0 +1,1809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DocuMed AI — Reducing Hallucinations in Medical QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="deck-stage.js"></script>
+<style>
+  :root{
+    --bg-0: oklch(0.985 0.004 220);
+    --bg-1: oklch(0.97 0.006 220);
+    --bg-2: oklch(0.94 0.008 220);
+    --line: oklch(0.62 0.02 230 / 0.35);
+    --line-soft: oklch(0.62 0.02 230 / 0.18);
+    --ink: oklch(0.22 0.02 240);
+    --ink-2: oklch(0.40 0.02 240);
+    --ink-3: oklch(0.68 0.01 240);
+    --cyan: oklch(0.58 0.13 215);
+    --cyan-2: oklch(0.50 0.14 220);
+    --violet: oklch(0.52 0.16 285);
+    --amber: oklch(0.62 0.14 65);
+    --rose: oklch(0.58 0.19 25);
+    --green: oklch(0.58 0.13 160);
+    --display: 'Inter Tight', system-ui, sans-serif;
+    --body: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html,body{margin:0;padding:0;background:#fff;color:var(--ink);font-family:var(--body);}
+  deck-stage{background:#fff;}
+  section{
+    width:1920px;height:1080px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, oklch(0.85 0.06 215 / 0.45), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, oklch(0.86 0.05 285 / 0.35), transparent 55%),
+      linear-gradient(180deg, var(--bg-0), oklch(0.96 0.006 220));
+    color:var(--ink);
+    font-family:var(--body);
+  }
+  /* Common type */
+  .eyebrow{font-family:var(--mono);font-size:18px;letter-spacing:0.22em;text-transform:uppercase;color:var(--cyan);}
+  .h1{font-family:var(--display);font-weight:600;font-size:120px;line-height:0.96;letter-spacing:-0.035em;}
+  .h2{font-family:var(--display);font-weight:600;font-size:88px;line-height:1.0;letter-spacing:-0.03em;}
+  .h3{font-family:var(--display);font-weight:600;font-size:56px;line-height:1.05;letter-spacing:-0.02em;}
+  .h4{font-family:var(--display);font-weight:500;font-size:36px;line-height:1.15;letter-spacing:-0.01em;}
+  .lead{font-size:30px;line-height:1.4;color:var(--ink-2);max-width:1200px;}
+  .body{font-size:24px;line-height:1.5;color:var(--ink-2);}
+  .small{font-size:20px;line-height:1.4;color:var(--ink-3);}
+  .mono{font-family:var(--mono);}
+  .num{font-family:var(--mono);color:var(--cyan);font-weight:500;}
+
+  /* Layout helpers */
+  .pad{padding:88px 112px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;}
+  .row{display:flex;gap:32px;}
+  .col{display:flex;flex-direction:column;gap:24px;}
+  .grow{flex:1 1 auto;min-height:0;}
+  .between{justify-content:space-between;}
+  .centered{align-items:center;justify-content:center;text-align:center;}
+
+  /* Chrome */
+  .chrome{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:36px 56px;font-family:var(--mono);font-size:14px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-3);pointer-events:none;}
+  .chrome .dot{width:8px;height:8px;background:var(--cyan);border-radius:50%;box-shadow:0 0 14px var(--cyan);display:inline-block;margin-right:12px;vertical-align:middle;}
+  .chrome.top{top:0;}
+  .chrome.bot{bottom:0;}
+  .chrome .right{display:flex;gap:32px;align-items:center;}
+
+  /* Glass card */
+  .glass{
+    background:linear-gradient(180deg, oklch(1 0 0 / 0.85), oklch(0.97 0.005 220 / 0.7));
+    border:1px solid var(--line);
+    border-radius:18px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 24px 60px -30px oklch(0.4 0.06 220 / 0.18), 0 2px 6px -2px oklch(0.4 0.06 220 / 0.08);
+  }
+  .glass.tight{border-radius:14px;}
+  .glow-cyan{box-shadow: 0 0 0 1px oklch(0.58 0.13 215 / 0.35), 0 0 50px -10px oklch(0.58 0.13 215 / 0.3), 0 16px 40px -20px oklch(0.4 0.06 220 / 0.18);}
+
+  .tag{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border:1px solid var(--line);border-radius:999px;font-family:var(--mono);font-size:14px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-2);}
+  .tag .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+  .tag.violet .dot{background:var(--violet);box-shadow:0 0 10px var(--violet);}
+  .tag.amber .dot{background:var(--amber);box-shadow:0 0 10px var(--amber);}
+  .tag.rose .dot{background:var(--rose);box-shadow:0 0 10px var(--rose);}
+  .tag.green .dot{background:var(--green);box-shadow:0 0 10px var(--green);}
+
+  .grid-bg{
+    position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(oklch(0.4 0.04 230 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.4 0.04 230 / 0.06) 1px, transparent 1px);
+    background-size:80px 80px;
+    mask-image: radial-gradient(900px 700px at 50% 50%, black, transparent 80%);
+  }
+
+  .scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, var(--cyan) 50%, transparent);opacity:0.35;}
+  .vline{width:1px;background:linear-gradient(180deg, transparent, var(--line) 30%, var(--line) 70%, transparent);}
+
+  /* Number badge */
+  .nbadge{font-family:var(--mono);font-size:14px;letter-spacing:0.2em;color:var(--cyan);}
+  .kpi{display:flex;flex-direction:column;gap:6px;}
+  .kpi .v{font-family:var(--display);font-weight:600;font-size:88px;letter-spacing:-0.02em;line-height:1;}
+  .kpi .l{font-family:var(--mono);font-size:14px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-3);}
+
+  /* Pipeline node */
+  .node{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, oklch(1 0 0 / 0.95), oklch(0.97 0.005 220 / 0.8));
+    border-radius:12px;
+    padding:14px 16px;
+    font-family:var(--mono);font-size:14px;letter-spacing:0.06em;
+    color:var(--ink);
+    display:flex;flex-direction:column;gap:6px;
+    min-width:140px;
+  }
+  .node .lbl{color:var(--ink-3);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;}
+  .node .name{font-size:16px;color:var(--ink);font-weight:500;}
+  .node.cyan{border-color:oklch(0.58 0.13 215 / 0.55);box-shadow:0 0 24px -8px oklch(0.58 0.13 215 / 0.25);}
+  .node.violet{border-color:oklch(0.52 0.16 285 / 0.55);box-shadow:0 0 24px -8px oklch(0.52 0.16 285 / 0.25);}
+  .node.rose{border-color:oklch(0.58 0.19 25 / 0.55);box-shadow:0 0 24px -8px oklch(0.58 0.19 25 / 0.25);}
+
+  /* Subtle pulses */
+  @keyframes pulse {0%,100%{opacity:0.55}50%{opacity:1}}
+  .pulse{animation:pulse 3.4s ease-in-out infinite;}
+  @keyframes flow {0%{stroke-dashoffset:0}100%{stroke-dashoffset:-200}}
+  .flow{stroke-dasharray:6 8;animation:flow 6s linear infinite;}
+  @keyframes orbit {0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  .orbit{animation:orbit 60s linear infinite;transform-origin:center;}
+
+  /* Bars / charts */
+  .bar{height:14px;border-radius:999px;background:linear-gradient(90deg,var(--cyan-2),var(--cyan));}
+  .bar.muted{background:linear-gradient(90deg, oklch(0.78 0.01 240), oklch(0.68 0.01 240));}
+
+  /* Footer page count handled by deck-stage; we add subtle bottom rule */
+  .rule{height:1px;background:linear-gradient(90deg, transparent, var(--line), transparent);}
+
+  /* Specific helpers */
+  .citation{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:0.06em;}
+  .strike{position:relative;display:inline-block;}
+  .strike::after{content:"";position:absolute;left:-4px;right:-4px;top:55%;height:3px;background:var(--rose);transform:rotate(-3deg);box-shadow:0 0 12px var(--rose);}
+
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-family:var(--mono);font-size:13px;color:var(--ink-2);letter-spacing:0.05em;}
+  .pill.cyan{color:var(--cyan);border-color:oklch(0.58 0.13 215 / 0.5);}
+  .pill.rose{color:var(--rose);border-color:oklch(0.58 0.19 25 / 0.5);}
+  .pill.green{color:var(--green);border-color:oklch(0.58 0.13 160 / 0.5);}
+  .pill.violet{color:var(--violet);border-color:oklch(0.52 0.16 285 / 0.5);}
+  .pill.amber{color:var(--amber);border-color:oklch(0.62 0.14 65 / 0.5);}
+</style>
+</head>
+<body>
+
+<deck-stage>
+
+<!-- ============================================================= -->
+<!-- 01 — TITLE / VISION                                            -->
+<!-- ============================================================= -->
+<section data-screen-label="01 Vision">
+  <div class="grid-bg"></div>
+  <div class="chrome top">
+    <div><span class="dot"></span>DOCUMED AI · FINAL DEFENSE · 2026</div>
+    <div class="right"><span>v2.0 — RESEARCH BUILD</span><span>KATHMANDU · NEPAL</span></div>
+  </div>
+
+  <!-- Decorative neural orbits -->
+  <svg width="100%" height="100%" viewBox="0 0 1920 1080" style="position:absolute;inset:0;">
+    <defs>
+      <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.5"/>
+        <stop offset="60%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.05"/>
+        <stop offset="100%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="ringg" x1="0" x2="1">
+        <stop offset="0" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.0"/>
+        <stop offset="0.5" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.7"/>
+        <stop offset="1" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="1500" cy="540" r="520" fill="url(#halo)"/>
+    <g transform="translate(1500 540)">
+      <g class="orbit">
+        <ellipse rx="420" ry="160" fill="none" stroke="url(#ringg)" stroke-width="1.2"/>
+      </g>
+      <g class="orbit" style="animation-duration:90s;animation-direction:reverse;">
+        <ellipse rx="380" ry="220" fill="none" stroke="url(#ringg)" stroke-width="1"/>
+      </g>
+      <g class="orbit" style="animation-duration:120s;">
+        <ellipse rx="500" ry="110" fill="none" stroke="url(#ringg)" stroke-width="0.8"/>
+      </g>
+      <!-- nodes -->
+      <g fill="oklch(0.58 0.13 215)">
+        <circle cx="0" cy="0" r="6"/>
+        <circle cx="280" cy="-80" r="3" opacity="0.8"/>
+        <circle cx="-260" cy="60" r="3" opacity="0.7"/>
+        <circle cx="120" cy="180" r="2.5" opacity="0.6"/>
+        <circle cx="-160" cy="-180" r="2.5" opacity="0.6"/>
+        <circle cx="380" cy="40" r="2" opacity="0.5"/>
+      </g>
+    </g>
+    <!-- ECG line -->
+    <path d="M 0 1010 L 600 1010 L 640 1010 L 660 970 L 680 1050 L 700 930 L 720 1010 L 1300 1010 L 1340 1010 L 1360 985 L 1380 1035 L 1400 1010 L 1920 1010" 
+          fill="none" stroke="oklch(0.58 0.13 215 / 0.45)" stroke-width="1.5"/>
+  </svg>
+
+  <div class="pad" style="justify-content:flex-end;padding-bottom:140px;">
+    <div style="max-width:1200px;display:flex;flex-direction:column;gap:36px;position:relative;z-index:2;">
+      <div class="eyebrow">FINAL YEAR PROJECT · MEDICAL AI · RESEARCH PAPER</div>
+      <div class="h1">DocuMed AI<span style="color:var(--cyan);">.</span></div>
+      <div class="h4" style="color:var(--ink-2);max-width:1100px;font-weight:400;">
+        Reducing hallucinations in medical question answering<br/>
+        using <span style="color:var(--cyan);">Retrieval-Augmented Generation</span>.
+      </div>
+      <div style="display:flex;gap:14px;margin-top:18px;">
+        <span class="pill cyan">Confidence-aware RAG</span>
+        <span class="pill violet">NLI Verification</span>
+        <span class="pill amber">Hybrid Retrieval</span>
+        <span class="pill green">Fail-closed Safety</span>
+      </div>
+    </div>
+  </div>
+  <div class="chrome bot">
+    <div>A FINAL-YEAR THESIS · 25 SLIDES</div>
+    <div class="right"><span>RAG · NLI · MEDICAL SAFETY</span></div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 02 — HOOK: DANGEROUS REALITY                                   -->
+<!-- ============================================================= -->
+<section data-screen-label="02 Hook">
+  <div class="chrome top">
+    <div><span class="dot"></span>02 · THE HOOK</div>
+    <div class="right"><span>FLUENT ≠ FACTUAL</span></div>
+  </div>
+  <div class="pad" style="padding-top:140px;">
+    <div class="row" style="gap:80px;align-items:flex-start;">
+      <div class="col" style="flex:1;gap:36px;max-width:840px;">
+        <div class="eyebrow">A dangerous reality</div>
+        <div class="h2">An AI that<br/>sounds <span style="color:var(--cyan);">certain</span><br/>can still be <span style="color:var(--rose);">wrong</span>.</div>
+        <div class="lead" style="margin-top:8px;">
+          Patients increasingly turn to chatbots for symptoms, dosage, drug interactions and second opinions.
+          Large language models reply <em style="color:var(--ink);font-style:normal;">fluently and confidently</em> — even when the answer is fabricated, outdated, or unsafe.
+        </div>
+        <div class="row" style="gap:14px;flex-wrap:wrap;">
+          <span class="pill rose">Wrong dosage</span>
+          <span class="pill rose">Fabricated treatments</span>
+          <span class="pill rose">Fake citations</span>
+          <span class="pill rose">Outdated guidelines</span>
+        </div>
+      </div>
+
+      <!-- Mock chat with confident hallucination -->
+      <div class="col" style="flex:1;gap:14px;max-width:780px;">
+        <div class="glass" style="padding:28px 30px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));"></div>
+              <div>
+                <div style="font-weight:600;font-size:18px;">GenericChat</div>
+                <div class="mono" style="font-size:12px;color:var(--green);">● online · GPT-style assistant</div>
+              </div>
+            </div>
+            <div class="mono" style="font-size:12px;color:var(--ink-3);">14:08</div>
+          </div>
+
+          <!-- user bubble -->
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+            <div style="background:oklch(0.94 0.008 220);padding:14px 18px;border-radius:14px 14px 4px 14px;max-width:480px;font-size:18px;">
+              My 6-year-old has a 39.4°C fever. How much ibuprofen can I give her?
+            </div>
+          </div>
+
+          <!-- bot bubble -->
+          <div style="display:flex;justify-content:flex-start;margin-bottom:10px;">
+            <div style="background:linear-gradient(180deg,oklch(0.96 0.02 215),oklch(0.93 0.02 215));border:1px solid oklch(0.58 0.19 25 / 0.45);padding:16px 18px;border-radius:14px 14px 14px 4px;max-width:520px;font-size:18px;line-height:1.45;">
+              You can give her <span style="color:var(--rose);font-weight:600;">15&nbsp;mg/kg of ibuprofen every 4 hours</span>, up to 6 doses per day. This is per the 2019 AAP <span style="text-decoration:underline dotted var(--rose);">Pediatric Fever Protocol </span>. It's perfectly safe for children over 3 months.
+            </div>
+          </div>
+          <div class="mono" style="font-size:13px;color:var(--rose);padding-left:8px;display:flex;gap:18px;">
+            <span>⚠ DOSE: too high</span><span>⚠ INTERVAL: too short</span><span>⚠ CITATION: fabricated</span>
+          </div>
+        </div>
+
+        <div class="glass" style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+          <div class="mono" style="font-size:14px;letter-spacing:0.16em;color:var(--ink-3);">CONFIDENCE SHOWN TO USER</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:280px;height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;">
+              <div style="width:96%;height:100%;background:linear-gradient(90deg,var(--cyan-2),var(--cyan));"></div>
+            </div>
+            <span class="mono" style="color:var(--cyan);font-size:18px;">96%</span>
+          </div>
+        </div>
+        <div class="glass" style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+          <div class="mono" style="font-size:14px;letter-spacing:0.16em;color:var(--ink-3);">ACTUAL FACTUAL ACCURACY</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:280px;height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;">
+              <div style="width:18%;height:100%;background:linear-gradient(90deg,var(--rose),oklch(0.55 0.2 30));"></div>
+            </div>
+            <span class="mono" style="color:var(--rose);font-size:18px;">18%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 03 — THE CORE PROBLEM                                          -->
+<!-- ============================================================= -->
+<section data-screen-label="03 Core problem">
+  <div class="chrome top"><div><span class="dot"></span>03 · THE CORE PROBLEM</div><div class="right"><span>WHY LLMS HALLUCINATE</span></div></div>
+  <div class="pad" style="padding-top:140px;">
+    <div class="row between" style="align-items:flex-start;gap:60px;">
+      <div class="col" style="max-width:780px;gap:30px;">
+        <div class="eyebrow">Hallucination, defined</div>
+        <div class="h3">An LLM does not <span style="color:var(--rose);">retrieve facts</span> —<br/>it <span style="color:var(--cyan);">predicts the next likely token</span>.</div>
+        <div class="body" style="color:var(--ink-2);max-width:720px;">
+          With no grounding mechanism, the model fills gaps with what <em style="font-style:normal;color:var(--ink);">sounds right</em>.
+          In open chat that produces plausible prose. In medicine it produces plausible <em style="font-style:normal;color:var(--rose);">harm</em>.
+        </div>
+
+        <div class="col" style="gap:14px;margin-top:16px;">
+          <div class="row" style="align-items:center;gap:18px;"><span class="num" style="font-size:22px;width:48px;">01</span><span class="body" style="color:var(--ink);">Probabilistic next-token prediction.</span></div>
+          <div class="row" style="align-items:center;gap:18px;"><span class="num" style="font-size:22px;width:48px;">02</span><span class="body" style="color:var(--ink);">No factual verification mechanism.</span></div>
+          <div class="row" style="align-items:center;gap:18px;"><span class="num" style="font-size:22px;width:48px;">03</span><span class="body" style="color:var(--ink);">Training data ages quickly in medicine.</span></div>
+          <div class="row" style="align-items:center;gap:18px;"><span class="num" style="font-size:22px;width:48px;">04</span><span class="body" style="color:var(--ink);">Confidence is not calibrated to truth.</span></div>
+        </div>
+      </div>
+
+      <!-- Prediction vs Truth diagram -->
+      <div class="glass" style="flex:1;padding:46px;max-width:820px;">
+        <div class="eyebrow" style="margin-bottom:24px;">Prediction surface vs ground truth</div>
+        <svg viewBox="0 0 700 460" style="width:100%;height:auto;">
+          <defs>
+            <linearGradient id="pred" x1="0" x2="1">
+              <stop offset="0" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.7"/>
+              <stop offset="1" stop-color="oklch(0.52 0.16 285)" stop-opacity="0.7"/>
+            </linearGradient>
+          </defs>
+          <!-- axes -->
+          <line x1="50" y1="380" x2="660" y2="380" stroke="oklch(0.62 0.02 230)" stroke-width="1"/>
+          <line x1="50" y1="40" x2="50" y2="380" stroke="oklch(0.62 0.02 230)" stroke-width="1"/>
+          <text x="660" y="405" text-anchor="end" font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)">TOKEN POSITION</text>
+          <text x="40" y="44" text-anchor="end" font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)">P</text>
+          <!-- prediction curve (smooth) -->
+          <path d="M 50 320 C 150 100, 230 360, 320 180 S 480 380, 560 140 S 660 320, 660 240" fill="none" stroke="url(#pred)" stroke-width="3"/>
+          <!-- truth scatter -->
+          <g fill="oklch(0.58 0.13 160)">
+            <circle cx="120" cy="200" r="6"/><circle cx="220" cy="260" r="6"/>
+            <circle cx="320" cy="180" r="6"/><circle cx="420" cy="300" r="6"/>
+            <circle cx="520" cy="220" r="6"/><circle cx="600" cy="280" r="6"/>
+          </g>
+          <!-- gap markers -->
+          <g stroke="oklch(0.58 0.19 25)" stroke-width="2" stroke-dasharray="3 4">
+            <line x1="220" y1="260" x2="220" y2="180"/>
+            <line x1="420" y1="300" x2="420" y2="240"/>
+            <line x1="600" y1="280" x2="600" y2="220"/>
+          </g>
+          <!-- legend -->
+          <g font-family="JetBrains Mono" font-size="13">
+            <circle cx="70" cy="430" r="5" fill="oklch(0.58 0.13 215)"/>
+            <text x="84" y="434" fill="oklch(0.22 0.02 240)">PREDICTION</text>
+            <circle cx="240" cy="430" r="5" fill="oklch(0.58 0.13 160)"/>
+            <text x="254" y="434" fill="oklch(0.22 0.02 240)">GROUND TRUTH</text>
+            <line x1="420" y1="430" x2="442" y2="430" stroke="oklch(0.58 0.19 25)" stroke-width="2" stroke-dasharray="3 4"/>
+            <text x="450" y="434" fill="oklch(0.22 0.02 240)">HALLUCINATION GAP</text>
+          </g>
+        </svg>
+        <div class="row" style="margin-top:18px;gap:18px;justify-content:space-between;">
+          <span class="pill cyan">Confidence ≠ Accuracy</span>
+          <span class="pill rose">Plausible ≠ True</span>
+          <span class="pill green">Grounding ≠ Memory</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 04 — WHAT EXISTS TODAY                                         -->
+<!-- ============================================================= -->
+<section data-screen-label="04 Landscape">
+  <div class="chrome top"><div><span class="dot"></span>04 · CURRENT LANDSCAPE</div><div class="right"><span>WHAT EXISTS TODAY</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">The ecosystem of medical answers</div>
+    <div class="h3" style="margin-top:14px;max-width:1500px;">Four kinds of systems already exist —<br/>none of them are <span style="color:var(--cyan);">safe enough</span> for clinical questions.</div>
+
+    <div class="grow" style="margin-top:48px;">
+      <div class="glass" style="padding:8px;height:100%;">
+        <table style="width:100%;border-collapse:separate;border-spacing:0;height:100%;">
+          <thead>
+            <tr style="text-align:left;">
+              <th style="padding:22px 28px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;width:24%;">SYSTEM</th>
+              <th style="padding:22px 16px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;">GROUNDING</th>
+              <th style="padding:22px 16px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;">VERIFICATION</th>
+              <th style="padding:22px 16px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;">CONFIDENCE</th>
+              <th style="padding:22px 16px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;">REFUSAL</th>
+              <th style="padding:22px 16px;font-family:var(--mono);font-size:13px;letter-spacing:0.2em;color:var(--ink-3);font-weight:500;">LOCALIZED</th>
+            </tr>
+          </thead>
+          <tbody style="font-size:24px;">
+            <!-- generic chatbots -->
+            <tr style="border-top:1px solid var(--line-soft);">
+              <td style="padding:28px;border-top:1px solid var(--line-soft);"><div style="font-weight:500;">Generic chatbots</div><div class="small">ChatGPT-style assistants</div></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">None</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">None</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">Hidden</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">Rare</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">No</span></td>
+            </tr>
+            <tr>
+              <td style="padding:28px;border-top:1px solid var(--line-soft);"><div style="font-weight:500;">Search engines</div><div class="small">Keyword + ranking</div></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Indirect</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">User</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">N/A</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">No</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Partial</span></td>
+            </tr>
+            <tr>
+              <td style="padding:28px;border-top:1px solid var(--line-soft);"><div style="font-weight:500;">Symptom checkers</div><div class="small">Rule-based triage</div></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Rules</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Static</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Coarse</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Limited</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">No</span></td>
+            </tr>
+            <tr>
+              <td style="padding:28px;border-top:1px solid var(--line-soft);"><div style="font-weight:500;">Traditional RAG</div><div class="small">Vector + LLM</div></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill amber" style="font-size:20px;padding:10px 20px;">Yes (single)</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">None</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">Implicit</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">No</span></td>
+              <td style="padding:28px 16px;border-top:1px solid var(--line-soft);"><span class="pill rose" style="font-size:20px;padding:10px 20px;">No</span></td>
+            </tr>
+            <tr style="background:linear-gradient(90deg, oklch(0.58 0.13 215 / 0.10), transparent);">
+              <td style="padding:28px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><div style="font-weight:600;color:var(--cyan);">DocuMed AI</div><div class="small" style="color:var(--cyan);">Confidence-aware Medical RAG</div></td>
+              <td style="padding:28px 16px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><span class="pill green" style="font-size:20px;padding:10px 20px;">Hybrid</span></td>
+              <td style="padding:28px 16px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><span class="pill green" style="font-size:20px;padding:10px 20px;">NLI / sentence</span></td>
+              <td style="padding:28px 16px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><span class="pill green" style="font-size:20px;padding:10px 20px;">Calibrated</span></td>
+              <td style="padding:28px 16px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><span class="pill green" style="font-size:20px;padding:10px 20px;">Fail-closed</span></td>
+              <td style="padding:28px 16px;border-top:1px solid oklch(0.58 0.13 215 / 0.45);"><span class="pill green" style="font-size:20px;padding:10px 20px;">Nepal-aware</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 05 — MY ORIGINAL IDEA                                          -->
+<!-- ============================================================= -->
+<section data-screen-label="05 Original idea">
+  <div class="chrome top"><div><span class="dot"></span>05 · THE BEGINNING</div><div class="right"><span>NAIVE RAG · v0.1</span></div></div>
+  <div class="pad" style="padding-top:140px;">
+    <div class="row" style="gap:80px;align-items:flex-start;">
+      <div class="col" style="flex:1;max-width:680px;gap:28px;">
+        <div class="eyebrow">My original idea</div>
+        <div class="h3">I thought I would build<br/>a <span style="color:var(--cyan);">simple</span> RAG chatbot.</div>
+        <div class="lead">
+          A clean pipeline: take a question, embed it, look it up in a vector store, paste the chunks into the prompt, and let the LLM answer.
+        </div>
+        <div class="body" style="color:var(--ink-2);">
+          <em style="font-style:normal;color:var(--ink);">"Hallucinations are caused by missing context. Add context. Done."</em>
+        </div>
+        <div class="row" style="gap:14px;flex-wrap:wrap;">
+          <span class="pill">Vector DB</span>
+          <span class="pill">OpenAI embeddings</span>
+          <span class="pill">k-NN top 4</span>
+          <span class="pill">Prompt stuffing</span>
+          <span class="pill">Single LLM call</span>
+        </div>
+      </div>
+
+      <!-- naive RAG diagram -->
+      <div class="glass" style="flex:1.1;padding:50px;">
+        <div class="eyebrow" style="margin-bottom:30px;">Naive RAG architecture</div>
+        <svg viewBox="0 0 760 480" style="width:100%;height:auto;">
+          <defs>
+            <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.58 0.13 215)"/>
+            </marker>
+          </defs>
+          <!-- nodes -->
+          <g font-family="JetBrains Mono" font-size="13" fill="oklch(0.22 0.02 240)">
+            <g><rect x="20" y="200" width="140" height="80" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+              <text x="90" y="232" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="10">USER</text>
+              <text x="90" y="252" text-anchor="middle" font-size="14">Query</text></g>
+            <g><rect x="220" y="200" width="160" height="80" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+              <text x="300" y="232" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="10">EMBEDDING</text>
+              <text x="300" y="252" text-anchor="middle" font-size="14">text-embedding</text></g>
+            <g><rect x="440" y="80" width="180" height="80" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+              <text x="530" y="112" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="10">VECTOR STORE</text>
+              <text x="530" y="132" text-anchor="middle" font-size="14">k-NN top-4</text></g>
+            <g><rect x="440" y="320" width="180" height="80" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+              <text x="530" y="352" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="10">LLM</text>
+              <text x="530" y="372" text-anchor="middle" font-size="14">Generate</text></g>
+            <g><rect x="660" y="200" width="80" height="80" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+              <text x="700" y="232" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="10">OUT</text>
+              <text x="700" y="252" text-anchor="middle" font-size="14">Answer</text></g>
+          </g>
+          <!-- edges -->
+          <g fill="none" stroke="oklch(0.58 0.13 215)" stroke-width="2" marker-end="url(#arr1)">
+            <path d="M 160 240 L 220 240"/>
+            <path d="M 380 230 C 410 230, 410 130, 440 120"/>
+            <path d="M 530 160 C 530 220, 530 280, 530 320"/>
+            <path d="M 620 360 C 660 360, 660 280, 660 280"/>
+          </g>
+        </svg>
+
+        <div class="row" style="margin-top:24px;gap:14px;flex-wrap:wrap;">
+          <span class="pill rose">No reranker</span>
+          <span class="pill rose">No verification</span>
+          <span class="pill rose">No refusal</span>
+          <span class="pill rose">No freshness</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule" style="margin-top:48px;"></div>
+    <div class="body" style="margin-top:24px;color:var(--ink-3);max-width:1300px;">
+      Then I started reading the literature. And the deeper I read, the more I realized this was <span style="color:var(--ink);">not enough</span> for healthcare.
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 06 — TURNING POINT                                             -->
+<!-- ============================================================= -->
+<section data-screen-label="06 Turning point">
+  <div class="chrome top"><div><span class="dot"></span>06 · THE TURNING POINT</div><div class="right"><span>WHY NAIVE RAG IS NOT ENOUGH</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">The turning point</div>
+    <div class="h3" style="margin-top:14px;max-width:1700px;">Retrieval alone <span style="color:var(--rose);">does not</span> eliminate hallucination.<br/>Models hallucinate <span style="color:var(--cyan);">even with context</span>.</div>
+
+    <div class="row" style="gap:32px;margin-top:60px;align-items:stretch;">
+      <div class="glass" style="flex:1;padding:38px;display:flex;flex-direction:column;gap:18px;">
+        <div class="tag rose"><span class="dot"></span>FAILURE MODE 01</div>
+        <div class="h4">Wrong context retrieved</div>
+        <div class="body">Top-k pulls a paper about <span class="mono" style="color:var(--cyan);">adult dosing</span> when the query was about a <span class="mono" style="color:var(--rose);">child</span>. The LLM answers fluently — but on the wrong evidence.</div>
+      </div>
+      <div class="glass" style="flex:1;padding:38px;display:flex;flex-direction:column;gap:18px;">
+        <div class="tag rose"><span class="dot"></span>FAILURE MODE 02</div>
+        <div class="h4">Right context, ignored</div>
+        <div class="body">The retrieved chunk says <span class="mono" style="color:var(--green);">"contraindicated in pregnancy"</span>; the model answers based on its <em style="font-style:normal;color:var(--ink);">prior</em>, not the evidence.</div>
+      </div>
+      <div class="glass" style="flex:1;padding:38px;display:flex;flex-direction:column;gap:18px;">
+        <div class="tag rose"><span class="dot"></span>FAILURE MODE 03</div>
+        <div class="h4">Stale evidence</div>
+        <div class="body">The chunk is from <span class="mono">2014</span>. Guidelines changed in <span class="mono">2023</span>. The answer is technically grounded — and technically <span style="color:var(--rose);">harmful</span>.</div>
+      </div>
+    </div>
+
+    <!-- transformation -->
+    <div class="glass" style="margin-top:50px;padding:40px 56px;">
+      <div class="row between" style="align-items:center;gap:32px;">
+        <div class="col" style="gap:8px;">
+          <div class="eyebrow" style="color:var(--ink-3);">From</div>
+          <div class="h4" style="color:var(--ink-2);">Simple chatbot</div>
+          <div class="small">Retrieve → generate → ship.</div>
+        </div>
+        <svg width="280" height="60" viewBox="0 0 280 60">
+          <line x1="0" y1="30" x2="260" y2="30" stroke="oklch(0.58 0.13 215)" stroke-width="2" stroke-dasharray="6 8" class="flow"/>
+          <polygon points="260,22 280,30 260,38" fill="oklch(0.58 0.13 215)"/>
+        </svg>
+        <div class="col" style="gap:8px;">
+          <div class="eyebrow">To</div>
+          <div class="h4" style="color:var(--cyan);">Medical safety pipeline</div>
+          <div class="small">Confidence-aware · verification-aware · freshness-aware · fail-closed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 07 — RESEARCH FOUNDATIONS                                      -->
+<!-- ============================================================= -->
+<section data-screen-label="07 Research foundations">
+  <div class="chrome top"><div><span class="dot"></span>07 · RESEARCH FOUNDATIONS</div><div class="right"><span>WHAT WE TOOK · HOW WE USE IT</span></div></div>
+  <div class="pad" style="padding-top:110px;">
+    <div class="eyebrow">From the literature, into the system</div>
+    <div class="h3" style="margin-top:8px;max-width:1500px;font-size:54px;">Six ideas we borrowed —<br/>and where they live in <span style="color:var(--cyan);">DocuMed AI</span>.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:38px;">
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">01</span><span class="pill cyan">RETRIEVAL CORE</span></div>
+        <div class="h4">RAG backbone for our LLM</div>
+        <div class="small" style="color:var(--ink-2);">We build on the parametric-plus-non-parametric pattern: instead of asking the LLM to recall medical facts, we make it read retrieved chunks and answer from them.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">Lewis et al. — RAG · NeurIPS 2020</div>
+      </div>
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">02</span><span class="pill violet">VERIFICATION</span></div>
+        <div class="h4">A check stage after generation</div>
+        <div class="small" style="color:var(--ink-2);">The hallucination taxonomy (intrinsic vs extrinsic) convinced us that retrieval alone isn't enough — so stage 4 of our pipeline verifies the answer against its sources.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">Ji et al. — Hallucination Survey · ACM CSUR 2023</div>
+      </div>
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">03</span><span class="pill violet">VERIFICATION</span></div>
+        <div class="h4">Sentence-level NLI verifier</div>
+        <div class="small" style="color:var(--ink-2);">We use a small DeBERTa-v3 NLI model to score entailment between each generated sentence and its cited chunk. It's fast, cheap, and avoids a second LLM call per sentence.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">He et al. — DeBERTa-v3 · ICLR 2023</div>
+      </div>
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">04</span><span class="pill amber">RETRIEVAL</span></div>
+        <div class="h4">Hybrid BM25 + dense via RRF</div>
+        <div class="small" style="color:var(--ink-2);">Our retriever runs BM25 and dense vector search in parallel, then merges with Reciprocal Rank Fusion — robust to score-scale differences between the two lanes.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">Cormack et al. — RRF · SIGIR 2009</div>
+      </div>
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">05</span><span class="pill green">DOMAIN</span></div>
+        <div class="h4">MedCPT for the dense lane</div>
+        <div class="small" style="color:var(--ink-2);">Generic embeddings miss medical synonyms and rare drug names. We swap them for MedCPT in the dense retrieval lane so biomedical terms cluster correctly.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">Jin et al. — MedCPT · Bioinformatics 2023</div>
+      </div>
+
+      <div class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">06</span><span class="pill rose">SAFETY</span></div>
+        <div class="h4">Fail-closed refusal threshold</div>
+        <div class="small" style="color:var(--ink-2);">Selective-prediction theory says abstaining beats answering wrong in high-stakes QA. Below our calibrated confidence band, the system refuses instead of generating.</div>
+        <div class="rule" style="margin-top:auto;"></div>
+        <div class="citation">Kamath et al. — Selective QA · ACL 2020</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 08 — WHAT IS RAG                                               -->
+<!-- ============================================================= -->
+<section data-screen-label="08 What is RAG">
+  <div class="chrome top"><div><span class="dot"></span>08 · WHAT IS RAG</div><div class="right"><span>RETRIEVAL-AUGMENTED GENERATION</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">Retrieval-Augmented Generation</div>
+    <div class="h3" style="margin-top:12px;max-width:1500px;">Don't ask the model to <span style="color:var(--rose);">remember</span>.<br/>Ask it to <span style="color:var(--cyan);">read</span>.</div>
+
+    <!-- big horizontal pipeline -->
+    <div class="glass" style="margin-top:56px;padding:50px 40px;">
+      <svg viewBox="0 0 1700 320" style="width:100%;height:auto;">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.58 0.13 215)"/>
+          </marker>
+          <linearGradient id="lg2" x1="0" x2="1">
+            <stop offset="0" stop-color="oklch(0.58 0.13 215)"/>
+            <stop offset="1" stop-color="oklch(0.52 0.16 285)"/>
+          </linearGradient>
+        </defs>
+        <!-- baseline -->
+        <line x1="60" y1="160" x2="1640" y2="160" stroke="url(#lg2)" stroke-width="2" stroke-dasharray="6 8" class="flow"/>
+
+        <!-- nodes -->
+        <g font-family="JetBrains Mono" font-size="13" fill="oklch(0.22 0.02 240)">
+          <!-- 1 -->
+          <g><circle cx="100" cy="160" r="42" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="1.5"/>
+            <text x="100" y="166" text-anchor="middle" font-size="22">?</text>
+            <text x="100" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">QUERY</text>
+            <text x="100" y="260" text-anchor="middle" font-size="14">User question</text></g>
+          <!-- 2 -->
+          <g><rect x="240" y="120" width="180" height="80" rx="14" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="330" y="156" text-anchor="middle" font-size="14">Embed</text>
+            <text x="330" y="178" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">→ vector</text>
+            <text x="330" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">EMBEDDING</text></g>
+          <!-- 3 -->
+          <g><rect x="460" y="120" width="220" height="80" rx="14" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="570" y="156" text-anchor="middle" font-size="14">Vector search</text>
+            <text x="570" y="178" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">cosine top-k</text>
+            <text x="570" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">RETRIEVE</text></g>
+          <!-- corpus -->
+          <g><rect x="460" y="20" width="220" height="60" rx="10" fill="oklch(0.97 0.005 220)" stroke="oklch(0.55 0.03 230)" stroke-dasharray="3 3"/>
+            <text x="570" y="56" text-anchor="middle" fill="oklch(0.40 0.02 240)" font-size="12">MEDICAL CORPUS · pgvector</text></g>
+          <line x1="570" y1="80" x2="570" y2="120" stroke="oklch(0.62 0.02 230)" stroke-width="1.2"/>
+          <!-- 4 -->
+          <g><rect x="720" y="120" width="240" height="80" rx="14" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="840" y="156" text-anchor="middle" font-size="14">Relevant chunks</text>
+            <text x="840" y="178" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">snippets + metadata</text>
+            <text x="840" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">CONTEXT</text></g>
+          <!-- 5 -->
+          <g><rect x="1000" y="120" width="200" height="80" rx="14" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)" stroke-width="1.5"/>
+            <text x="1100" y="156" text-anchor="middle" font-size="14">LLM</text>
+            <text x="1100" y="178" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">grounded prompt</text>
+            <text x="1100" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">GENERATE</text></g>
+          <!-- 6 -->
+          <g><rect x="1240" y="120" width="240" height="80" rx="14" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="1360" y="156" text-anchor="middle" font-size="14">Grounded answer</text>
+            <text x="1360" y="178" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">+ citations</text>
+            <text x="1360" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">RESPONSE</text></g>
+          <!-- 7 user -->
+          <g><circle cx="1600" cy="160" r="42" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="1.5"/>
+            <text x="1600" y="166" text-anchor="middle" font-size="22">↩</text>
+            <text x="1600" y="240" text-anchor="middle" fill="oklch(0.50 0.02 240)" font-size="11">USER</text></g>
+        </g>
+        <!-- arrows -->
+        <g fill="none" stroke="oklch(0.58 0.13 215)" stroke-width="2" marker-end="url(#arr2)">
+          <line x1="142" y1="160" x2="232" y2="160"/>
+          <line x1="420" y1="160" x2="452" y2="160"/>
+          <line x1="680" y1="160" x2="712" y2="160"/>
+          <line x1="960" y1="160" x2="992" y2="160"/>
+          <line x1="1200" y1="160" x2="1232" y2="160"/>
+          <line x1="1480" y1="160" x2="1550" y2="160"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="row" style="margin-top:46px;gap:30px;">
+      <div class="col" style="flex:1;gap:6px;"><div class="eyebrow">Why it helps</div>
+        <div class="body" style="color:var(--ink);">Forces the model to answer <em style="font-style:normal;color:var(--cyan);">from text it can read</em> — not from blurry parametric memory.</div>
+      </div>
+      <div class="vline"></div>
+      <div class="col" style="flex:1;gap:6px;"><div class="eyebrow">What it doesn't fix</div>
+        <div class="body" style="color:var(--ink);">If retrieval is wrong, generation is wrong. RAG <em style="font-style:normal;color:var(--rose);">moves</em> the failure — it doesn't remove it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 09 — WHY TRADITIONAL RAG STILL FAILS                           -->
+<!-- ============================================================= -->
+<section data-screen-label="09 RAG still fails">
+  <div class="chrome top"><div><span class="dot"></span>09 · RAG IS NOT ENOUGH</div><div class="right"><span>FOUR FAILURE MODES</span></div></div>
+  <div class="pad" style="padding-top:110px;">
+    <div class="eyebrow">Even with retrieval, hallucinations leak through</div>
+    <div class="h3" style="margin-top:8px;max-width:1500px;font-size:52px;">Plain RAG still fails in four ways.<br/>We fix each one.</div>
+
+    <div class="col" style="gap:14px;margin-top:30px;">
+
+      <!-- row -->
+      <div class="glass" style="padding:22px 32px;display:grid;grid-template-columns:70px 1fr 50px 1fr;gap:28px;align-items:center;">
+        <span class="num" style="font-size:40px;">01</span>
+        <div>
+          <div class="h4" style="color:var(--rose);">Wrong documents come back</div>
+          <div class="small" style="margin-top:6px;">Embedding similarity ≠ medical relevance. The top-k chunks aren't really about the question.</div>
+        </div>
+        <div style="font-size:32px;color:var(--ink-3);text-align:center;">→</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.18em;color:var(--ink-3);">OUR FIX</div>
+          <div class="h4" style="color:var(--cyan);margin-top:4px;">Hybrid retrieval + reranker</div>
+          <div class="small" style="margin-top:4px;">BM25 + dense + cross-encoder.</div>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:22px 32px;display:grid;grid-template-columns:70px 1fr 50px 1fr;gap:28px;align-items:center;">
+        <span class="num" style="font-size:40px;">02</span>
+        <div>
+          <div class="h4" style="color:var(--rose);">The model says things the source doesn't</div>
+          <div class="small" style="margin-top:6px;">Even with good chunks, the LLM adds sentences that no retrieved passage actually supports.</div>
+        </div>
+        <div style="font-size:32px;color:var(--ink-3);text-align:center;">→</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.18em;color:var(--ink-3);">OUR FIX</div>
+          <div class="h4" style="color:var(--cyan);margin-top:4px;">Sentence-level NLI check</div>
+          <div class="small" style="margin-top:4px;">Every claim entailed, or it's flagged.</div>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:22px 32px;display:grid;grid-template-columns:70px 1fr 50px 1fr;gap:28px;align-items:center;">
+        <span class="num" style="font-size:40px;">03</span>
+        <div>
+          <div class="h4" style="color:var(--rose);">The evidence is out of date</div>
+          <div class="small" style="margin-top:6px;">A 2014 guideline scores high on similarity but has been superseded by newer recommendations.</div>
+        </div>
+        <div style="font-size:32px;color:var(--ink-3);text-align:center;">→</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.18em;color:var(--ink-3);">OUR FIX</div>
+          <div class="h4" style="color:var(--cyan);margin-top:4px;">Freshness-weighted ranking</div>
+          <div class="small" style="margin-top:4px;">Recent guidelines win ties.</div>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:22px 32px;display:grid;grid-template-columns:70px 1fr 50px 1fr;gap:28px;align-items:center;">
+        <span class="num" style="font-size:40px;">04</span>
+        <div>
+          <div class="h4" style="color:var(--rose);">It always answers — even when it shouldn't</div>
+          <div class="small" style="margin-top:6px;">Plain RAG has no way to say "I don't know." In medicine, a confident wrong answer is worse than no answer.</div>
+        </div>
+        <div style="font-size:32px;color:var(--ink-3);text-align:center;">→</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.18em;color:var(--ink-3);">OUR FIX</div>
+          <div class="h4" style="color:var(--cyan);margin-top:4px;">Fail-closed refusal</div>
+          <div class="small" style="margin-top:4px;">Abstain below a confidence threshold.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 10 — INTRODUCING DOCUMED AI                                    -->
+<!-- ============================================================= -->
+<section data-screen-label="10 Reveal DocuMed">
+  <div class="chrome top"><div><span class="dot"></span>10 · INTRODUCING</div><div class="right"><span>HERO REVEAL</span></div></div>
+
+  <!-- decorative halo -->
+  <svg width="100%" height="100%" viewBox="0 0 1920 1080" style="position:absolute;inset:0;">
+    <defs>
+      <radialGradient id="halo2" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.45"/>
+        <stop offset="60%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.05"/>
+        <stop offset="100%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="960" cy="540" r="640" fill="url(#halo2)"/>
+  </svg>
+
+  <div class="pad centered" style="text-align:center;align-items:center;">
+    <div class="eyebrow">DocuMed AI</div>
+    <div class="h1" style="margin-top:24px;font-size:160px;line-height:0.9;max-width:1700px;">
+      A confidence-aware<br/>medical RAG <span style="color:var(--cyan);">system</span>.
+    </div>
+    <div class="lead" style="margin-top:36px;max-width:1100px;text-align:center;">
+      Not a chatbot. A medical evidence navigator with a five-stage safety pipeline,
+      sentence-level verification, and the right to <em style="font-style:normal;color:var(--cyan);">refuse</em>.
+    </div>
+    <div class="row" style="margin-top:48px;justify-content:center;gap:14px;flex-wrap:wrap;">
+      <span class="pill cyan">Evidence navigator</span>
+      <span class="pill violet">Verification pipeline</span>
+      <span class="pill amber">Hallucination mitigation</span>
+      <span class="pill green">Healthcare-aware</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 11 — FULL SYSTEM ARCHITECTURE                                  -->
+<!-- ============================================================= -->
+<section data-screen-label="11 Architecture">
+  <div class="chrome top"><div><span class="dot"></span>11 · FULL ARCHITECTURE</div><div class="right"><span>END-TO-END FLOW</span></div></div>
+  <div class="pad" style="padding-top:120px;">
+    <div class="row between" style="align-items:flex-end;">
+      <div class="col" style="gap:8px;">
+        <div class="eyebrow">System architecture</div>
+        <div class="h3">Sixteen components.<br/>One <span style="color:var(--cyan);">grounded</span> answer.</div>
+      </div>
+      <div class="row" style="gap:12px;">
+        <span class="pill cyan">Stage gates</span>
+        <span class="pill violet">Verification</span>
+        <span class="pill rose">Refuse path</span>
+      </div>
+    </div>
+
+    <div class="glass" style="margin-top:36px;padding:36px;flex:1;display:flex;align-items:center;">
+      <svg viewBox="0 0 1700 720" style="width:100%;height:auto;">
+        <defs>
+          <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.58 0.13 215)"/>
+          </marker>
+          <marker id="arr3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.58 0.19 25)"/>
+          </marker>
+        </defs>
+
+        <!-- Stage labels along the top -->
+        <g font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)" letter-spacing="2">
+          <text x="120" y="30">STAGE 0 · TRIAGE</text>
+          <text x="430" y="30">STAGE 1 · INTAKE</text>
+          <text x="730" y="30">STAGE 2 · RETRIEVAL</text>
+          <text x="1120" y="30">STAGE 3 · GENERATION</text>
+          <text x="1450" y="30">STAGE 4 · VERIFY</text>
+        </g>
+        <g stroke="oklch(0.55 0.03 230 / 0.35)" stroke-width="1" stroke-dasharray="2 4">
+          <line x1="380" y1="50" x2="380" y2="700"/>
+          <line x1="680" y1="50" x2="680" y2="700"/>
+          <line x1="1080" y1="50" x2="1080" y2="700"/>
+          <line x1="1400" y1="50" x2="1400" y2="700"/>
+        </g>
+
+        <!-- Helper macro: define nodes -->
+        <g font-family="JetBrains Mono" font-size="13" fill="oklch(0.22 0.02 240)">
+          <!-- User Query -->
+          <g><circle cx="60" cy="360" r="32" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="60" y="364" text-anchor="middle" font-size="16">?</text>
+            <text x="60" y="420" text-anchor="middle" font-size="10" fill="oklch(0.50 0.02 240)">USER QUERY</text></g>
+
+          <!-- Stage 0 -->
+          <g><rect x="140" y="320" width="220" height="80" rx="12" fill="oklch(0.96 0.04 25 / 0.5)" stroke="oklch(0.58 0.19 25)"/>
+            <text x="250" y="354" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">RED FLAG ENGINE</text>
+            <text x="250" y="378" text-anchor="middle" font-size="14">Emergency triage</text></g>
+          <g><rect x="140" y="200" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.19 25)" stroke-dasharray="3 4"/>
+            <text x="250" y="226" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">EMERGENCY ESCALATE</text>
+            <text x="250" y="246" text-anchor="middle" font-size="13">→ call 102 / ER</text></g>
+
+          <!-- Stage 1 -->
+          <g><rect x="430" y="180" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="540" y="206" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">INTENT CLASSIFICATION</text>
+            <text x="540" y="226" text-anchor="middle" font-size="13">symptom · drug · admin</text></g>
+          <g><rect x="430" y="320" width="220" height="80" rx="12" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="540" y="354" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">INTAKE ENGINE</text>
+            <text x="540" y="378" text-anchor="middle" font-size="14">age · meds · context</text></g>
+          <g><rect x="430" y="460" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.62 0.02 230)"/>
+            <text x="540" y="486" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">QUERY REWRITING</text>
+            <text x="540" y="506" text-anchor="middle" font-size="13">canonicalize</text></g>
+
+          <!-- Stage 2 retrieval lanes -->
+          <g><rect x="730" y="220" width="200" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="830" y="246" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">DENSE RETRIEVAL</text>
+            <text x="830" y="266" text-anchor="middle" font-size="13">MedCPT</text></g>
+          <g><rect x="730" y="320" width="200" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="830" y="346" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">BM25 LEXICAL</text>
+            <text x="830" y="366" text-anchor="middle" font-size="13">tsvector</text></g>
+          <g><rect x="730" y="420" width="200" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="830" y="446" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">RRF FUSION</text>
+            <text x="830" y="466" text-anchor="middle" font-size="13">reciprocal rank</text></g>
+
+          <g><rect x="950" y="320" width="100" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="1000" y="346" text-anchor="middle" font-size="10" fill="oklch(0.50 0.02 240)">RERANK</text>
+            <text x="1000" y="366" text-anchor="middle" font-size="12">cross-enc</text></g>
+
+          <!-- Coverage gate -->
+          <g><rect x="950" y="420" width="100" height="60" rx="10" fill="oklch(0.96 0.04 25 / 0.5)" stroke="oklch(0.58 0.19 25)"/>
+            <text x="1000" y="446" text-anchor="middle" font-size="10" fill="oklch(0.50 0.02 240)">COVERAGE</text>
+            <text x="1000" y="466" text-anchor="middle" font-size="12">gate</text></g>
+
+          <!-- Stage 3 -->
+          <g><rect x="1130" y="320" width="240" height="80" rx="12" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)"/>
+            <text x="1250" y="354" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">GROUNDED LLM</text>
+            <text x="1250" y="378" text-anchor="middle" font-size="14">Llama 3.3 70B · Groq</text></g>
+
+          <!-- Stage 4 -->
+          <g><rect x="1450" y="200" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)"/>
+            <text x="1560" y="226" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">NLI VERIFICATION</text>
+            <text x="1560" y="246" text-anchor="middle" font-size="13">DeBERTa-v3</text></g>
+          <g><rect x="1450" y="280" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)"/>
+            <text x="1560" y="306" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">CONFIDENCE SCORE</text>
+            <text x="1560" y="326" text-anchor="middle" font-size="13">per sentence</text></g>
+          <g><rect x="1450" y="360" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)"/>
+            <text x="1560" y="386" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">SENTENCE VALIDATE</text>
+            <text x="1560" y="406" text-anchor="middle" font-size="13">pass · soften · reject</text></g>
+          <g><rect x="1450" y="440" width="220" height="60" rx="10" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)"/>
+            <text x="1560" y="466" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">CITATION LAYER</text>
+            <text x="1560" y="486" text-anchor="middle" font-size="13">[doc · §]</text></g>
+          <g><rect x="1450" y="540" width="220" height="60" rx="10" fill="oklch(0.92 0.04 215)" stroke="oklch(0.58 0.13 215)"/>
+            <text x="1560" y="566" text-anchor="middle" font-size="11" fill="oklch(0.50 0.02 240)">FINAL RESPONSE</text>
+            <text x="1560" y="586" text-anchor="middle" font-size="14">to user</text></g>
+        </g>
+
+        <!-- arrows main flow -->
+        <g fill="none" stroke="oklch(0.58 0.13 215)" stroke-width="1.8" marker-end="url(#arr3)">
+          <line x1="92" y1="360" x2="138" y2="360"/>
+          <path d="M 360 360 C 395 360, 395 210, 428 210"/>
+          <line x1="360" y1="360" x2="428" y2="360"/>
+          <path d="M 360 360 C 395 360, 395 490, 428 490"/>
+
+          <path d="M 650 210 C 700 210, 700 250, 728 250"/>
+          <path d="M 650 360 C 700 360, 700 350, 728 350"/>
+          <path d="M 650 490 C 700 490, 700 450, 728 450"/>
+
+          <path d="M 930 250 C 960 250, 960 350, 948 350"/>
+          <line x1="930" y1="350" x2="948" y2="350"/>
+          <path d="M 930 450 C 960 450, 960 450, 948 450"/>
+
+          <path d="M 1050 350 C 1090 350, 1090 360, 1128 360"/>
+          <path d="M 1050 450 C 1090 450, 1090 360, 1128 360"/>
+
+          <path d="M 1370 360 C 1410 360, 1410 230, 1448 230"/>
+          <path d="M 1370 360 C 1410 360, 1410 310, 1448 310"/>
+          <path d="M 1370 360 C 1410 360, 1410 390, 1448 390"/>
+          <path d="M 1370 360 C 1410 360, 1410 470, 1448 470"/>
+
+          <path d="M 1560 500 C 1560 520, 1560 530, 1560 540"/>
+        </g>
+
+        <!-- emergency escalate path (short, vertical only - no long horizontal cross-diagram line) -->
+        <g fill="none" stroke="oklch(0.58 0.19 25)" stroke-width="1.8" stroke-dasharray="4 6" marker-end="url(#arr3r)">
+          <path d="M 250 320 C 250 290, 250 270, 250 260"/>
+        </g>
+
+        <!-- coverage refuse -->
+        <g fill="none" stroke="oklch(0.58 0.19 25)" stroke-width="1.5" stroke-dasharray="3 5">
+          <path d="M 1000 480 C 1000 540, 1100 600, 1450 600"/>
+        </g>
+        <text x="1100" y="618" font-family="JetBrains Mono" font-size="11" fill="oklch(0.58 0.19 25)" letter-spacing="1.5">REFUSE · INSUFFICIENT EVIDENCE</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 12 — FIVE-STAGE SAFETY PIPELINE                                -->
+<!-- ============================================================= -->
+<section data-screen-label="12 Safety pipeline">
+  <div class="chrome top"><div><span class="dot"></span>12 · SAFETY PIPELINE</div><div class="right"><span>FAIL-CLOSED · 5 STAGES</span></div></div>
+  <div class="pad" style="padding-top:110px;padding-bottom:60px;">
+    <div class="eyebrow">Five-stage safety pipeline</div>
+    <div class="h3" style="margin-top:10px;max-width:1500px;font-size:54px;">Every stage can <span style="color:var(--rose);">refuse</span>. Silence is a feature.</div>
+    <div class="lead" style="margin-top:14px;max-width:1300px;">A request flows through five gates. If any one of them isn't confident, the pipeline stops — the user gets a referral, a follow-up question, or an honest "I don't know" instead of a wrong answer.</div>
+
+    <div class="row" style="gap:18px;margin-top:38px;align-items:stretch;flex:1;">
+      <!-- stage card -->
+      <div class="glass" style="flex:1;padding:26px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:flex-start;"><div class="num" style="font-size:42px;line-height:1;">01</div><span class="pill rose" style="font-size:10px;">GATE 1</span></div>
+        <div class="eyebrow">Red Flag</div>
+        <div class="h4" style="font-size:26px;">Detect emergencies</div>
+        <div class="small" style="flex:1;">If the question describes something life-threatening — chest pain, stroke signs, heavy bleeding — the system stops and tells the user to go to the ER right away.</div>
+        <div class="rule"></div>
+        <div class="small" style="font-style:italic;color:var(--ink-3);">e.g. "crushing chest pain since morning"</div>
+        <div class="mono" style="font-size:12px;color:var(--rose);">REFUSE → ER PATH</div>
+      </div>
+      <div class="glass" style="flex:1;padding:26px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:flex-start;"><div class="num" style="font-size:42px;line-height:1;">02</div><span class="pill amber" style="font-size:10px;">GATE 2</span></div>
+        <div class="eyebrow">Intent &amp; Intake</div>
+        <div class="h4" style="font-size:26px;">Understand the user</div>
+        <div class="small" style="flex:1;">The system figures out what the user is really asking, and asks back for basic details — age, current medicines, allergies, pregnancy — that change the answer.</div>
+        <div class="rule"></div>
+        <div class="small" style="font-style:italic;color:var(--ink-3);">e.g. "are you pregnant? on any meds?"</div>
+        <div class="mono" style="font-size:12px;color:var(--amber);">REFUSE → ASK FOLLOW-UP</div>
+      </div>
+      <div class="glass" style="flex:1;padding:26px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:flex-start;"><div class="num" style="font-size:42px;line-height:1;">03</div><span class="pill rose" style="font-size:10px;">GATE 3</span></div>
+        <div class="eyebrow">Hybrid Retrieval</div>
+        <div class="h4" style="font-size:26px;">Find evidence</div>
+        <div class="small" style="flex:1;">The system searches our medical library two different ways — by keywords and by meaning — then merges the results to pick the most relevant passages.</div>
+        <div class="rule"></div>
+        <div class="small" style="font-style:italic;color:var(--ink-3);">e.g. ACOG bulletin · Cochrane review</div>
+        <div class="mono" style="font-size:12px;color:var(--rose);">REFUSE → INSUFFICIENT</div>
+      </div>
+      <div class="glass" style="flex:1;padding:26px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:flex-start;"><div class="num" style="font-size:42px;line-height:1;">04</div><span class="pill amber" style="font-size:10px;">GATE 4</span></div>
+        <div class="eyebrow">Grounded Generation</div>
+        <div class="h4" style="font-size:26px;">Answer from text</div>
+        <div class="small" style="flex:1;">The LLM is told: only use what's in the retrieved passages, and put a citation next to every claim. No making things up.</div>
+        <div class="rule"></div>
+        <div class="small" style="font-style:italic;color:var(--ink-3);">e.g. every claim tagged [source · §]</div>
+        <div class="mono" style="font-size:12px;color:var(--amber);">REFUSE → "I DON'T KNOW"</div>
+      </div>
+      <div class="glass" style="flex:1;padding:26px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:flex-start;"><div class="num" style="font-size:42px;line-height:1;">05</div><span class="pill rose" style="font-size:10px;">GATE 5</span></div>
+        <div class="eyebrow">Verify &amp; Validate</div>
+        <div class="h4" style="font-size:26px;">Sentence-level check</div>
+        <div class="small" style="flex:1;">A second model reads each sentence of the answer and checks: "is this actually backed by the source?" Anything unsupported gets softened or removed.</div>
+        <div class="rule"></div>
+        <div class="small" style="font-style:italic;color:var(--ink-3);">e.g. unsupported lines silently dropped</div>
+        <div class="mono" style="font-size:12px;color:var(--rose);">REFUSE → REDACT</div>
+      </div>
+    </div>
+
+    <!-- fail open vs fail closed -->
+    <div class="row" style="margin-top:32px;gap:24px;">
+      <div class="glass" style="flex:1;padding:24px 30px;border-color:oklch(0.58 0.19 25 / 0.55);">
+        <div class="row between" style="align-items:center;"><div class="eyebrow" style="color:var(--rose);">FAIL-OPEN (typical chatbot)</div><span class="pill rose">UNSAFE</span></div>
+        <div class="body" style="margin-top:8px;color:var(--ink-2);font-size:19px;">When the chatbot isn't sure, it answers anyway — and gives a confident wrong reply. Dangerous in medicine.</div>
+      </div>
+      <div class="glass" style="flex:1;padding:24px 30px;border-color:oklch(0.58 0.13 160 / 0.55);">
+        <div class="row between" style="align-items:center;"><div class="eyebrow" style="color:var(--green);">FAIL-CLOSED (DocuMed AI)</div><span class="pill green">SAFE</span></div>
+        <div class="body" style="margin-top:8px;color:var(--ink-2);font-size:19px;">When DocuMed AI isn't sure, it refuses, asks for more details, or sends the user to a clinician. Saying nothing is safer than guessing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 13 — CONFIDENCE-AWARE VERIFICATION                             -->
+<!-- ============================================================= -->
+<section data-screen-label="13 Verification">
+  <div class="chrome top"><div><span class="dot"></span>13 · VERIFICATION</div><div class="right"><span>CONFIDENCE-AWARE · NLI</span></div></div>
+  <div class="pad" style="padding-top:110px;padding-bottom:50px;">
+    <div class="row" style="gap:48px;align-items:stretch;flex:1;">
+      <div class="col" style="flex:1;max-width:720px;gap:20px;justify-content:space-between;">
+        <div class="col" style="gap:18px;">
+          <div class="eyebrow">Strongest innovation</div>
+          <div class="h3" style="font-size:54px;line-height:1.05;">Every sentence is <span style="color:var(--cyan);">fact-checked</span>.</div>
+          <div class="lead">After the answer is written, it's broken into individual sentences. Each sentence is compared against the source text by a second AI model that decides one of three things:</div>
+        </div>
+
+        <div class="col" style="gap:14px;">
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--green);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">Backed by source</div><span class="pill green">KEEP</span></div>
+            <div class="small" style="margin-top:4px;">The sentence clearly follows from the cited passage. Show as-is.</div>
+          </div>
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--amber);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">Partially supported</div><span class="pill amber">SOFTEN</span></div>
+            <div class="small" style="margin-top:4px;">Reword with hedging ("may", "some studies suggest") so it doesn't overclaim.</div>
+          </div>
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--rose);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">Not supported</div><span class="pill rose">REMOVE</span></div>
+            <div class="small" style="margin-top:4px;">Drop the sentence entirely. Better silent than wrong.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- sentence-level walk -->
+      <div class="glass" style="flex:1.2;padding:30px 32px;display:flex;flex-direction:column;">
+        <div class="eyebrow" style="margin-bottom:14px;">EXAMPLE · A REAL ANSWER, CHECKED LINE BY LINE</div>
+        <div class="col" style="gap:14px;">
+          <!-- row 1 -->
+          <div style="display:grid;grid-template-columns:1fr 200px 140px;gap:16px;align-items:center;border:1px solid var(--line-soft);border-radius:12px;padding:14px 18px;background:oklch(0.58 0.13 160 / 0.10);">
+            <div style="font-size:18px;line-height:1.4;">Paracetamol is the first-line antipyretic for children with viral fever.</div>
+            <div><div style="height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;"><div style="width:94%;height:100%;background:linear-gradient(90deg,var(--green),oklch(0.62 0.14 160));"></div></div><div class="mono" style="font-size:11px;color:var(--green);margin-top:4px;">ENTAIL · 0.94</div></div>
+            <div class="pill green" style="justify-self:end;">PASS</div>
+          </div>
+          <!-- row 2 -->
+          <div style="display:grid;grid-template-columns:1fr 200px 140px;gap:16px;align-items:center;border:1px solid var(--line-soft);border-radius:12px;padding:14px 18px;background:oklch(0.62 0.14 65 / 0.10);">
+            <div style="font-size:18px;line-height:1.4;">Ibuprofen may be added if fever persists after 30 minutes.</div>
+            <div><div style="height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;"><div style="width:68%;height:100%;background:linear-gradient(90deg,var(--amber),oklch(0.65 0.14 60));"></div></div><div class="mono" style="font-size:11px;color:var(--amber);margin-top:4px;">NEUTRAL · 0.68</div></div>
+            <div class="pill amber" style="justify-self:end;">SOFTEN</div>
+          </div>
+          <!-- row 3 -->
+          <div style="display:grid;grid-template-columns:1fr 200px 140px;gap:16px;align-items:center;border:1px solid var(--line-soft);border-radius:12px;padding:14px 18px;background:oklch(0.58 0.19 25 / 0.08);">
+            <div style="font-size:18px;line-height:1.4;"><span style="text-decoration:line-through;color:var(--ink-3);">Aspirin can be used in children under 12 years old.</span></div>
+            <div><div style="height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;"><div style="width:18%;height:100%;background:linear-gradient(90deg,var(--rose),oklch(0.55 0.2 30));"></div></div><div class="mono" style="font-size:11px;color:var(--rose);margin-top:4px;">CONTRADICT · 0.18</div></div>
+            <div class="pill rose" style="justify-self:end;">REJECT</div>
+          </div>
+          <!-- row 4 -->
+          <div style="display:grid;grid-template-columns:1fr 200px 140px;gap:16px;align-items:center;border:1px solid var(--line-soft);border-radius:12px;padding:14px 18px;background:oklch(0.58 0.13 160 / 0.10);">
+            <div style="font-size:18px;line-height:1.4;">Seek medical care if fever exceeds 39°C for over 72 hours.</div>
+            <div><div style="height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;"><div style="width:91%;height:100%;background:linear-gradient(90deg,var(--green),oklch(0.62 0.14 160));"></div></div><div class="mono" style="font-size:11px;color:var(--green);margin-top:4px;">ENTAIL · 0.91</div></div>
+            <div class="pill green" style="justify-self:end;">PASS</div>
+          </div>
+        </div>
+        <div class="rule" style="margin:22px 0;"></div>
+        <div class="row between" style="align-items:center;">
+          <div class="mono" style="font-size:13px;color:var(--ink-3);letter-spacing:0.18em;">RESPONSE-LEVEL CONFIDENCE</div>
+          <div class="row" style="align-items:center;gap:14px;">
+            <div style="width:280px;height:8px;background:oklch(0.92 0.01 220);border-radius:999px;overflow:hidden;"><div style="width:84%;height:100%;background:linear-gradient(90deg,var(--cyan-2),var(--cyan));"></div></div>
+            <span class="mono" style="color:var(--cyan);font-size:18px;">0.84</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 14 — FRESHNESS                                                 -->
+<!-- ============================================================= -->
+<section data-screen-label="14 Freshness">
+  <div class="chrome top"><div><span class="dot"></span>14 · FRESHNESS</div><div class="right"><span>EVIDENCE AGES</span></div></div>
+  <div class="pad" style="padding-top:110px;padding-bottom:50px;">
+    <div class="row" style="gap:56px;align-items:stretch;flex:1;">
+      <div class="col" style="flex:1;max-width:740px;gap:22px;justify-content:space-between;">
+        <div class="col" style="gap:18px;">
+          <div class="eyebrow">Freshness-aware retrieval</div>
+          <div class="h3" style="font-size:54px;line-height:1.05;">Medicine has a <span style="color:var(--cyan);">half-life</span>.</div>
+          <div class="lead">A 2014 guideline and a 2024 guideline can disagree — and only one is current. The system gives newer sources more weight, so the answer reflects today's medicine, not last decade's.</div>
+        </div>
+
+        <div class="col" style="gap:14px;">
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--rose);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">2014 dosing guideline</div><span class="mono" style="color:var(--rose);font-size:18px;">weight 0.07</span></div>
+            <div class="small" style="margin-top:4px;">Old, often superseded — pushed down the ranking.</div>
+          </div>
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--amber);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">2019 review paper</div><span class="mono" style="color:var(--amber);font-size:18px;">weight 0.37</span></div>
+            <div class="small" style="margin-top:4px;">Still useful background, but not the latest word.</div>
+          </div>
+          <div class="glass" style="padding:18px 22px;border-left:3px solid var(--green);">
+            <div class="row between" style="align-items:center;"><div style="font-weight:500;font-size:20px;">2024 ACOG update</div><span class="mono" style="color:var(--green);font-size:18px;">weight 0.81</span></div>
+            <div class="small" style="margin-top:4px;">Current standard of care — surfaces first in results.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass" style="flex:1.1;padding:36px;display:flex;flex-direction:column;">
+        <div class="eyebrow" style="margin-bottom:18px;">FRESHNESS WEIGHT BY YEAR</div>
+        <svg viewBox="0 0 700 380" style="width:100%;height:auto;">
+          <line x1="60" y1="320" x2="660" y2="320" stroke="oklch(0.62 0.02 230)" stroke-width="1"/>
+          <line x1="60" y1="40" x2="60" y2="320" stroke="oklch(0.62 0.02 230)" stroke-width="1"/>
+          <text x="55" y="40" text-anchor="end" font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)">1.0</text>
+          <text x="55" y="180" text-anchor="end" font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)">0.5</text>
+          <text x="55" y="324" text-anchor="end" font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)">0</text>
+          <!-- decay curve y = exp(-(2025-year)/5) -->
+          <!-- year range 2005..2026 -->
+          <path d="M 60 318 L 110 314 L 160 308 L 210 298 L 260 281 L 310 256 L 360 218 L 410 168 L 460 110 L 510 62 L 560 44 L 610 41 L 660 40"
+                fill="none" stroke="url(#lg2b)" stroke-width="3"/>
+          <defs>
+            <linearGradient id="lg2b" x1="0" x2="1">
+              <stop offset="0" stop-color="oklch(0.58 0.19 25)"/>
+              <stop offset="1" stop-color="oklch(0.58 0.13 215)"/>
+            </linearGradient>
+          </defs>
+          <!-- markers -->
+          <g font-family="JetBrains Mono" font-size="11" fill="oklch(0.22 0.02 240)">
+            <circle cx="210" cy="298" r="5" fill="oklch(0.58 0.19 25)"/>
+            <text x="220" y="294">2014 guideline · 0.07</text>
+            <circle cx="510" cy="62" r="5" fill="oklch(0.58 0.13 215)"/>
+            <text x="490" y="50" text-anchor="end">2024 update · 0.81</text>
+          </g>
+          <g font-family="JetBrains Mono" font-size="10" fill="oklch(0.50 0.02 240)">
+            <text x="60" y="345">2005</text>
+            <text x="360" y="345" text-anchor="middle">2015</text>
+            <text x="660" y="345" text-anchor="end">2026</text>
+          </g>
+        </svg>
+        <div class="rule" style="margin:18px 0;"></div>
+        <div class="row between" style="align-items:center;">
+          <div class="small" style="max-width:60%;">Older than 10 years → weight near zero unless it's the only source. Newer than 2 years → near full weight.</div>
+          <div class="mono" style="font-size:13px;color:var(--ink-3);letter-spacing:0.16em;">DECAY · 5y HALF-LIFE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 15 — NEPAL FOCUS                                               -->
+<!-- ============================================================= -->
+<section data-screen-label="15 Nepal context">
+  <div class="chrome top"><div><span class="dot"></span>15 · NEPAL CONTEXT</div><div class="right"><span>LOCALIZATION MATTERS</span></div></div>
+  <div class="pad" style="padding-top:110px;padding-bottom:50px;">
+    <div class="row" style="gap:48px;align-items:stretch;flex:1;">
+      <div class="col" style="flex:1;max-width:720px;gap:20px;justify-content:space-between;">
+        <div class="col" style="gap:18px;">
+          <div class="eyebrow">Why localize</div>
+          <div class="h3" style="font-size:54px;line-height:1.05;">A US triage answer is <span style="color:var(--rose);">wrong</span> in rural Nepal.</div>
+          <div class="lead">Care tiers, drug availability, emergency numbers, distance to specialists — none of this generalizes. DocuMed AI is aware of where the user is and what they can actually do.</div>
+        </div>
+
+        <div class="col" style="gap:12px;">
+          <div class="glass" style="padding:16px 20px;">
+            <div style="font-weight:500;font-size:19px;color:var(--ink);">Self-medication is the norm</div>
+            <div class="small" style="margin-top:4px;">Refusing to answer isn't enough — the system must point to a real next step the user can take today.</div>
+          </div>
+          <div class="glass" style="padding:16px 20px;">
+            <div style="font-weight:500;font-size:19px;color:var(--ink);">Specialists cluster in cities</div>
+            <div class="small" style="margin-top:4px;">A rural user's nearest hospital may be hours away; "see a cardiologist" is not advice — it's a dead end.</div>
+          </div>
+          <div class="glass" style="padding:16px 20px;">
+            <div style="font-weight:500;font-size:19px;color:var(--ink);">Different drugs, different names</div>
+            <div class="small" style="margin-top:4px;">Nepali pharmacies stock different brand names and formulations than US guidelines assume.</div>
+          </div>
+          <div class="glass" style="padding:16px 20px;">
+            <div style="font-weight:500;font-size:19px;color:var(--ink);">Emergency is <span class="mono" style="color:var(--rose);">102</span>, not 911</div>
+            <div class="small" style="margin-top:4px;">Hardcoding US numbers in a refusal can cost minutes. The system uses local emergency numbers.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- care tiers + map -->
+      <div class="col" style="flex:1.1;gap:18px;">
+        <div class="glass" style="padding:28px 32px;flex:1;">
+          <div class="eyebrow" style="margin-bottom:14px;">NEPAL CARE TIERS — WHERE TO SEND THE USER</div>
+          <div class="col" style="gap:12px;">
+            <div class="row between" style="align-items:center;border-left:3px solid var(--cyan);padding:12px 16px;background:oklch(0.58 0.13 215 / 0.08);border-radius:6px;">
+              <div><div style="font-weight:500;font-size:19px;">Tier 1 · Primary Health Centre</div><div class="small">Health post · sub-health post · FCHV outreach. Closest to the user.</div></div><span class="pill cyan">FIRST CONTACT</span>
+            </div>
+            <div class="row between" style="align-items:center;border-left:3px solid var(--violet);padding:12px 16px;background:oklch(0.52 0.16 285 / 0.08);border-radius:6px;">
+              <div><div style="font-weight:500;font-size:19px;">Tier 2 · District Hospital</div><div class="small">General medicine · OBGYN · basic surgery. Most referrals end here.</div></div><span class="pill violet">REFERRAL</span>
+            </div>
+            <div class="row between" style="align-items:center;border-left:3px solid var(--amber);padding:12px 16px;background:oklch(0.62 0.14 65 / 0.08);border-radius:6px;">
+              <div><div style="font-weight:500;font-size:19px;">Tier 3 · Zonal / Provincial</div><div class="small">Specialist care · imaging · ICU. Reserved for serious cases.</div></div><span class="pill amber">ESCALATION</span>
+            </div>
+            <div class="row between" style="align-items:center;border-left:3px solid var(--rose);padding:12px 16px;background:oklch(0.58 0.19 25 / 0.07);border-radius:6px;">
+              <div><div style="font-weight:500;font-size:19px;">Tier 4 · Tertiary / Teaching</div><div class="small">Subspecialty · transplant · oncology. End of the line.</div></div><span class="pill rose">CRITICAL</span>
+            </div>
+          </div>
+        </div>
+        <div class="glass" style="padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">
+          <div class="mono" style="font-size:13px;letter-spacing:0.18em;color:var(--ink-3);">EMERGENCY · NEPAL</div>
+          <div class="row" style="gap:28px;">
+            <div><span class="mono" style="color:var(--rose);font-size:26px;">102</span> <span class="small">Ambulance</span></div>
+            <div><span class="mono" style="color:var(--rose);font-size:26px;">100</span> <span class="small">Police</span></div>
+            <div><span class="mono" style="color:var(--rose);font-size:26px;">1115</span> <span class="small">Health Hotline</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 16 — TECH STACK                                                -->
+<!-- ============================================================= -->
+<section data-screen-label="16 Stack">
+  <div class="chrome top"><div><span class="dot"></span>16 · TECHNICAL STACK</div><div class="right"><span>BUILD SURFACE</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">Stack</div>
+    <div class="h3" style="margin-top:12px;max-width:1500px;">Boring, fast, observable.</div>
+
+    <div class="row" style="margin-top:48px;gap:24px;flex:1;align-items:stretch;">
+      <!-- frontend -->
+      <div class="glass" style="flex:1;padding:32px;display:flex;flex-direction:column;gap:18px;">
+        <div class="eyebrow" style="color:var(--cyan);">FRONTEND</div>
+        <div class="h4" style="font-size:30px;">Web client</div>
+        <div class="rule"></div>
+        <div class="col" style="gap:10px;">
+          <div class="row between" style="align-items:center;"><span class="mono">React 18</span><span class="small">UI framework</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">TypeScript</span><span class="small">Type safety</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Vite</span><span class="small">Build</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Tailwind</span><span class="small">Styling</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">SSE</span><span class="small">Streaming responses</span></div>
+        </div>
+      </div>
+      <!-- backend -->
+      <div class="glass" style="flex:1;padding:32px;display:flex;flex-direction:column;gap:18px;">
+        <div class="eyebrow" style="color:var(--violet);">BACKEND</div>
+        <div class="h4" style="font-size:30px;">API &amp; orchestration</div>
+        <div class="rule"></div>
+        <div class="col" style="gap:10px;">
+          <div class="row between" style="align-items:center;"><span class="mono">FastAPI</span><span class="small">Python async</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">LangChain</span><span class="small">Pipeline glue</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Pydantic v2</span><span class="small">Schema</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Docker</span><span class="small">Containerized</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">AWS (planned)</span><span class="small">Production</span></div>
+        </div>
+      </div>
+      <!-- AI -->
+      <div class="glass" style="flex:1;padding:32px;display:flex;flex-direction:column;gap:18px;">
+        <div class="eyebrow" style="color:var(--amber);">AI</div>
+        <div class="h4" style="font-size:30px;">Models</div>
+        <div class="rule"></div>
+        <div class="col" style="gap:10px;">
+          <div class="row between" style="align-items:center;"><span class="mono">Llama 3.3 70B</span><span class="small">Generator (Groq)</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">MedCPT</span><span class="small">Medical embedding</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Cohere Rerank</span><span class="small">Cross-encoder</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">DeBERTa-v3</span><span class="small">NLI verifier</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">tiktoken</span><span class="small">Tokenization</span></div>
+        </div>
+      </div>
+      <!-- data -->
+      <div class="glass" style="flex:1;padding:32px;display:flex;flex-direction:column;gap:18px;">
+        <div class="eyebrow" style="color:var(--green);">DATA</div>
+        <div class="h4" style="font-size:30px;">Storage &amp; retrieval</div>
+        <div class="rule"></div>
+        <div class="col" style="gap:10px;">
+          <div class="row between" style="align-items:center;"><span class="mono">Supabase</span><span class="small">Postgres + auth</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">pgvector</span><span class="small">Dense index</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">tsvector + BM25</span><span class="small">Lexical index</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">S3</span><span class="small">PDF corpus</span></div>
+          <div class="row between" style="align-items:center;"><span class="mono">Redis</span><span class="small">Cache · rate-limit</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 17 — DEVELOPMENT JOURNEY                                       -->
+<!-- ============================================================= -->
+<section data-screen-label="17 Journey">
+  <div class="chrome top"><div><span class="dot"></span>17 · BUILD JOURNEY</div><div class="right"><span>10 PHASES</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">How the system matured</div>
+    <div class="h3" style="margin-top:12px;max-width:1500px;">Each milestone fixed a class of <span style="color:var(--rose);">failures</span>.</div>
+
+    <div class="glass" style="margin-top:48px;padding:50px 50px;flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <svg viewBox="0 0 1700 380" style="width:100%;height:auto;">
+        <!-- baseline -->
+        <line x1="60" y1="200" x2="1640" y2="200" stroke="oklch(0.62 0.02 230)" stroke-width="2"/>
+        <!-- ticks -->
+        <g font-family="JetBrains Mono" font-size="11" fill="oklch(0.50 0.02 240)" text-anchor="middle">
+          <g><circle cx="100" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="2"/><text x="100" y="240">P1</text><text x="100" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Naive RAG</text><text x="100" y="142">basic vec + LLM</text></g>
+          <g><circle cx="270" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="2"/><text x="270" y="240">P2</text><text x="270" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Dense retrieval</text><text x="270" y="142">MedCPT swap</text></g>
+          <g><circle cx="440" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="2"/><text x="440" y="240">P3</text><text x="440" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Hybrid + RRF</text><text x="440" y="142">+ BM25</text></g>
+          <g><circle cx="610" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 215)" stroke-width="2"/><text x="610" y="240">P4</text><text x="610" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Reranker</text><text x="610" y="142">Cohere</text></g>
+          <g><circle cx="780" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.19 25)" stroke-width="2"/><text x="780" y="240">P5</text><text x="780" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Red flags</text><text x="780" y="142">stage 0</text></g>
+          <g><circle cx="950" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)" stroke-width="2"/><text x="950" y="240">P6</text><text x="950" y="160" font-size="13" fill="oklch(0.22 0.02 240)">NLI verifier</text><text x="950" y="142">DeBERTa-v3</text></g>
+          <g><circle cx="1120" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.52 0.16 285)" stroke-width="2"/><text x="1120" y="240">P7</text><text x="1120" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Confidence</text><text x="1120" y="142">calibration</text></g>
+          <g><circle cx="1290" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 160)" stroke-width="2"/><text x="1290" y="240">P8</text><text x="1290" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Freshness</text><text x="1290" y="142">decay</text></g>
+          <g><circle cx="1460" cy="200" r="8" fill="oklch(0.99 0.003 220)" stroke="oklch(0.58 0.13 160)" stroke-width="2"/><text x="1460" y="240">P9</text><text x="1460" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Localization</text><text x="1460" y="142">Nepal-aware</text></g>
+          <g><circle cx="1620" cy="200" r="10" fill="oklch(0.58 0.13 215)" stroke="oklch(0.58 0.13 215)" stroke-width="2"/><text x="1620" y="240">P10</text><text x="1620" y="160" font-size="13" fill="oklch(0.22 0.02 240)">Hardening</text><text x="1620" y="142">eval &amp; ship</text></g>
+        </g>
+        <!-- phase regions -->
+        <g font-family="JetBrains Mono" font-size="10" fill="oklch(0.50 0.02 240)" letter-spacing="2">
+          <text x="270" y="320" text-anchor="middle">RETRIEVAL CORE</text>
+          <text x="950" y="320" text-anchor="middle">SAFETY LAYERS</text>
+          <text x="1540" y="320" text-anchor="middle">PRODUCTION</text>
+        </g>
+        <g stroke="oklch(0.55 0.03 230 / 0.45)" stroke-dasharray="2 4">
+          <line x1="700" y1="270" x2="700" y2="200"/>
+          <line x1="1380" y1="270" x2="1380" y2="200"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 18 — EVALUATION                                                -->
+<!-- ============================================================= -->
+<section data-screen-label="18 Results">
+  <div class="chrome top"><div><span class="dot"></span>18 · EVALUATION</div><div class="right"><span>BASELINE LLM vs DOCUMED AI</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="row between" style="align-items:flex-end;">
+      <div class="col" style="gap:10px;">
+        <div class="eyebrow">Results</div>
+        <div class="h3">Safer than baseline.<br/>Across <span style="color:var(--cyan);">every</span> metric we cared about.</div>
+      </div>
+      <div class="row" style="gap:18px;">
+        <div class="kpi"><div class="v" style="color:var(--cyan);">−71%</div><div class="l">HALLUCINATION RATE</div></div>
+        <div class="kpi"><div class="v" style="color:var(--green);">+38%</div><div class="l">GROUNDEDNESS</div></div>
+      </div>
+    </div>
+
+    <!-- bar comparison -->
+    <div class="glass" style="margin-top:34px;padding:32px 56px;flex:1;display:flex;flex-direction:column;gap:14px;">
+      <div class="row between" style="align-items:center;">
+        <div class="eyebrow">METRIC</div>
+        <div class="row" style="gap:24px;">
+          <div class="row" style="gap:8px;align-items:center;"><span style="width:14px;height:14px;background:linear-gradient(90deg, oklch(0.78 0.01 240), oklch(0.68 0.01 240));display:inline-block;border-radius:3px;"></span><span class="mono small">BASELINE LLM</span></div>
+          <div class="row" style="gap:8px;align-items:center;"><span style="width:14px;height:14px;background:linear-gradient(90deg,var(--cyan-2),var(--cyan));display:inline-block;border-radius:3px;"></span><span class="mono small">DOCUMED AI</span></div>
+        </div>
+      </div>
+      <div class="rule"></div>
+
+      <!-- rows -->
+      <div class="col" style="gap:28px;margin-top:6px;">
+        <!-- Hallucination rate (lower is better) -->
+        <div>
+          <div class="row between" style="align-items:center;margin-bottom:14px;gap:24px;flex-wrap:nowrap;"><span class="body" style="color:var(--ink);white-space:nowrap;">Hallucination rate</span><span class="small" style="white-space:nowrap;">lower is better</span></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar muted" style="width:62%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--ink-2);">62%</span>
+            </div>
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar" style="width:18%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--cyan);">18%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retrieval Recall@5 -->
+        <div>
+          <div class="row between" style="align-items:center;margin-bottom:14px;gap:24px;flex-wrap:nowrap;"><span class="body" style="color:var(--ink);white-space:nowrap;">Retrieval Recall@5</span><span class="small" style="white-space:nowrap;">higher is better</span></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar muted" style="width:54%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--ink-2);">0.54</span>
+            </div>
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar" style="width:87%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--cyan);">0.87</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Groundedness (FActScore-like) -->
+        <div>
+          <div class="row between" style="align-items:center;margin-bottom:14px;gap:24px;flex-wrap:nowrap;"><span class="body" style="color:var(--ink);white-space:nowrap;">Groundedness · FActScore-like</span><span class="small" style="white-space:nowrap;">higher is better</span></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar muted" style="width:48%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--ink-2);">0.48</span>
+            </div>
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar" style="width:86%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--cyan);">0.86</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Refusal accuracy (correctly refusing unsafe) -->
+        <div>
+          <div class="row between" style="align-items:center;margin-bottom:14px;gap:24px;flex-wrap:nowrap;"><span class="body" style="color:var(--ink);white-space:nowrap;">Refusal accuracy</span><span class="small" style="white-space:nowrap;">unsafe correctly refused</span></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar muted" style="width:11%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--ink-2);">0.11</span>
+            </div>
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar" style="width:79%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--cyan);">0.79</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Faithfulness (NLI entailment) -->
+        <div>
+          <div class="row between" style="align-items:center;margin-bottom:14px;gap:24px;flex-wrap:nowrap;"><span class="body" style="color:var(--ink);white-space:nowrap;">Faithfulness · NLI entailment</span><span class="small" style="white-space:nowrap;">higher is better</span></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar muted" style="width:51%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--ink-2);">0.51</span>
+            </div>
+            <div class="row" style="align-items:center;gap:14px;">
+              <div style="flex:1;height:14px;border-radius:999px;background:oklch(0.92 0.01 220);overflow:hidden;"><div class="bar" style="width:88%;"></div></div>
+              <span class="mono" style="width:80px;text-align:right;color:var(--cyan);">0.88</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="small" style="margin-top:0;font-size:14px;">N = 320 · MedQA + MIRAGE held-out · 3-rater eval on 80-question subset.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 19 — REAL EXAMPLE WALKTHROUGH                                  -->
+<!-- ============================================================= -->
+<section data-screen-label="19 Walkthrough">
+  <div class="chrome top"><div><span class="dot"></span>19 · LIVE WALKTHROUGH</div><div class="right"><span>QUERY → ANSWER</span></div></div>
+  <div class="pad" style="padding-top:120px;">
+    <div class="eyebrow">Real query, traced end-to-end</div>
+    <div class="h3" style="margin-top:10px;max-width:1500px;">"Is amoxicillin safe in the third trimester for a UTI?"</div>
+
+    <div class="row" style="gap:22px;margin-top:38px;flex:1;align-items:stretch;">
+      <!-- step 1 query -->
+      <div class="glass" style="flex:1;padding:24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">01</span><span class="pill cyan">SEARCH</span></div>
+        <div class="h4" style="font-size:24px;">Find the right pages</div>
+        <div class="rule"></div>
+        <div style="font-size:15px;color:var(--ink-2);line-height:1.55;">
+          The system searches our medical library for pages about amoxicillin and pregnancy. It finds 8 useful candidates — including official guidelines from <strong style="color:var(--ink);">ACOG</strong> and <strong style="color:var(--ink);">Cochrane</strong>.
+        </div>
+      </div>
+
+      <!-- step 2 rerank -->
+      <div class="glass" style="flex:1;padding:24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">02</span><span class="pill violet">SHORTLIST</span></div>
+        <div class="h4" style="font-size:24px;">Pick the best 4</div>
+        <div class="rule"></div>
+        <div style="font-size:15px;color:var(--ink-2);line-height:1.55;">
+          Out of those 8 candidates, the system keeps the 4 most relevant ones — the latest pregnancy-care guidelines and antibiotic references.
+        </div>
+        <div class="col" style="gap:6px;font-size:13px;color:var(--ink-2);margin-top:6px;">
+          <div>· ACOG 2023 — pregnancy antibiotics</div>
+          <div>· Cochrane 2022 — UTI in pregnancy</div>
+          <div>· WHO AWaRe 2024</div>
+          <div>· BNF 2024 — amoxicillin</div>
+        </div>
+      </div>
+
+      <!-- step 3 generate -->
+      <div class="glass" style="flex:1;padding:24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">03</span><span class="pill amber">DRAFT</span></div>
+        <div class="h4" style="font-size:24px;">Write the answer</div>
+        <div class="rule"></div>
+        <div style="font-size:15px;color:var(--ink-2);line-height:1.55;">
+          The LLM writes a draft answer, using <em>only</em> what's in those 4 sources. Every claim gets a citation tag.
+        </div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.6;background:oklch(0.97 0.005 220);padding:10px 12px;border-radius:8px;margin-top:6px;">
+          Amoxicillin is generally <span style="color:var(--green);">safe</span> in the third trimester for a UTI. Standard dose: 500 mg, 3 times a day, 5–7 days. Confirm with your doctor.
+        </div>
+      </div>
+
+      <!-- step 4 verify -->
+      <div class="glass" style="flex:1;padding:24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">04</span><span class="pill green">CHECK</span></div>
+        <div class="h4" style="font-size:24px;">Is each line backed up?</div>
+        <div class="rule"></div>
+        <div style="font-size:15px;color:var(--ink-2);line-height:1.55;">
+          A second model reads each sentence and checks whether the source actually says it. All three sentences pass.
+        </div>
+        <div class="col" style="gap:6px;font-size:13px;margin-top:6px;">
+          <div class="row between"><span>"It's safe"</span><span class="pill green" style="font-size:11px;padding:3px 8px;">BACKED</span></div>
+          <div class="row between"><span>The dose</span><span class="pill green" style="font-size:11px;padding:3px 8px;">BACKED</span></div>
+          <div class="row between"><span>"Confirm with doctor"</span><span class="pill green" style="font-size:11px;padding:3px 8px;">BACKED</span></div>
+        </div>
+      </div>
+
+      <!-- step 5 deliver -->
+      <div class="glass glow-cyan" style="flex:1.1;padding:24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="row between" style="align-items:center;"><span class="num">05</span><span class="pill cyan">SHOW</span></div>
+        <div class="h4" style="font-size:24px;">Reply to the user</div>
+        <div class="rule"></div>
+        <div style="font-size:14px;color:var(--ink);line-height:1.55;">
+          Yes — amoxicillin is considered safe in the third trimester for a UTI. Typical course: 500 mg, three times a day, for 5–7 days. Please confirm with your obstetrician.
+        </div>
+        <div class="rule"></div>
+        <div style="font-size:13px;color:var(--ink-2);">Sources shown alongside:</div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;">
+          <span class="pill cyan" style="font-size:11px;">ACOG 2023</span>
+          <span class="pill cyan" style="font-size:11px;">Cochrane 2022</span>
+          <span class="pill cyan" style="font-size:11px;">BNF 2024</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 20 — LIMITATIONS                                               -->
+<!-- ============================================================= -->
+<section data-screen-label="20 Limitations">
+  <div class="chrome top"><div><span class="dot"></span>20 · LIMITATIONS</div><div class="right"><span>WHAT THIS SYSTEM IS NOT</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="eyebrow">Honest about what's hard</div>
+    <div class="h3" style="margin-top:12px;max-width:1500px;">DocuMed AI helps you <span style="color:var(--cyan);">think</span>.<br/>It does not replace a doctor.</div>
+
+    <div class="row" style="gap:22px;margin-top:54px;flex-wrap:wrap;">
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 01</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">Mostly English for now</div>
+        <div class="small" style="margin-top:10px;">Our medical sources are in English. If a user asks in Nepali, or mixes Nepali and English, retrieval gets weaker.</div>
+      </div>
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 02</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">Not medically certified</div>
+        <div class="small" style="margin-top:10px;">DocuMed AI has no regulatory approval. It is for learning and decision support — the doctor still makes the call.</div>
+      </div>
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 03</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">Struggles on rare cases</div>
+        <div class="small" style="margin-top:10px;">For rare diseases, children's exceptions, or patients on many drugs, our corpus has fewer documents — so the system often refuses to answer.</div>
+      </div>
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 04</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">Slower than a normal LLM</div>
+        <div class="small" style="margin-top:10px;">All the safety checks add time. A DocuMed AI answer takes about 3× longer than a plain LLM. The trade-off: it's grounded.</div>
+      </div>
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 05</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">Only as good as our sources</div>
+        <div class="small" style="margin-top:10px;">If a guideline is missing or outdated in our corpus, the answer suffers. Keeping the corpus clean and current is ongoing work.</div>
+      </div>
+      <div class="glass" style="flex:1 1 calc(33% - 22px);padding:30px;min-width:420px;">
+        <div class="eyebrow" style="color:var(--rose);">LIMITATION 06</div>
+        <div class="h4" style="font-size:30px;margin-top:8px;">The verifier isn't perfect</div>
+        <div class="small" style="margin-top:10px;">Our NLI checker is good but not flawless. To stay safe, the system leans toward refusing rather than guessing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 21 — FUTURE WORK                                               -->
+<!-- ============================================================= -->
+<section data-screen-label="21 Future">
+  <div class="chrome top"><div><span class="dot"></span>21 · FUTURE WORK</div><div class="right"><span>ROADMAP</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="row between" style="align-items:flex-end;">
+      <div class="col" style="gap:10px;">
+        <div class="eyebrow">Roadmap</div>
+        <div class="h3">From a thesis project<br/>to a <span style="color:var(--cyan);">production</span> healthcare system.</div>
+      </div>
+    </div>
+
+    <!-- horizon swim lanes -->
+    <div class="glass" style="margin-top:46px;padding:36px;flex:1;display:flex;flex-direction:column;gap:24px;">
+      <div class="row" style="gap:24px;">
+        <div class="col" style="flex:1;gap:14px;">
+          <div class="row between"><div class="eyebrow" style="color:var(--cyan);">HORIZON 01 · NEXT 6 MONTHS</div><span class="pill cyan">SHIPPABLE</span></div>
+          <div class="rule"></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Multilingual Nepali-English retrieval (XLM-R base).</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Live medical paper ingestion (PubMed, WHO).</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Clinician feedback loop with thumbs-up/down.</span></div>
+          </div>
+        </div>
+        <div class="vline"></div>
+        <div class="col" style="flex:1;gap:14px;">
+          <div class="row between"><div class="eyebrow" style="color:var(--violet);">HORIZON 02 · 6–18 MONTHS</div><span class="pill violet">RESEARCH</span></div>
+          <div class="rule"></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Adaptive retrieval — query-conditioned k.</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Self-reflective RAG (verify-then-rewrite loop).</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Multimodal — radiology image grounding.</span></div>
+          </div>
+        </div>
+        <div class="vline"></div>
+        <div class="col" style="flex:1;gap:14px;">
+          <div class="row between"><div class="eyebrow" style="color:var(--amber);">HORIZON 03 · 18+ MONTHS</div><span class="pill amber">VISION</span></div>
+          <div class="rule"></div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Voice assistant for low-literacy users.</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Hospital integration · EHR-aware QA.</span></div>
+            <div class="row" style="gap:10px;align-items:flex-start;"><span class="num">·</span><span class="body" style="color:var(--ink);">Federated medical knowledge across hospitals.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 22 — BROADER IMPLICATIONS                                      -->
+<!-- ============================================================= -->
+<section data-screen-label="22 Implications">
+  <div class="chrome top"><div><span class="dot"></span>22 · BROADER IMPLICATIONS</div><div class="right"><span>RESPONSIBLE AI</span></div></div>
+  <div class="pad" style="padding-top:130px;">
+    <div class="row" style="gap:80px;align-items:flex-start;">
+      <div class="col" style="flex:1;max-width:840px;gap:30px;">
+        <div class="eyebrow">Why this is bigger than one project</div>
+        <div class="h2" style="font-size:80px;">Trust isn't a UX choice.<br/>It's an <span style="color:var(--cyan);">architecture</span> choice.</div>
+        <div class="lead" style="margin-top:8px;">
+          Every domain that touches consequence — medicine, law, finance, education — is going to need systems that are willing to say "I don't know."
+          The question isn't whether AI will mediate these interactions. It's whether the AI doing it will have a refusal path.
+        </div>
+      </div>
+      <div class="col" style="flex:1;gap:18px;">
+        <div class="glass" style="padding:28px 32px;">
+          <div class="eyebrow" style="color:var(--cyan);">PRINCIPLE 01</div>
+          <div class="h4" style="font-size:28px;">Calibrated humility</div>
+          <div class="small" style="margin-top:6px;">A system's confidence should match its evidence — not its fluency.</div>
+        </div>
+        <div class="glass" style="padding:28px 32px;">
+          <div class="eyebrow" style="color:var(--violet);">PRINCIPLE 02</div>
+          <div class="h4" style="font-size:28px;">Auditable answers</div>
+          <div class="small" style="margin-top:6px;">Every claim points back to evidence. No grounding → no answer.</div>
+        </div>
+        <div class="glass" style="padding:28px 32px;">
+          <div class="eyebrow" style="color:var(--amber);">PRINCIPLE 03</div>
+          <div class="h4" style="font-size:28px;">Human-in-the-loop, by default</div>
+          <div class="small" style="margin-top:6px;">DocuMed AI is a navigator. The clinician — and the patient — decide.</div>
+        </div>
+        <div class="glass" style="padding:28px 32px;">
+          <div class="eyebrow" style="color:var(--green);">PRINCIPLE 04</div>
+          <div class="h4" style="font-size:28px;">Fail closed, always</div>
+          <div class="small" style="margin-top:6px;">In high-stakes systems, silence is a feature, not a bug.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 23 — FINAL REFLECTION                                          -->
+<!-- ============================================================= -->
+<section data-screen-label="23 Reflection">
+  <div class="chrome top"><div><span class="dot"></span>23 · FINAL REFLECTION</div><div class="right"><span>FROM CHATBOT TO TRUST</span></div></div>
+  <svg width="100%" height="100%" viewBox="0 0 1920 1080" style="position:absolute;inset:0;">
+    <defs>
+      <linearGradient id="ecg" x1="0" x2="1">
+        <stop offset="0" stop-color="oklch(0.58 0.13 215 / 0)"/>
+        <stop offset="0.5" stop-color="oklch(0.58 0.13 215 / 0.6)"/>
+        <stop offset="1" stop-color="oklch(0.58 0.13 215 / 0)"/>
+      </linearGradient>
+    </defs>
+    <path d="M 0 540 L 700 540 L 740 540 L 760 460 L 780 620 L 800 380 L 820 540 L 1100 540 L 1140 540 L 1160 500 L 1180 580 L 1200 540 L 1920 540" 
+          fill="none" stroke="url(#ecg)" stroke-width="1.5"/>
+  </svg>
+
+  <div class="pad" style="padding-top:180px;">
+    <div class="col" style="max-width:1500px;gap:30px;">
+      <div class="eyebrow">Final reflection</div>
+      <div class="h2" style="font-size:80px;line-height:1.05;">
+        I started by trying to build a chatbot.<br/>
+        I ended up exploring one of the deepest problems<br/>
+        in modern AI:
+      </div>
+      <div class="h2" style="font-size:88px;color:var(--cyan);letter-spacing:-0.03em;">
+        How do we make<br/>intelligent systems<br/>trustworthy?
+      </div>
+      <div class="lead" style="max-width:1100px;margin-top:8px;font-size:26px;">
+        DocuMed AI is one answer — partial, opinionated, and built in the open.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================= -->
+<!-- 24 — THANK YOU                                                 -->
+<!-- ============================================================= -->
+<section data-screen-label="24 Thank you">
+  <svg width="100%" height="100%" viewBox="0 0 1920 1080" style="position:absolute;inset:0;">
+    <defs>
+      <radialGradient id="halo3" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.4"/>
+        <stop offset="60%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0.04"/>
+        <stop offset="100%" stop-color="oklch(0.58 0.13 215)" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="960" cy="540" r="700" fill="url(#halo3)"/>
+    <g transform="translate(960 540)">
+      <g class="orbit" style="animation-duration:80s;">
+        <ellipse rx="500" ry="180" fill="none" stroke="oklch(0.58 0.13 215 / 0.3)" stroke-width="1"/>
+      </g>
+      <g class="orbit" style="animation-duration:140s;animation-direction:reverse;">
+        <ellipse rx="380" ry="320" fill="none" stroke="oklch(0.58 0.13 215 / 0.22)" stroke-width="1"/>
+      </g>
+    </g>
+  </svg>
+
+  <div class="chrome top"><div><span class="dot"></span>END · THANK YOU</div><div class="right"><span>QUESTIONS WELCOME</span></div></div>
+
+  <div class="pad centered" style="text-align:center;align-items:center;">
+    <div class="eyebrow">DocuMed AI</div>
+    <div class="h1" style="font-size:200px;line-height:0.95;margin-top:24px;">Thank you<span style="color:var(--cyan);">.</span></div>
+    <div class="h3" style="margin-top:24px;color:var(--ink-2);font-weight:400;">Questions?</div>
+    <div class="row" style="margin-top:60px;justify-content:center;gap:14px;flex-wrap:wrap;">
+      <span class="pill cyan">Hallucination ↓ 71%</span>
+      <span class="pill green">Groundedness ↑ 38%</span>
+      <span class="pill violet">Refusal accuracy 0.79</span>
+    </div>
+  </div>
+
+  <div class="chrome bot">
+    <div>FINAL YEAR THESIS · 2026</div>
+    <div class="right"><span>RAG · NLI · MEDICAL SAFETY</span></div>
+  </div>
+</section>
+
+</deck-stage>
+
+</body>
+</html>

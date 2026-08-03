@@ -86,7 +86,7 @@ Thumbs.db
 *.faiss
 vectors/
 *.pdf_temp
-docs/
+
 
 # Supabase CLI scratch
 supabase/.temp/
@@ -98,6 +98,9 @@ supabase/.branches/
 *.key
 credentials.json
 service-account*.json
+
+# Local-only patient documents (never commit identifiable health data)
+NARA NATH UPRETI-*.pdf
 
 # Scratch / local-only
 scratch/
