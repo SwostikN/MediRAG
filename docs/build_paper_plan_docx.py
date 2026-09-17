@@ -265,32 +265,63 @@ para("The red-flag result is the one number in this project that reproduces clea
      "— offline, in about four seconds, with no API keys at all. That is a real asset.",
      space_after=10)
 
-doc.add_heading("1.2 Two things your own documentation gets wrong", level=2)
+doc.add_heading("1.2 Your corpus is eight times bigger than your documentation says", level=2)
 
-rich(("Your corpus is eight times bigger than you think. ", {"bold": True, "color": GOOD}),
-     ("Both docs/DOCUMED.md and your corpus audit say 131 documents. The live database has "
-      "1,009 documents and 3,816 chunks.", {}))
+rich(("Both docs/DOCUMED.md and your corpus audit record 131 documents. The live database "
+      "holds ", {}),
+     ("1,009 documents and 3,816 chunks.", {"bold": True}),
+     (" The ingestion that produced them was never written back into the documentation.", {}))
 
-rich(("That fixed a problem you had written off. ", {"bold": True, "color": GOOD}),
-     ("You had concluded that 78.6% of your gold rows could never be scored for retrieval "
-      "recall, because no corpus document was close enough to grade against. Re-running "
-      "that audit against the live corpus:", {}))
+callout("A correction to an earlier draft of this plan",
+        "An earlier version of this document said that corpus growth had fixed your "
+        "retrieval-gradability problem, quoting a jump from 21.4% to about 51%. That was "
+        "wrong. It compared the CURRENT gold files against the CURRENT corpus and set the "
+        "result beside an April figure computed on a DIFFERENT gold set. The numbers were "
+        "never comparable.\n\n"
+        "Measured properly, on the same 518 April gold strings:\n"
+        "    against the April corpus (131 docs)  ->  111/518 = 21.4%\n"
+        "    against today's corpus (1,009 docs)  ->  115/518 = 22.2%\n\n"
+        "Growing the corpus 7.7x bought +0.8 percentage points. Essentially nothing.",
+        fill="FDECEC")
 
+para("The reason is the corpus composition problem in §1.3 (F8): the 878 new documents are "
+     "almost all MedlinePlus patient-education pages, while your gold rows cite specific "
+     "sources — WHO IMAI, mhGAP, IMCI, named NHS topics, MoHP standard treatment protocols. "
+     "Adding more of the wrong kind of document does not make the right ones appear.",
+     space_after=8)
+
+para("Where the apparent improvement actually came from", bold=True, space_after=4)
+para("Your gold files were rewritten on 21 April 2026 by "
+     "eval/scripts/apply_gold_rewrite_2026_04_21.py. Across 198 rows and 604 source entries:",
+     space_after=4)
 table(
-    ["Stage", "Gradable now", "Was"],
-    [["navigation", "53.3%", "19.0%"],
-     ["condition", "53.3%", "24.7%"],
-     ["visit_prep", "53.3%", "16.7%"],
-     ["results", "63.6%", "31.9%"],
-     ["intake", "50.0%", "12.3%"],
-     ["navigation_stage2", "41.7%", "33.3%"],
-     ["**TOTAL**", "**51.2%**", "**21.4%**"]],
-    widths=[2.4, 2.2, 2.2])
+    ["Transform", "Entries", "Share"],
+    [["**D — dropped as an invalid label**", "**365**", "**60%**"],
+     ["K — kept unchanged", "121", "20%"],
+     ["I — queued as an ingest candidate", "88", "15%"],
+     ["**S — substituted with a corpus-aligned title**", "**30**", "**5%**"]],
+    widths=[3.4, 1.6, 1.6])
+para("Dropping 60% of the entries — disproportionately the ones nothing in the corpus could "
+     "match — raises the remaining percentage by definition. That is survivorship, not "
+     "improvement. A further 57 of 228 gold rows (25%) had every source dropped and are now "
+     "excluded from retrieval scoring entirely.", space_after=6)
 
-para("Retrieval recall goes back on the table as a reportable metric instead of being "
-     "abandoned. (This replicates the original method but not its exact denominator, so "
-     "re-run your own audit script for the citable figure — the direction is not in doubt.)",
-     italic=True, size=9.5, space_after=10)
+para("Was the rewrite wrong? Mostly no — and this matters for how you defend it. Many drops "
+     "are plainly correct; the script's own note on one row reads \"SOCRATES is a template "
+     "tag, not a retrieval source\", which is a genuinely bad label. The problem is not the "
+     "cleanup. The problem is comparing a number computed after it with one computed before "
+     "it and calling the difference progress.", space_after=8)
+
+callout("What this means for the paper",
+        "Keep retrieval recall OFF the headline. Your original decision — faithfulness "
+        "carries correctness, retrieval recall is a caveated coverage bound — was right.\n\n"
+        "If you report retrieval recall at all, disclose three things: the gold was "
+        "rewritten after the fact, 60% of source entries were dropped, and 25% of rows "
+        "cannot be scored. A reviewer who finds apply_gold_rewrite_2026_04_21.py in your "
+        "repository without those disclosures in the paper will distrust the entire "
+        "evaluation. The 5% substitution rate is separately worth naming as a mild "
+        "circularity: those labels were changed to match what the corpus contains.",
+        fill="FFF4E5")
 
 doc.add_heading("1.3 The problems that block a paper", level=2)
 

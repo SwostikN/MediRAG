@@ -1,0 +1,1651 @@
+{
+  "WARNING": "matchable_pct is computed on the post-2026-04-21 gold. That rewrite dropped 60% of source entries and substituted 5% with corpus-aligned titles, so this figure is NOT comparable to the April 2026 21.4%. See like_for_like below, which scores the original 518 April strings against the current corpus and isolates the actual effect of corpus growth.",
+  "like_for_like": {
+    "april_gold_strings": 518,
+    "matchable_april_corpus": 111,
+    "pct_april_corpus": 0.2143,
+    "matchable_now": 115,
+    "pct_now": 0.222,
+    "delta_pp": 0.77,
+    "interpretation": "Corpus grew 131 -> 1009 documents (7.7x), almost entirely MedlinePlus patient-education pages, which do not correspond to the specific sources the gold rows cite (WHO IMAI/mhGAP/IMCI, named NHS topics, MoHP SOPs). Gradability is therefore essentially unchanged."
+  },
+  "audited_at": "2026-09-17T06:44:16.241041+00:00",
+  "git_sha": "5c4361fc7e340ec75b776659e5ca681776ee2ee7",
+  "source": "snapshot",
+  "corpus_size": 1009,
+  "gradable_threshold": 0.6,
+  "unique_expected": 226,
+  "matchable_count": 113,
+  "matchable_pct": 0.5,
+  "comparison_april_2026": {
+    "corpus_size": 131,
+    "unique_expected": 518,
+    "matchable_count": 111,
+    "per_stage": {
+      "navigation_stage2": 0.333,
+      "navigation": 0.19,
+      "visit_prep": 0.167,
+      "results": 0.319,
+      "condition": 0.247,
+      "intake": 0.123
+    }
+  },
+  "per_stage": {
+    "navigation_stage2": {
+      "gradable": 25,
+      "total": 62,
+      "pct": 0.403
+    },
+    "navigation": {
+      "gradable": 39,
+      "total": 70,
+      "pct": 0.557
+    },
+    "visit_prep": {
+      "gradable": 19,
+      "total": 35,
+      "pct": 0.543
+    },
+    "results": {
+      "gradable": 19,
+      "total": 32,
+      "pct": 0.594
+    },
+    "condition": {
+      "gradable": 39,
+      "total": 69,
+      "pct": 0.565
+    },
+    "intake": {
+      "gradable": 14,
+      "total": 33,
+      "pct": 0.424
+    }
+  },
+  "matchable": [
+    {
+      "gold": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "refs": 14,
+      "score": 1.0,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "NHS thyroid tests",
+      "refs": 5,
+      "score": 1.0,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "Dengue Control Program (Nepal)",
+      "refs": 4,
+      "score": 1.0,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP mental health",
+      "refs": 3,
+      "score": 0.667,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "EDCD Nepal",
+      "refs": 3,
+      "score": 1.0,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "NHS common cold patient info",
+      "refs": 2,
+      "score": 0.6,
+      "best_title": "Common cold",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "MoHP maternal health",
+      "refs": 2,
+      "score": 0.667,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO meningitis guidance",
+      "refs": 2,
+      "score": 0.667,
+      "best_title": "Meningitis",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS back pain",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Back pain — red flags and when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO reproductive health",
+      "refs": 2,
+      "score": 0.667,
+      "best_title": "Nepal National Mental Health Strategy 2026-2030 Workshop (WHO Nepal)",
+      "best_source": "WHO Nepal"
+    },
+    {
+      "gold": "NHS 111 chest pain",
+      "refs": 2,
+      "score": 0.75,
+      "best_title": "Chest pain — when to call 999 vs see GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS meningitis",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Meningitis — symptoms and emergency signs",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO dengue guidelines",
+      "refs": 2,
+      "score": 0.667,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Snakebite envenoming",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Urinary tract infections (UTIs)",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Urinary tract infections (UTIs)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS back pain patient info",
+      "refs": 2,
+      "score": 0.6,
+      "best_title": "Back pain — red flags and when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS gestational diabetes",
+      "refs": 2,
+      "score": 0.667,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "Iron deficiency anaemia",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Iron deficiency anaemia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS blood tests",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO diabetes",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Diabetes",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS type 2 diabetes",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS hypertension",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO dengue",
+      "refs": 2,
+      "score": 1.0,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS persistent cough",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Cough — when to see a GP and red flags",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS depression when-to-see-GP",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS chest pain when-to-see-GP",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Chest pain — when to call 999 vs see GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO PEN cardiovascular",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Cardiovascular diseases (CVDs)",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP snakebite management",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Infertility (Childlessness) Management Service Operations Standards, 2082",
+      "best_source": "MoHP"
+    },
+    {
+      "gold": "WHO rabies post-exposure prophylaxis",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO PEN diabetes",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Diabetes",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO PEN hypertension",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Hypertension",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO postpartum care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Postpartum Care",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "NHS meningitis red flags",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Food allergy — what to do, anaphylaxis signs, and red flags",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS breast lump when-to-see-GP",
+      "refs": 1,
+      "score": 0.6,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO musculoskeletal primary care",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "WHO — Primary health care",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS migraine when-to-see-GP",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO headache primary care",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "WHO — Primary health care",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO COPD primary care",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "WHO — Primary health care",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS heavy periods",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Heavy periods — when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS bowel cancer when-to-see-GP",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Bowel cancer red flags — when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO primary care GI",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "WHO — Primary health care",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO stroke care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS stroke FAST symptoms",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Stroke — FAST symptoms and when to act",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "MoHP Nepal STG",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "MoHP pediatric guidelines",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Guidelines for Community-Based Disease Surveillance, 2082",
+      "best_source": "MoHP"
+    },
+    {
+      "gold": "NHS when-to-see-GP",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS FAST",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Stroke — FAST symptoms and when to act",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO maternal emergencies",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Maternal mortality",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO trauma care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO suicide prevention",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Suicide Prevention Brochure (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP environmental health",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO sepsis",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Sepsis",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMCI danger signs",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Diarrhoeal disease — oral rehydration, danger signs",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO rabies guidelines",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO cholera guidelines",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Cholera",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS skin infections",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Skin Infections",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "WHO hepatitis",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO wound care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO eye care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Eye Care",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "MoHP Nepal TB program",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "NHS joint pain",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Back pain — red flags and when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS sexual health",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Teen Sexual Health",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "NHS common cold",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Common cold",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "Ear infections",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Ear infections",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS type 2 diabetes patient info",
+      "refs": 1,
+      "score": 0.6,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS kidney disease patient info",
+      "refs": 1,
+      "score": 0.6,
+      "best_title": "Chronic kidney disease",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS rheumatoid arthritis patient info",
+      "refs": 1,
+      "score": 0.6,
+      "best_title": "Rheumatoid arthritis",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS pneumonia recovery",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Pneumonia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "Type 2 diabetes",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NICE type 2 diabetes",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS antenatal care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Vaginal bleeding in pregnancy — when to seek urgent care",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO catch-up vaccination",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Immunization coverage — childhood vaccines and catch-up schedules",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS when to call 999 chest pain",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Chest pain — when to call 999 vs see GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS diabetes tests",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS vitamin B12 and folate deficiency",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Vitamin B12 or folate deficiency anaemia — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS iron tests",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS vitamin D",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Vitamin B12 or folate deficiency anaemia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS vitamin B12 deficiency",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Vitamin B12 or folate deficiency anaemia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS urine tests",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS blood tests overview",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS HbA1c test",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Hemoglobin A1c (HbA1c) Test",
+      "best_source": "Testing.com"
+    },
+    {
+      "gold": "NHS children's blood tests",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS peptic ulcer",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Peptic Ulcer",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "WHO asthma",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Asthma",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS type 1 diabetes",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Type 2 diabetes",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS overactive thyroid",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Overactive thyroid (hyperthyroidism)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO COPD",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "COPD",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO TB",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Nepal NTP guideline",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Nepal National Antimicrobial Stewardship Programme Guideline Workshop (WHO Nepal)",
+      "best_source": "WHO Nepal"
+    },
+    {
+      "gold": "NHS GERD/heartburn",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Heartburn and acid reflux",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO hepatitis B",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS celiac disease",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Chronic kidney disease",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS kidney stones",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Kidney Stones",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "Rheumatoid arthritis",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Rheumatoid Arthritis",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "Dengue and severe dengue",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Nepal EDCD dengue",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Dengue Control Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "WHO typhoid",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Typhoid",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Nepal communicable disease guideline",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Non-Communicable Disease and Mental Health Section (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "WHO hepatitis A",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO HIV",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Nepal National HIV Strategic Plan Validation Meeting (WHO Nepal)",
+      "best_source": "WHO Nepal"
+    },
+    {
+      "gold": "WHO snakebite",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO cervical cancer",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Cervical cancer",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS bowel cancer screening",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Bowel cancer red flags — when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO palliative care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Chest pain — when to call 999 vs see GP",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Chest pain — when to call 999 vs see GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS carbon monoxide poisoning",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Carbon Monoxide Poisoning",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "NHS ectopic pregnancy",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Ectopic Pregnancy",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "Neglected Tropical Diseases (NTD) Fact Sheet 2026 (Nepal)",
+      "refs": 1,
+      "score": 1.0,
+      "best_title": "Neglected Tropical Diseases (NTD) Fact Sheet 2026 (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP Nepal National TB Programme",
+      "refs": 1,
+      "score": 0.75,
+      "best_title": "Nepal National Antimicrobial Stewardship Programme Guideline Workshop (WHO Nepal)",
+      "best_source": "WHO Nepal"
+    },
+    {
+      "gold": "NHS vomiting in children",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Diarrhoea and vomiting — when to get help",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO antenatal care",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO wound care and tetanus prophylaxis",
+      "refs": 1,
+      "score": 0.667,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    }
+  ],
+  "unmatchable": [
+    {
+      "gold": "WHO IMAI",
+      "refs": 6,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO mhGAP",
+      "refs": 5,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMCI",
+      "refs": 3,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO antenatal care guidelines",
+      "refs": 3,
+      "score": 0.5,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO HEARTS",
+      "refs": 3,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS kidney function tests",
+      "refs": 3,
+      "score": 0.5,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS cholesterol patient info",
+      "refs": 3,
+      "score": 0.5,
+      "best_title": "High cholesterol — diagnosis (total, LDL, HDL, triglycerides)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO IMAI fever",
+      "refs": 3,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP IMNCI",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO URI",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO indoor air quality",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Household air pollution",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO leptospirosis",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO travel medicine",
+      "refs": 2,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS hypertension patient info",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "High blood pressure (hypertension)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS migraine patient info",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Migraine",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS depression patient info",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Clinical depression",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "MoHP referral pathway patient info",
+      "refs": 2,
+      "score": 0.2,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO CVD",
+      "refs": 2,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMAI adult history",
+      "refs": 2,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMAI respiratory",
+      "refs": 2,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO upper respiratory infection guidance",
+      "refs": 1,
+      "score": 0.2,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMAI diarrhoea",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG diarrhoea adult",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO IMCI diarrhoea",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO snakebite guidelines South-East Asia",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Snakebite envenoming",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP rabies STG",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO dengue case management",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Dengue and severe dengue",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG dengue",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "NHS typhoid",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "MoHP STG diabetes",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "MoHP STG hypertension",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "MoHP maternal health postpartum sepsis",
+      "refs": 1,
+      "score": 0.4,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO IMAI TB",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP National TB Programme STG",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Nepal National Antimicrobial Stewardship Programme Guideline Workshop (WHO Nepal)",
+      "best_source": "WHO Nepal"
+    },
+    {
+      "gold": "WHO breast cancer early detection",
+      "refs": 1,
+      "score": 0.4,
+      "best_title": "Cervical cancer",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO burns management",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG burns",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO IMAI UTI",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG UTI",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "GOLD COPD exacerbation",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "COPD",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP ANC protocol",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO emergency trauma care",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Rabies — post-exposure prophylaxis and when to seek care after animal bite",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP STG fracture management",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Infertility (Childlessness) Management Service Operations Standards, 2082",
+      "best_source": "MoHP"
+    },
+    {
+      "gold": "WHO IMCI growth monitoring",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP nutrition rehabilitation",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO IMAI allergy",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS allergic reaction",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO PEN package",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP NCD screening",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO stroke guidance",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMAI anaphylaxis",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO trauma",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMCI young infant",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP Nepal leptospirosis SOP",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "HRA Nepal altitude guidelines",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP Nepal snakebite protocol",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "MoHP Nepal rabies SOP",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "MoHP Nepal cholera SOP",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "EDCD Nepal AWD protocol",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "WHO UTI",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO ORS guidelines",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP IMCI",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO ANC",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO TB screening",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO MSK",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO PEN",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO STI guidelines",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "FPAN Nepal",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP NCASC",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Department of Health Services Nepal — programmes and health-system structure",
+      "best_source": "MoHP Nepal"
+    },
+    {
+      "gold": "WHO fatigue workup",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMCI ear",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS skin cancer patient info",
+      "refs": 1,
+      "score": 0.4,
+      "best_title": "Bowel cancer red flags — when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "patient.info back pain",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Back pain — red flags and when to see a GP",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO ANC recommendations",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO GDM",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP safe motherhood danger signs",
+      "refs": 1,
+      "score": 0.4,
+      "best_title": "Diarrhoeal disease — oral rehydration, danger signs",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO child development milestones",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Child Development",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "MoHP national immunization schedule",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "National Population Policy 2082 (Nepal)",
+      "best_source": "MoHP"
+    },
+    {
+      "gold": "WHO anemia thresholds",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS iron deficiency anemia patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Iron deficiency anaemia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO anemia",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS liver function tests",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Overactive thyroid (hyperthyroidism) — diagnosis and blood tests",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO pediatric anemia thresholds",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS gastritis patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Gastritis",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS asthma patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Asthma",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO RHD",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS rheumatic heart disease",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Heart Disease in Women",
+      "best_source": "MedlinePlus"
+    },
+    {
+      "gold": "NHS PCOS patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Polycystic ovary syndrome (PCOS)",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS COPD patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "COPD",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS pneumonia patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Pneumonia",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS TB patient info",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS hepatitis B",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP viral hepatitis",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS stroke patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Stroke — FAST symptoms and when to act",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS osteoarthritis patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Osteoarthritis",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS gout patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Gout",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO scrub typhus",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS hepatitis A",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "Nepal NCASC",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "NHS eczema patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Atopic eczema",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS acne patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Acne",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "NHS menopause patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Menopause",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO anemia in children",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "MoHP nutrition/anemia program",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Kala-Azar Elimination Program (Nepal)",
+      "best_source": "EDCD"
+    },
+    {
+      "gold": "MoHP cervical cancer screening program",
+      "refs": 1,
+      "score": 0.4,
+      "best_title": "Cervical cancer",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO traditional medicine guidance",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "WHO IMAI fever workup",
+      "refs": 1,
+      "score": 0.25,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS cough patient info",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Cough — when to see a GP and red flags",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO IMAI GI",
+      "refs": 1,
+      "score": 0.5,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS thunderclap headache",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    },
+    {
+      "gold": "WHO IMAI obstetric",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Hepatitis A",
+      "best_source": "WHO"
+    },
+    {
+      "gold": "NHS altitude sickness",
+      "refs": 1,
+      "score": 0.333,
+      "best_title": "Tiredness and fatigue — causes and when to see a doctor",
+      "best_source": "NHS"
+    }
+  ]
+}

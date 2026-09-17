@@ -16,6 +16,88 @@ to the plan at `~/.claude/plans/i-have-a-folder-virtual-kahan.md`.
 
 ---
 
+## 2026-09-17 — Phase 0.3: CORRECTION — the retrieval ceiling did NOT improve
+
+### What changed
+
+New file `eval/audit_corpus_vs_gold.py` — a reproducible version of the corpus-vs-gold
+gradability audit, which previously existed only as an output file with no script. Report
+written to `eval/reports/corpus_vs_gold_audit_2026-09.json`.
+
+### The correction
+
+**Earlier today I told you the retrieval ceiling had "largely fixed itself", 21.4% → ~51%.
+That was wrong, and the plan document repeated it. It is not true.**
+
+I compared the current gold files against the current corpus, and compared that percentage
+with an April 2026 figure computed on a *different* gold set. That is not a valid
+comparison. Doing it properly:
+
+| Comparison | Result |
+|---|---|
+| April gold (518 sources) vs April corpus (131 docs) | 111/518 = **21.4%** |
+| April gold (518 sources) vs **today's corpus (1,009 docs)** | 115/518 = **22.2%** |
+| **Like-for-like effect of growing the corpus 7.7×** | **+0.8 percentage points** |
+
+The corpus grew nearly eightfold and bought essentially **nothing** in gradability. The
+reason is the one already noted about corpus composition: the 878 new documents are
+overwhelmingly MedlinePlus patient-education pages, and the gold rows cite *specific*
+sources — WHO IMAI, mhGAP, IMCI, named NHS topics, MoHP SOPs — that MedlinePlus does not
+correspond to. Adding more of the wrong kind of document does not make the right ones
+appear.
+
+### Where the apparent improvement actually came from
+
+The gold files were rewritten on 2026-04-21 by
+`eval/scripts/apply_gold_rewrite_2026_04_21.py`. Across 198 rows and 604 source entries:
+
+| Transform | Entries | Share |
+|---|---|---|
+| **D — dropped** as invalid labels | **365** | **60%** |
+| K — kept unchanged | 121 | 20% |
+| I — queued as ingest candidates | 88 | 15% |
+| **S — substituted** with a corpus-aligned title | **30** | **5%** |
+
+Dropping 60% of the entries — disproportionately the ones nothing in the corpus could
+match — raises the remaining percentage *by definition*. That is survivorship, not
+improvement. On top of that, **57 of 228 gold rows (25%)** had every source dropped and are
+now tagged `retrieval_scoring: disabled`, so they are excluded from the denominator
+entirely.
+
+### Was the rewrite wrong?
+
+Mostly no, and this matters for how you defend it. Many drops are plainly correct — the
+script's own note on row `in-001` reads *"SOCRATES is a template tag, not a retrieval
+source"*, which is a genuinely bad label. Dropping Western commercial sources from a Nepal
+system is defensible. The rewrite was reasonable cleanup.
+
+The problem is not the rewrite; it is **comparing a number computed after the cleanup with
+one computed before it**, and calling the difference progress. The 5% substitution rate is
+a smaller but real concern in its own right: those labels were changed to match what the
+corpus contains, which is mildly circular.
+
+### Impact on the project
+
+**Retrieval recall stays off the headline.** Your original §11.22 Phase 4 decision — keep
+faithfulness as the headline correctness metric and treat retrieval recall as a caveated
+coverage bound — was correct, and I was wrong to suggest reversing it. The plan has been
+amended.
+
+**If retrieval recall is reported at all**, it must carry three disclosures: the gold was
+rewritten post-hoc, 60% of source entries were dropped, and 25% of rows are excluded from
+scoring. A reviewer who finds `apply_gold_rewrite_2026_04_21.py` without those disclosures
+in the paper will treat the whole evaluation as suspect. Pre-empt it.
+
+**The script now refuses to be misquoted.** Every run prints the like-for-like comparison
+and the rewrite caveat next to the headline figure, and the JSON carries a `WARNING` field.
+The number cannot be lifted out of context by accident.
+
+**Files touched:** `eval/audit_corpus_vs_gold.py` (new),
+`eval/reports/corpus_vs_gold_audit_2026-09.json` (new), plan documents amended
+**Verify with:** `.venv\Scripts\python.exe eval/audit_corpus_vs_gold.py`
+
+---
+
 ## 2026-09-17 — Phase 0.4: Closed the scope-guard safety hole, and measured what it cost
 
 ### What changed
