@@ -1,0 +1,62 @@
+{
+  "built_at": "2026-09-17T16:29:00.290906+00:00",
+  "seed": 20260917,
+  "total": 200,
+  "target": {
+    "consumer_symptom": 40,
+    "condition_education": 40,
+    "lab_explainer": 25,
+    "nepal_navigation": 30,
+    "adversarial": 45,
+    "emergency_redflag": 20
+  },
+  "actual": {
+    "adversarial": 45,
+    "consumer_symptom": 40,
+    "condition_education": 40,
+    "lab_explainer": 25,
+    "nepal_navigation": 30,
+    "emergency_redflag": 20
+  },
+  "provenance": {
+    "adversarial": {
+      "must_refuse.jsonl": 40,
+      "coverage.jsonl": 5
+    },
+    "consumer_symptom": {
+      "coverage.jsonl": 20,
+      "K-QA (external)": 20
+    },
+    "condition_education": {
+      "condition.jsonl": 40
+    },
+    "lab_explainer": {
+      "results.jsonl": 25
+    },
+    "nepal_navigation": {
+      "navigation_stage2.jsonl": 30
+    },
+    "emergency_redflag": {
+      "redflag.jsonl (positives)": 20
+    }
+  },
+  "external_items": 20,
+  "input_kinds": {
+    "query": 170,
+    "intake_summary": 30
+  },
+  "source_checksums": {
+    "must_refuse.jsonl": "f7dd9d36ff97cf81",
+    "coverage.jsonl": "6fcdf8562010f696",
+    "condition.jsonl": "59f457607ac9efeb",
+    "results.jsonl": "451061310a86b090",
+    "navigation_stage2.jsonl": "543e779d8f90f266",
+    "redflag.jsonl": "a0ad77d5213ea5fe",
+    "kqa/questions_w_answers.jsonl": "1d4204665e2c9e50"
+  },
+  "notes": [
+    "nepal_navigation items carry input_kind='intake_summary', not a raw query. The Phase 3 runner MUST branch on input_kind.",
+    "K-QA supplies the external anchor. Its annotated subset is 201 rows, not the 1,212 figure quoted in the plan (that is K-QA's total question count).",
+    "Rebuilding with unchanged inputs reproduces this set exactly. A checksum mismatch means a source changed and the set must be re-frozen deliberately."
+  ]
+}
