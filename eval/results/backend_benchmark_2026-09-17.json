@@ -1,0 +1,83 @@
+{
+  "measured_at": "2026-09-17",
+  "question": "Should local CPU inference carry the paper's bulk evaluation, or only a verification subset?",
+  "answer": "Groq for all bulk work. Local is 180x slower and cannot carry it. Local's role narrows to a small determinism/agreement subset plus archival insurance.",
+
+  "hardware": {
+    "cpu": "Intel Xeon W-2145 @ 3.70GHz",
+    "cores": 5,
+    "threads": 5,
+    "ram_gb": 69,
+    "gpu": "none (Microsoft Basic Display Adapter - virtualized host)",
+    "note": "CPU-only inference. ggml auto-selected ggml-cpu-skylakex.dll, i.e. the AVX-512 build, so this is the fast path for this silicon, not an unoptimised fallback."
+  },
+
+  "model": {
+    "id": "gpt-oss-20b",
+    "params_b": 20.91,
+    "quant": "MXFP4 (native format, not a re-quantisation)",
+    "file_gib": 11.27,
+    "source": "ggml-org/gpt-oss-20b-GGUF",
+    "sha256": "27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901",
+    "note": "Same weights Groq serves as openai/gpt-oss-20b, which is why the comparison is like-for-like."
+  },
+
+  "llama_bench": {
+    "tool": "llama-bench b11013 (05f2dcfdb)",
+    "threads": 5,
+    "repetitions": 2,
+    "prefill_pp512_tok_per_s": {"mean": 14.59, "stddev": 0.17},
+    "decode_tg128_tok_per_s": {"mean": 5.45, "stddev": 1.80},
+    "plan_estimate_was": {"prefill": "30-60", "decode": "8-14"},
+    "verdict": "Both roughly 2-3x worse than the planning estimate. The plan's compute budget was wrong and has been corrected."
+  },
+
+  "end_to_end": {
+    "prompt": "4 real corpus chunks + system prompt + question",
+    "prompt_tokens": 1102,
+    "max_tokens": 1212,
+    "temperature": 0,
+    "seed": 20260917,
+    "local_seconds": 103.6,
+    "local_completion_tokens": 265,
+    "groq_seconds": 0.56,
+    "groq_completion_tokens": 235,
+    "slowdown_factor": 180,
+    "projection_check": "Projected 119s from llama-bench; measured 103.6s. The benchmark predicts real cost well.",
+    "behavioural_agreement": "Both correctly REFUSED - the sampled chunks did not cover the question. Same decision, different wording.",
+    "text_similarity": 0.231,
+    "text_similarity_note": "Low similarity does NOT indicate disagreement here: both answers are refusals, phrased differently. It does show local and Groq are not token-identical even at temperature 0 with the same seed, because the inference stacks differ numerically. Claim behavioural comparability, never token-level equivalence."
+  },
+
+  "budget_projection": {
+    "per_generation_seconds": {"groq": 0.56, "local": 119},
+    "scenarios": [
+      {"label": "plan asymmetric-seed budget", "generations": 2600,
+       "groq_hours": 0.4, "local_hours": 85.7, "local_days": 3.6},
+      {"label": "full budget incl. diagnostics", "generations": 5500,
+       "groq_hours": 0.9, "local_hours": 181.3, "local_days": 7.6}
+    ],
+    "caveat": "Local figures assume the machine does nothing else, nothing fails and nothing is re-run. Any of those makes it worse."
+  },
+
+  "decision": {
+    "bulk_evaluation": "groq",
+    "rationale": "0.4h versus 3.6 days for identical behaviour. There is no argument for spending days of wall-clock to obtain the same answers.",
+    "local_retained_for": [
+      "A determinism/agreement subset of 50-100 prompts (~1.5-3h, runs overnight) demonstrating results hold under seed-exact local inference.",
+      "Archival insurance: hash-pinned weights that no vendor can withdraw. This is the failure that already cost this project every number it had.",
+      "A fallback if Groq's free-tier quota blocks a run - slow, but it does finish."
+    ],
+    "local_NOT_used_for": [
+      "Bulk generation (180x too slow).",
+      "Quota overflow at scale - at ~2 minutes per generation it cannot absorb a real backlog, contrary to what the plan assumed.",
+      "Latency measurements - CPU speed would swamp the guardrail overhead being measured. Phase 4.1 latency numbers must come from Groq."
+    ]
+  },
+
+  "reproduce": {
+    "benchmark": "~/llamacpp/llama-bench.exe -m ~/models/gpt-oss-20b-MXFP4.gguf -t 5 -p 512 -n 128 -r 2",
+    "server": "~/llamacpp/llama-server.exe -m ~/models/gpt-oss-20b-MXFP4.gguf -t 5 -c 4096 --host 127.0.0.1 --port 8080 --jinja",
+    "switch_backend": "set LLM_BACKEND=local (or groq, or cohere)"
+  }
+}

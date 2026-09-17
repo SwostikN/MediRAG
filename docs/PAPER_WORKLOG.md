@@ -16,6 +16,104 @@ to the plan at `~/.claude/plans/i-have-a-folder-virtual-kahan.md`.
 
 ---
 
+## 2026-09-17 — Phase 1.1: Backend switch built, local inference measured — and rejected for bulk
+
+### What changed
+
+`app/RAG.py` gained an `LLM_BACKEND` switch with three settings: `groq` (default), `local`,
+`cohere`. Downloaded llama.cpp's prebuilt CPU binaries and the `gpt-oss-20b` weights, ran
+the model locally, and measured it against Groq on identical prompts. Results recorded in
+`eval/results/backend_benchmark_2026-09-17.json`.
+
+### Why the switch is built the way it is
+
+`local` reuses the **same Groq client class**, just pointed at a different address.
+`llama-server` speaks the same OpenAI protocol Groq does, so switching backends is a URL
+change — no second client to maintain, no separate code path through the guardrails that
+could drift out of sync.
+
+`cohere` needed no new code at all: every call site already checks "is there a Groq client?"
+and falls back to Cohere when there isn't. Setting it to nothing routes everything down the
+path that was already there.
+
+Also changed the default model from `llama-3.3-70b-versatile` to `openai/gpt-oss-20b`. The
+old default now returns 404, so any machine that didn't explicitly set the model would have
+broken on startup.
+
+### The measurement, and the answer
+
+You asked whether local gives a better result, and to pick the best way forward if not.
+
+**It does not.** Same behaviour, dramatically slower.
+
+| | Measured | The plan had estimated |
+|---|---|---|
+| Reading the prompt (prefill) | **14.59 tok/s** | 30–60 |
+| Writing the answer (decode) | **5.45 tok/s** | 8–14 |
+
+Both roughly 2–3× worse than I estimated when writing the plan. Worth noting the software
+was *not* the problem: llama.cpp automatically selected the AVX-512 build for your Xeon, so
+this is the fast path for this hardware, not a misconfiguration. The limit is having 5 CPU
+cores and no GPU.
+
+End-to-end on an identical prompt (4 real corpus chunks, temperature 0, same seed):
+
+| | Local | Groq |
+|---|---|---|
+| Time | **103.6 seconds** | **0.56 seconds** |
+| Result | correctly refused | correctly refused |
+
+**180× slower for the same decision.** Both correctly refused to answer, because the
+chunks I sampled didn't cover the question — so quality is equivalent, speed is not.
+
+What that means for the evaluation:
+
+| Work | Groq | Local |
+|---|---|---|
+| 2,600 generations | **24 minutes** | 3.6 days |
+| 5,500 generations | **54 minutes** | 7.6 days |
+
+And the local figures assume nothing else runs, nothing fails, and nothing needs redoing.
+
+### Decision
+
+**Groq runs all bulk evaluation.** There is no case for spending days of wall-clock to get
+the same answers you can have in under an hour.
+
+**Local is kept, but for a much smaller job than the plan assumed:**
+- a **50–100 prompt agreement check** (1.5–3 hours, runs overnight) showing the results
+  hold under seed-exact local inference;
+- **archival insurance** — weights pinned by hash that no vendor can withdraw. This is
+  exactly the failure that already destroyed every number this project had;
+- a slow-but-it-finishes fallback if free-tier quota blocks a run.
+
+**The plan was wrong about one use I've now removed:** it proposed local as a "quota
+overflow valve". At ~2 minutes per generation it cannot absorb a real backlog. Phase 4.1's
+latency measurements must also come from Groq — CPU speed would completely swamp the
+guardrail overhead those numbers are meant to isolate.
+
+### One finding that affects the paper's wording
+
+Local and Groq are **not token-identical**, even at temperature 0 with the same seed — the
+two inference stacks differ numerically. So the reproducibility claim must be *behavioural*
+comparability, never token-level equivalence. Worth getting right in Methods, because it is
+the kind of overclaim a reviewer checks.
+
+### Impact on the project
+
+The pipeline can now switch backends with one environment variable, which is what makes the
+Phase 3 ablation runner able to fail over mid-experiment. The compute schedule in the plan
+has been corrected from estimates to measurements — the bulk evaluation is about an hour of
+Groq time, not days of local grinding, which materially de-risks Phase 3.
+
+**Files touched:** `app/RAG.py`, `eval/results/backend_benchmark_2026-09-17.json` (new),
+plan §3 corrected. Downloaded: `~/models/gpt-oss-20b-MXFP4.gguf` (11.27 GiB, sha256
+`27cd6c43…`), `~/llamacpp/` (llama.cpp b11013 CPU binaries). Neither is in the repo.
+**Verify with:** `set LLM_BACKEND=local` then `.venv\Scripts\python.exe -c "import app.RAG"`
+(expect `LLM backend: local`). Benchmark command is in the JSON artifact.
+
+---
+
 ## 2026-09-17 — Phase 1.0: Replaced the dead backend, and caught what the swap would have broken
 
 ### What changed
