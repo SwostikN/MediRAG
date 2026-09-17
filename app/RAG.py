@@ -148,9 +148,45 @@ co = cohere.ClientV2(api_key=COHERE_API_KEY)
 # generate) instead of Cohere Chat (1800–4500ms). Falls back to Cohere
 # automatically if either is missing. Cohere Rerank is untouched.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-groq_client = Groq(api_key=GROQ_API_KEY) if (Groq and GROQ_API_KEY) else None
-print(f"Groq generate enabled: {groq_client is not None} (model={GROQ_MODEL if groq_client else 'n/a'})")
+
+# Default is gpt-oss-20b, NOT the historical llama-3.3-70b-versatile: that model was
+# decommissioned by Groq in Sept 2026 and now 404s, so leaving it as the default would
+# silently break any environment that does not set GROQ_MODEL.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+
+# ── Backend switch (paper phase, 1.1) ──────────────────────────────────────
+#
+#   groq   (default)  hosted Groq. Fast, free tier, daily quota, sampling not
+#                     reproducible, model can be withdrawn without notice.
+#   local             llama-server on this machine serving the SAME open weights
+#                     (gpt-oss-20b). Slower, but unlimited, seed-exact, and
+#                     immune to a vendor retiring the model.
+#   cohere            no Groq client at all; every call falls through to the
+#                     existing Cohere path.
+#
+# `local` reuses the Groq SDK deliberately: llama-server exposes an
+# OpenAI-compatible /v1 endpoint, and the Groq SDK is an OpenAI-protocol client,
+# so pointing it at a different base_url needs no new code path and no second
+# client abstraction to keep in sync. The API key is ignored by llama-server but
+# the SDK requires a non-empty string.
+LLM_BACKEND = os.getenv("LLM_BACKEND", "groq").strip().lower()
+LOCAL_LLM_URL = os.getenv("LOCAL_LLM_URL", "http://127.0.0.1:8080/v1")
+LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "gpt-oss-20b")
+
+if LLM_BACKEND == "local":
+    groq_client = Groq(api_key="local-no-key-needed", base_url=LOCAL_LLM_URL) if Groq else None
+    GROQ_MODEL = LOCAL_LLM_MODEL
+elif LLM_BACKEND == "cohere":
+    groq_client = None
+else:
+    if LLM_BACKEND != "groq":
+        print(f"[backend] unknown LLM_BACKEND={LLM_BACKEND!r}; falling back to 'groq'")
+        LLM_BACKEND = "groq"
+    groq_client = Groq(api_key=GROQ_API_KEY) if (Groq and GROQ_API_KEY) else None
+
+print(f"LLM backend: {LLM_BACKEND} "
+      f"(model={GROQ_MODEL if groq_client else 'cohere command-r-08-2024'}"
+      + (f", url={LOCAL_LLM_URL}" if LLM_BACKEND == "local" else "") + ")")
 
 # Admin token for the corpus-ingestion endpoint /upload_pdf. /upload_pdf
 # writes to the SHARED chunks corpus, so we cannot let arbitrary users
