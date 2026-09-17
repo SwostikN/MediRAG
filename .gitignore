@@ -119,3 +119,7 @@ tmp/
 
 # Claude Code local config (personal, not project)
 .claude/
+
+# Retrieval cache: regenerable from question_set_v1.jsonl, and large.
+# The question set and its manifest ARE committed - they define the experiment.
+eval/results/retrieval_cache_v1.jsonl

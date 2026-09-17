@@ -16,6 +16,102 @@ to the plan at `~/.claude/plans/i-have-a-folder-virtual-kahan.md`.
 
 ---
 
+## 2026-09-17 — Phase 2: The 200-question set, and the retrieval cache the ablation runs on
+
+### 1. The frozen question set
+
+**What changed:** New `eval/build_question_set.py` produced `eval/question_set_v1.jsonl`
+(200 items) and a manifest recording the seed and a checksum of every source file.
+
+| Stratum | n | Where from |
+|---|---|---|
+| consumer_symptom | 40 | `coverage.jsonl` (20) + **K-QA** (20, external) |
+| condition_education | 40 | `condition.jsonl` |
+| lab_explainer | 25 | `results.jsonl` |
+| nepal_navigation | 30 | `navigation_stage2.jsonl` |
+| adversarial | 45 | `must_refuse.jsonl` (40) + `coverage.jsonl` (5) |
+| emergency_redflag | 20 | `redflag.jsonl` positives |
+
+**Why it has to be frozen:** the ablation runs 7 arms over this set. If the arms see
+different questions, the differences between them are noise rather than measurement.
+
+**Verified deterministic** — rebuilding produces a byte-identical file
+(`sha256 a8e7e611…`). No duplicate questions, no empty inputs.
+
+**External anchor:** K-QA (Manes et al. 2024, MIT licence) — real patient questions with
+clinician-written must-have and nice-to-have statements. It matters because reviewers
+discount a system measured only against gold its own authors wrote.
+
+**A correction to the plan:** the plan cites K-QA as "1,212 real patient questions". That
+is the total question count; only **201 carry the annotated answers**, and only those are
+usable. The external share was sized to what actually exists.
+
+### 2. Two input shapes — a trap worth knowing about
+
+Most items are a raw question. `navigation_stage2` items are **not**: they carry an
+`intake_summary`, because Stage 2 routes an already-completed intake rather than free text.
+Items therefore declare `input_kind`, and the runner must branch on it. Treating all 200 as
+raw questions would silently mis-run 30 of them and the failure would look like poor
+navigation accuracy rather than a bug.
+
+### 3. The retrieval cache — and a second correction to the plan
+
+**What changed:** New `eval/build_retrieval_cache.py`, writing
+`eval/results/retrieval_cache_v1.jsonl`. It retrieves once per question per retrieval
+config and stores the full ranked rows including the chunk text.
+
+**Why:** retrieval is the expensive, rate-limited part — MedCPT encoding, a Supabase hybrid
+query, and a Cohere rerank capped at roughly 10 requests/minute on the trial tier.
+Re-retrieving for every arm would make **Cohere, not the LLM, the bottleneck**.
+
+More importantly it would make the comparison *wrong*. If arms A4 and A6 each retrieve
+separately, any difference between them mixes guardrail effects with retrieval jitter. The
+arms must see byte-identical context so the only thing varying is the layer under test.
+Caching is what makes this a controlled experiment.
+
+**The plan said "retrieve once per question and reuse across all arms". That is not right:**
+
+| Arms | Retrieval |
+|---|---|
+| A0 | none at all (context-free upper bound) |
+| A1 | dense-only, no rerank — **its own config** |
+| A2–A6 | hybrid + rerank — one shared config |
+
+So it is one retrieval per *(question, config)* — **two configs, not one, and not seven**.
+A1 exists precisely to show what reranking buys; giving it A2's context would erase the
+very thing it measures.
+
+**Confirmed the two configs actually differ** on the smoke test — only 2–4 of the top 6
+chunks overlap between dense and hybrid+rerank. If they had matched, A1 vs A2 would have
+measured nothing.
+
+**The abstention gate needs no extra retrieval.** It is a threshold on `rerank_score`, so
+arms A3+ are a pure function of the cached rows. One smoke-test question already lands at
+0.285, below your 0.4 threshold — so the gate will fire on it, computed straight from cache.
+
+**Resumable by design:** one line per item, flushed immediately, and anything already
+cached is skipped on restart. A rate-limit stall costs only the item in flight. Quota
+exhaustion has already truncated one experiment in this project's history.
+
+**Smoke test:** 3 questions × 2 configs = 6 retrievals, 0 errors, ~7.8 s/item.
+
+### Impact on the project
+
+Phase 3 can now run as a controlled experiment rather than a correlated one, and the
+Cohere rate limit is paid once (about 25 minutes for the full 400 retrievals) instead of
+once per arm.
+
+**What is not built yet:** the arm runner itself — the part that takes cached context,
+toggles the guardrail layers per arm, generates, and scores. That is the next piece.
+
+**Files touched:** `eval/build_question_set.py` (new), `eval/question_set_v1.jsonl` (new),
+`eval/question_set_v1.manifest.json` (new), `eval/build_retrieval_cache.py` (new),
+`eval/external/kqa/` (new, downloaded)
+**Verify with:** `.venv\Scripts\python.exe eval/build_question_set.py --check` and
+`.venv\Scripts\python.exe eval/build_retrieval_cache.py --limit 3`
+
+---
+
 ## 2026-09-17 — Phase 1.1: Backend switch built, local inference measured — and rejected for bulk
 
 ### What changed
