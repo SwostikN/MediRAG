@@ -1211,6 +1211,19 @@ RERANK_MODEL = "rerank-v3.5"
 # provider, split into GROQ_TEMPERATURE / COHERE_TEMPERATURE later.
 MAIN_QUERY_TEMPERATURE = 0.15
 
+# Paper-phase determinism (Phase 0.5). Production behaviour is UNCHANGED unless
+# EVAL_DETERMINISTIC=1 is set in the environment. Full rationale, and the honest
+# limits of temperature-0 on a hosted API, are in app/determinism.py.
+from .determinism import EVAL_DETERMINISTIC, EVAL_SEED, eval_temp  # noqa: E402
+
+# Effective temperature for the main /query and /query/stream generation calls.
+GEN_TEMPERATURE = eval_temp(MAIN_QUERY_TEMPERATURE)
+
+if EVAL_DETERMINISTIC:
+    print(f"[eval] DETERMINISTIC MODE: temperature=0.0, seed={EVAL_SEED} "
+          f"(production default {MAIN_QUERY_TEMPERATURE} bypassed)")
+
+
 # Phase-3: inline-citation binding + fusion-drift detection.
 # - INLINE_CITATIONS_ENABLED turns on the prompt instruction that asks
 #   the LLM to tag each clinical claim with `[N]` markers, and the
@@ -1842,7 +1855,7 @@ async def query_document(query: QueryRequest):
                 model=GROQ_MODEL,
                 messages=messages,
                 max_tokens=700,
-                temperature=MAIN_QUERY_TEMPERATURE,
+                temperature=GEN_TEMPERATURE,
             )
             answer = groq_resp.choices[0].message.content
             llm_provider = "groq"
@@ -1852,7 +1865,7 @@ async def query_document(query: QueryRequest):
                 model="command-r-08-2024",
                 messages=messages,
                 max_tokens=700,
-                temperature=MAIN_QUERY_TEMPERATURE,
+                temperature=GEN_TEMPERATURE,
             )
             try:
                 answer = response.message.content[0].text
@@ -1864,7 +1877,7 @@ async def query_document(query: QueryRequest):
             model="command-r-08-2024",
             messages=messages,
             max_tokens=700,
-            temperature=MAIN_QUERY_TEMPERATURE,
+            temperature=GEN_TEMPERATURE,
         )
         try:
             answer = response.message.content[0].text
@@ -2105,7 +2118,7 @@ def generate_procedural_guidance(
                 model=GROQ_MODEL,
                 messages=messages,
                 max_tokens=320,
-                temperature=0.2,
+                temperature=eval_temp(0.2),
             )
             text = (resp.choices[0].message.content or "").strip() or None
         if text is None:
@@ -2113,7 +2126,7 @@ def generate_procedural_guidance(
                 model="command-r-08-2024",
                 messages=messages,
                 max_tokens=320,
-                temperature=0.2,
+                temperature=eval_temp(0.2),
             )
             try:
                 text = (resp.message.content[0].text or "").strip() or None
@@ -2182,7 +2195,7 @@ def derive_followup_search_query(
                 model=GROQ_MODEL,
                 messages=messages,
                 max_tokens=40,
-                temperature=0.1,
+                temperature=eval_temp(0.1),
             )
             text = (resp.choices[0].message.content or "").strip()
         else:
@@ -2190,7 +2203,7 @@ def derive_followup_search_query(
                 model="command-r-08-2024",
                 messages=messages,
                 max_tokens=40,
-                temperature=0.1,
+                temperature=eval_temp(0.1),
             )
             text = (resp.message.content[0].text or "").strip()
     except Exception as exc:
@@ -2278,7 +2291,7 @@ def generate_grounded_followup_answer(
                 model=GROQ_MODEL,
                 messages=messages,
                 max_tokens=500,
-                temperature=MAIN_QUERY_TEMPERATURE,
+                temperature=GEN_TEMPERATURE,
             )
             text = (resp.choices[0].message.content or "").strip() or None
         if text is None:
@@ -2286,7 +2299,7 @@ def generate_grounded_followup_answer(
                 model="command-r-08-2024",
                 messages=messages,
                 max_tokens=500,
-                temperature=MAIN_QUERY_TEMPERATURE,
+                temperature=GEN_TEMPERATURE,
             )
             try:
                 text = (resp.message.content[0].text or "").strip() or None
@@ -2813,7 +2826,7 @@ async def query_document_stream(query: QueryRequest):
                     messages=messages,
                     max_tokens=700,
                     stream=True,
-                    temperature=MAIN_QUERY_TEMPERATURE,
+                    temperature=GEN_TEMPERATURE,
                 )
                 source = "groq"
                 for chunk in stream:
@@ -2846,7 +2859,7 @@ async def query_document_stream(query: QueryRequest):
                     model="command-r-08-2024",
                     messages=messages,
                     max_tokens=700,
-                    temperature=MAIN_QUERY_TEMPERATURE,
+                    temperature=GEN_TEMPERATURE,
                 )
                 source = "cohere"
                 for ev in cohere_stream:

@@ -49,6 +49,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
+from ..determinism import eval_temp
 
 try:
     from ..refusal_filter import filter_response, find_forbidden_phrases
@@ -495,7 +496,7 @@ def _compose_one_marker(
                     {"role": "user", "content": user_prompt},
                 ],
                 max_tokens=max_tokens,
-                temperature=0.2,
+                temperature=eval_temp(0.2),
             )
             raw = resp.choices[0].message.content
         except Exception as exc:

@@ -1,0 +1,94 @@
+{
+  "frozen_at": "2026-09-17T06:51:21.595762+00:00",
+  "counts": {
+    "documents": 1009,
+    "chunks": 3816,
+    "nepal_scoped_documents": 57,
+    "nepal_scoped_pct": 0.0565
+  },
+  "composition": {
+    "source": {
+      "MedlinePlus": 826,
+      "NHS": 73,
+      "WHO": 45,
+      "EDCD": 28,
+      "Testing.com": 9,
+      "WHO Nepal": 7,
+      "MoHP": 6,
+      "NPHL": 5,
+      "BPKIHS": 3,
+      "CSH": 3,
+      "MoHP Nepal": 2,
+      "Bir Hospital": 1,
+      "DDA": 1
+    },
+    "doc_type": {
+      "patient-ed": 945,
+      "clinical-guideline": 23,
+      "reference": 23,
+      "care_pathway": 18
+    },
+    "authority_tier": {
+      "1": 987,
+      "2": 15,
+      "3": 7
+    },
+    "country_scope": {
+      "[\"global\"]": 873,
+      "[\"uk\", \"global\"]": 71,
+      "[\"NP\"]": 54,
+      "[\"global\", \"searo\"]": 5,
+      "[\"nepal\"]": 3,
+      "[\"uk\", \"global\", \"south-asia\"]": 2,
+      "[\"global\", \"south-asia\"]": 1
+    },
+    "language": {
+      "en": 1009
+    }
+  },
+  "manifest_reconciliation": {
+    "manifest_urls_deduped": 210,
+    "ingested": 185,
+    "never_ingested": 25,
+    "never_ingested_by_file": {
+      "nepal_candidates_v1.jsonl": 19,
+      "care_pathway_v1.jsonl": 5,
+      "seed_v1.jsonl": 1
+    },
+    "never_ingested_urls": [
+      "bpkihs.edu/2025/department",
+      "csh.gov.np/pages/health-test-group-60",
+      "csh.gov.np/pages/opid-schedule",
+      "dda.gov.np/category/banned-drug",
+      "dda.gov.np/category/nepalese-national-formulary",
+      "dda.gov.np/category/recalls-drug-alert",
+      "dda.gov.np/category/required-medicine-list",
+      "edcd.gov.np/resources/download/dengue-booklet-2082",
+      "giwmscdnone.gov.np/content/38/nepal-leprosy-fact-sheet-2025",
+      "giwmscdnone.gov.np/content/396/hospital-service-improvement-procedures--2082",
+      "giwmscdnone.gov.np/content/44/human-body-transplantation--regulation-and-prohibition--directory-",
+      "giwmscdnone.gov.np/content/46/nepal-health-fact-sheet-2025",
+      "giwmscdnone.gov.np/content/83/annual-health-report-207879",
+      "giwmscdnone.gov.np/content/84/annual-health-report-207980",
+      "giwmscdnone.gov.np/content/85/annual-health-report-208081",
+      "giwmscdnone.gov.np/content/86/national-directory-of-patient-referrals--2082",
+      "giwmscdnone.gov.np/content/87/procedures-for-expanding-intensive-burn-care-services-",
+      "nhs.uk/conditions/baby/health/spotting-signs-of-serious-illness",
+      "nhs.uk/conditions/breast-cancer-women/symptoms",
+      "nhs.uk/conditions/breastfeeding-problems/getting-help",
+      "nhs.uk/conditions/copd",
+      "nhs.uk/conditions/depression-in-adults/symptoms",
+      "nhs.uk/conditions/irritable-bowel-syndrome-ibs",
+      "nphl.gov.np/page?id=117&title=laboratory-biosafety",
+      "nphl.gov.np/page?id=129&title=malaria-program"
+    ],
+    "docs_without_manifest_before_derivation": 824,
+    "docs_without_manifest_after_derivation": 0,
+    "derived_manifest": "ingest/manifest/medlineplus_bulk_v1.jsonl"
+  },
+  "paper_notes": [
+    "Table 1 must state that the corpus is 82% MedlinePlus and only 57 documents (5.6%) are Nepal-scoped. The Nepal contribution is the ROUTING layer (nepal_care_tiers.yaml, redflag_rules.yaml), not the knowledge base. Do not claim a 'Nepal-grounded corpus'.",
+    "Authoritative corpus = eval/corpus_snapshot/ (exact text + MedCPT vector(768) embeddings, SHA-256 recorded). Manifests describe provenance, not content.",
+    "25 manifest URLs were never ingested; they are listed here so the gap is documented rather than silently carried."
+  ]
+}
