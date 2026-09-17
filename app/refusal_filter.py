@@ -206,6 +206,90 @@ _CONTEXT_DIAGNOSTIC_CUES = (
     "symptoms of",  # e.g. "symptoms of depression" when paired with a condition
 )
 
+
+# ── "you have X" as a diagnostic assertion (restored 2026-09-17) ────────────
+#
+# History. A bare "you have" substring cue lived in _DIAGNOSTIC_SCOPE_CUES until
+# 2026-04-20, when it was removed for over-firing on lab explanations such as
+# "your HbA1c of 6.8% means you have a slightly elevated blood sugar". Removing
+# it outright was an over-correction: it left the guard catching only HEDGED
+# diagnoses ("most likely you have X", "sounds like X") while the blunt,
+# unhedged assertion — the most dangerous phrasing there is — classified as
+# 'safe'. See eval/results/scope_guard_regression_2026-09_{BEFORE,AFTER}.json.
+#
+# Why a substring cue cannot work either way. Measured over the 33,314 sentences
+# in the live corpus snapshot, a plain "you have" cue gated only on a co-occurring
+# condition name reclassified 177 sentences (0.53%) as diagnostic. Nearly all were
+# legitimate patient education — "If you have diabetes, your blood glucose levels
+# are too high", "it does not necessarily mean you have cancer", "make sure you
+# have had the latest boosters". Shipping that would have rebuilt the exact
+# over-refusal problem the 2026-04-20 removal was chasing.
+#
+# The distinction that actually matters is grammatical, not lexical: a diagnosis
+# is an ASSERTION about this user. "You have diabetes" asserts. "If you have
+# diabetes", "people who have diabetes", "it doesn't mean you have diabetes" and
+# "you have had ..." do not. So we require:
+#   1. a you-have phrase that is not preceded in its clause by a conditional,
+#      subordinating, third-person, negating or epistemic marker, and
+#   2. a named condition within _ASSERTION_WINDOW characters AFTER the phrase,
+#      so "You have a higher risk of kidney disease if you have diabetes" does
+#      not trip on a condition mentioned far downstream.
+#
+# Measured cost of this rule on the same 33,314 sentences: 7 reclassifications
+# (0.021%) — a 25x reduction in false positives versus the substring approach,
+# with all 18 probe cases passing. The 7 survivors are list fragments and
+# constructions like "conditions in which you have anxiety"; they fail toward
+# over-refusal, which is the correct direction under this project's stated
+# safety asymmetry (a missed diagnosis leak is a safety event, an unnecessary
+# refusal is an inconvenience).
+
+_ASSERTION_WINDOW = 40
+
+_YOU_HAVE_RE = re.compile(
+    r"\byou(?:'ve|\s+have)\s+(?:got\s+)?"
+    r"|\byou\s+(?:likely|probably|most\s+likely)\s+have\b",
+    re.I,
+)
+
+# Markers that, immediately before a you-have phrase, make it non-assertive:
+# conditional, subordinating, third-person, epistemic or reported speech.
+_NON_ASSERTIVE_BEFORE_RE = re.compile(
+    r"\b(if|when|whenever|unless|whether|in\s+case|suppose|assuming|"
+    r"mean|means|meant|meaning|that|because|since|though|although|"
+    r"who|whom|anyone|someone|people|those|patients|adults|children|"
+    r"ask|tell|told|check|confirm|and|or|but|"
+    r"think|thinks|thought|show|shows|showed|sure|know|knew|knows|"
+    r"until|risk|chance|likely|suspect|suspects|maybe|perhaps)\s*,?\s*$",
+    re.I,
+)
+
+# "you have had" / "you've been" is history, not a present-tense diagnosis.
+_YOU_HAVE_PAST_RE = re.compile(r"\byou(?:'ve|\s+have)\s+(?:had|been)\b", re.I)
+
+
+def _is_diagnostic_assertion(text: str) -> bool:
+    """True when `text` asserts that the reader HAS a named condition.
+
+    Conditional, generic, third-person, negated and reported phrasings are not
+    assertions and return False. See the block comment above for the measured
+    rationale and cost.
+    """
+    if _YOU_HAVE_PAST_RE.search(text):
+        return False
+    lower = text.lower()
+    for m in _YOU_HAVE_RE.finditer(text):
+        before = text[: m.start()]
+        # Only the current clause governs whether this is an assertion.
+        clause = re.split(r"[.;:,]\s*", before)[-1] if before else ""
+        if _NON_ASSERTIVE_BEFORE_RE.search(clause + " "):
+            continue
+        if _NON_ASSERTIVE_BEFORE_RE.search(before.rstrip() + " "):
+            continue
+        tail = lower[m.end(): m.end() + _ASSERTION_WINDOW]
+        if any(cond in tail for cond in _CONDITION_NAMES):
+            return True
+    return False
+
 _CONDITION_NAMES = (
     "depression", "anxiety", "panic disorder", "bipolar",
     "diabetes", "diabetic", "hypertension", "hypertensive",
@@ -445,7 +529,14 @@ def classify_scope(text: str) -> str:
       1. Emergency override FIRST — emergency routing takes precedence
          even if the text also contains a diagnostic cue (e.g. "this is
          a medical emergency — call an ambulance").
-      2. Diagnostic cluster — "you have X" / "your diagnosis is Y".
+      2. Unconditional diagnostic cues — "your diagnosis is Y",
+         "you are diabetic", "sounds like". These are diagnostic on their
+         own, whatever else the answer says.
+      2b. Context-sensitive diagnostic cues — "you have X",
+         "you're experiencing X", "symptoms of X". These only count as
+         diagnostic when a name from _CONDITION_NAMES co-occurs, so that
+         "you have a slightly elevated blood sugar" (a lab explanation)
+         stays safe while "you have diabetes" does not.
       3. Prescriptive cluster — only fires when a prescriptive cue
          co-occurs with a dose-unit pattern. "Take this medication" on
          its own is fine; "take 500 mg of X" is not.
@@ -467,6 +558,13 @@ def classify_scope(text: str) -> str:
     if any(cue in lower for cue in _CONTEXT_DIAGNOSTIC_CUES):
         if any(cond in lower for cond in _CONDITION_NAMES):
             return "diagnostic"
+
+    # "You have <condition>" as a direct assertion about the reader. Handled by
+    # a grammatical check rather than a substring cue so that conditional and
+    # educational phrasings ("if you have diabetes ...", "it does not mean you
+    # have cancer") stay safe. See _is_diagnostic_assertion.
+    if _is_diagnostic_assertion(text):
+        return "diagnostic"
 
     has_dose_unit = bool(_DOSE_UNIT_RE.search(text))
     if has_dose_unit and any(cue in lower for cue in _PRESCRIPTIVE_SCOPE_CUES):
