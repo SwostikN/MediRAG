@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import yaml
+from ..determinism import eval_temp
 
 _TIERS_PATH = Path(__file__).resolve().parent.parent / "nepal_care_tiers.yaml"
 
@@ -236,7 +237,7 @@ def compose_recommendation(
                     {"role": "user", "content": user_prompt},
                 ],
                 max_tokens=max_tokens,
-                temperature=0.2,
+                temperature=eval_temp(0.2),
             )
             raw = resp.choices[0].message.content
         except Exception as exc:

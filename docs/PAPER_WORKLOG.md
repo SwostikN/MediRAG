@@ -16,6 +16,115 @@ to the plan at `~/.claude/plans/i-have-a-folder-virtual-kahan.md`.
 
 ---
 
+## 2026-09-17 — Phase 0.2 & 0.5: Corpus provenance closed, determinism switch, run manifests
+
+### 1. Every document in the corpus is now accounted for
+
+**What changed:** New `eval/freeze_corpus_manifest.py`, which produced
+`ingest/manifest/medlineplus_bulk_v1.jsonl` (824 rows + README) and
+`eval/corpus_manifest.json` (the frozen, paper-facing record).
+
+**Why:** Reconciling your manifests against the live corpus showed they did not describe it:
+
+| | |
+|---|---|
+| Manifest URLs actually in the corpus | 185 / 210 (88%) |
+| Manifest URLs never ingested | 25 |
+| **Corpus documents from no manifest at all** | **824 / 1,009 (82%)** |
+
+The 824 are all MedlinePlus, bulk-ingested from the cached topic index
+(`ingest/cache/mplus_topics.xml`) rather than from a URL list. So 82% of your corpus was
+undocumented — it could not be audited, described in a paper, or rebuilt. For a paper whose
+central claim rests on a fixed corpus, that is not a survivable position.
+
+The 25 never-ingested URLs are exactly the gap your August plan flagged (19 Nepal
+candidates + 5 care-pathway + 1 seed). They are now listed explicitly in
+`eval/corpus_manifest.json` rather than carried silently.
+
+**Impact on the project:** Provenance goes from 18% to **100%** — every document is
+accounted for by some manifest. Table 1 of the paper can now be generated from a file
+instead of assembled by hand.
+
+**One honest caveat, recorded in the file itself:** the derived manifest is a *record of
+what was ingested*, not a recipe. Re-running it would re-fetch those URLs as they exist
+today, which is not the same corpus. The authoritative copy remains
+`eval/corpus_snapshot/`, which holds the exact text and embeddings.
+
+**Also confirmed for the paper:** 57 of 1,009 documents (**5.6%**) are Nepal-scoped. The
+"Nepal-grounded corpus" claim stays retired; the Nepal contribution is the routing layer.
+
+### 2. A determinism switch, so results stop moving on their own
+
+**What changed:** New `app/determinism.py`. Setting `EVAL_DETERMINISTIC=1` forces every
+generation call to temperature 0 and supplies a fixed seed. **Production is untouched** —
+without that variable, every call site keeps exactly the temperature it had before.
+
+**Why:** your headline hallucination A/B was run at temperature 0.15 with no seed, and your
+own log records identical configurations flipping 2–3 gold items between runs. A number
+that moves when nothing changed cannot go in a paper.
+
+**The part that mattered:** pinning only the final generation call would not have worked.
+Eleven call sites in `RAG.py` plus four stage modules (`clarification`, `intake`,
+`navigation`, `results`) each had their own temperature. A non-deterministic *query rewrite*
+changes what gets retrieved, which changes the context, which changes the answer — so the
+run would have stayed irreproducible through the back door. All of them now route through
+one helper.
+
+`app/determinism.py` is a separate module because `RAG.py` imports the stages, so the
+stages cannot import `RAG.py` back. A shared leaf module is the only place all of them can
+reach.
+
+**Stated honestly in the code:** temperature 0 is necessary but *not sufficient* on a
+hosted API — batching and load balancing still perturb results, and a provider can retire
+a model outright, as happened here. Real reproducibility needs local hash-pinned weights.
+That is Phase 1, and the manifest records which backend produced each number so the
+distinction is visible in the data rather than assumed.
+
+### 3. Run manifests — no more orphaned numbers
+
+**What changed:** New `eval/run_manifest.py`. Every result file gets a block recording git
+SHA and tag, all nine thresholds, model IDs, backend, seed, corpus checksum, and Python
+version.
+
+**Why:** three separate failures in this project trace to results that did not record their
+own conditions — the decommissioned model (nothing recorded which model), the mislabelled
+baselines (`baseline_v4_filtered.json` holds Week-2 n=30 data), and the quota-truncated A/B
+(saved only because it happened to log `quota_exhausted`).
+
+It also **flags its own uncommitted state**: if the working tree is dirty, the manifest
+carries a `WARNING` saying the result is not reproducible from the recorded SHA and must
+not be cited.
+
+**Impact on the project:** gives you a hard reviewable rule — reject any result file with
+no manifest, or with `dirty_worktree: true`. That single check would have caught all three
+historical failures.
+
+### 4. A mistake I made and corrected
+
+While wiring the determinism switch I edited `app/RAG.py` with a PowerShell text
+replacement. PowerShell re-encoded the file and corrupted **266 non-ASCII characters** —
+107 em-dashes and 157 box-drawing characters in your comment headers turned into mojibake
+(`—` became `â€"`).
+
+Caught it by diffing against the committed version, reverted with `git checkout`, and redid
+the edit in Python with explicit UTF-8 byte handling and CRLF preservation, verifying the
+non-ASCII character counts matched before and after. Nothing was committed in the corrupted
+state.
+
+**Lesson worth keeping:** do not use PowerShell `Set-Content` on source files in this repo.
+The comment headers throughout `app/` use box-drawing characters and em-dashes, and
+PowerShell's default encoding silently destroys them.
+
+**Files touched:** `app/determinism.py` (new), `app/RAG.py` (11 call sites),
+`app/stages/{clarification,intake,navigation,results}.py`, `eval/run_manifest.py` (new),
+`eval/freeze_corpus_manifest.py` (new), `eval/corpus_manifest.json` (new),
+`ingest/manifest/medlineplus_bulk_v1.jsonl` (new, 824 rows)
+**Verify with:** `.venv\Scripts\python.exe -m eval.run_manifest` and
+`$env:EVAL_DETERMINISTIC=1; .venv\Scripts\python.exe -c "import app.RAG as R; print(R.GEN_TEMPERATURE)"`
+(expect `0.0`; expect `0.15` without the variable). Suite: 184 passed, 2 skipped.
+
+---
+
 ## 2026-09-17 — Phase 0.3: CORRECTION — the retrieval ceiling did NOT improve
 
 ### What changed

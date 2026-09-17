@@ -22,6 +22,7 @@ at rephrasing. Never raises.
 from __future__ import annotations
 
 from typing import Any, Optional
+from ..determinism import eval_temp
 
 
 _SYSTEM_PROMPT = """You are a health navigator answering a CLARIFICATION \
@@ -82,7 +83,7 @@ def compose_clarification(
                 {"role": "user", "content": user_prompt},
             ],
             max_tokens=max_tokens,
-            temperature=0.1,
+            temperature=eval_temp(0.1),
         )
     except Exception as exc:
         print(f"[clarification] groq failed: {exc}")
