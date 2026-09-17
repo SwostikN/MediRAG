@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Literal, Optional
+from .llm_compat import gen_max_tokens
 
 Decision = Literal["intake", "condition", "navigation", "results"]
 
@@ -283,7 +284,7 @@ def _llm_tiebreak(q: str, groq_client: Any, groq_model: str) -> Decision:
         resp = groq_client.chat.completions.create(
             model=groq_model,
             messages=[{"role": "user", "content": _LLM_PROMPT.format(q=q)}],
-            max_tokens=2,
+            max_tokens=gen_max_tokens(2, groq_model),
             temperature=0,
         )
         text = (resp.choices[0].message.content or "").strip().upper()

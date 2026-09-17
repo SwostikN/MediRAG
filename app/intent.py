@@ -14,6 +14,7 @@ import os
 from typing import Dict, Optional
 
 import cohere
+from .llm_compat import gen_max_tokens
 
 STAGES = ["intake", "navigation", "visit_prep", "results", "condition"]
 
@@ -146,7 +147,7 @@ def classify(question: str) -> Optional[Dict[str, str]]:
                     ),
                 }
             ],
-            max_tokens=50,
+            max_tokens=gen_max_tokens(50, MODEL),
             response_format={"type": "json_object"},
         )
         text = resp.message.content[0].text

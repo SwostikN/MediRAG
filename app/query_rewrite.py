@@ -18,6 +18,7 @@ corrupt retrieval.
 from __future__ import annotations
 
 from typing import Any, Optional
+from .llm_compat import gen_max_tokens
 
 
 _SYSTEM_PROMPT = """You expand lay health questions into medical retrieval \
@@ -108,7 +109,7 @@ def expand_for_retrieval(
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": f"Q: {q}\nA:"},
             ],
-            max_tokens=_MAX_TOKENS,
+            max_tokens=gen_max_tokens(_MAX_TOKENS, groq_model),
             temperature=_TEMPERATURE,
         )
     except Exception as exc:

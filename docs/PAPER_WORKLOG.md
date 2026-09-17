@@ -16,6 +16,117 @@ to the plan at `~/.claude/plans/i-have-a-folder-virtual-kahan.md`.
 
 ---
 
+## 2026-09-17 — Phase 1.0: Replaced the dead backend, and caught what the swap would have broken
+
+### What changed
+
+New Groq API key in `.env`, and `GROQ_MODEL` switched from the decommissioned
+`llama-3.3-70b-versatile` to **`openai/gpt-oss-20b`**. New `app/llm_compat.py`, and every
+`max_tokens` in `app/` now routes through it (20 call sites across 9 files). Local weights
+downloading via new `eval/download_local_model.py`.
+
+### Why gpt-oss-20b specifically
+
+It is the only candidate that is **both** served on Groq's free tier **and** released as
+open weights. That means the same model runs two ways: fast and free on Groq for bulk
+evaluation, and locally — hash-pinned, no quota, real seeds — for anything that must be
+reproducible. Switching the hosted model is therefore not a detour away from going local;
+it is the first half of it.
+
+### The trap this swap was hiding
+
+`gpt-oss-20b` is a **reasoning model**. It emits hidden chain-of-thought tokens before any
+visible text, and those tokens are charged against `max_tokens`. Measured on Groq:
+
+| `max_tokens` | reasoning tokens used | content returned |
+|---|---|---|
+| 40 | 38 | `''` — empty |
+| 120 | 118 | `''` — empty |
+| 200 | 147 | `'Pleurisy'` |
+
+**It needs roughly 150 tokens of headroom before it will say anything at all.** Your
+codebase is full of deliberately tight budgets, and every one of them would have returned
+an empty string — not an error:
+
+| File | Budget | What it does | Would have become |
+|---|---|---|---|
+| `app/intent_gate.py` | 2 | **First-layer gate** | always empty |
+| `app/stages/intake.py` | 10 | Slot filling | always empty |
+| `app/RAG.py` | 40 | Topic derivation | always empty |
+| `app/intent.py` | 50 | Intent classification | always empty |
+| `app/query_rewrite.py` | 80 | Retrieval rewrite | always empty |
+| `app/RAG.py` | 320 | Stage answers | badly truncated |
+
+Every one of those call sites treats an empty string as "no result" and quietly falls back.
+**Nothing would have raised an error.** The pipeline would have run, produced plausible
+output, and silently lost its intent gate, its query rewriting and its slot filling — and
+the evaluation numbers would have looked like a model-quality finding rather than a
+configuration bug.
+
+I checked whether the API's `reasoning_effort` parameter could avoid this. It is accepted
+but had no effect on the token count at any setting, so headroom is the only remedy.
+
+### The fix
+
+`app/llm_compat.py` provides `gen_max_tokens(visible_budget, model)`. Call sites now state
+what they actually want to **see** — 2 tokens of YES/NO, 700 tokens of answer — and the
+helper adds a 512-token reasoning allowance only when the model is a reasoning family.
+Cohere paths (`command-r-08-2024`) are untouched and get exactly what they asked for.
+
+The allowance is 512 against a worst observed 147, roughly 3.5× headroom. That asymmetry
+is deliberate: too much headroom wastes a little free quota, too little silently disables
+a safety layer.
+
+### Two bugs my own edit introduced, caught before commit
+
+The first pass wired the model argument by scanning surrounding code, and got three call
+sites wrong — `intent_gate.py` and `intake.py` referenced a module-level `GROQ_MODEL` that
+does not exist in those files (the model arrives as a function parameter), and `intent.py`
+uses Cohere's `MODEL`, not Groq's.
+
+Your own test suite caught the first one immediately (`test_intent_gate` failed with
+`name 'GROQ_MODEL' is not defined`). I then wrote a static check that parses every file and
+verifies each `gen_max_tokens` model argument actually resolves in its enclosing scope, and
+fixed the other two. That check is worth keeping in mind as a pattern: a wrong name here
+fails loudly, but a wrong *value* would not have.
+
+### Verified live on the new model
+
+The three paths that would have silently broken, tested against real Groq:
+
+```
+query_rewrite   (was max_tokens=80) -> 'pleuritic chest pain, chest pain on inspiration, ...'
+intent_gate     (was max_tokens=2)  -> 'condition'   (correct)
+intake classify (was max_tokens=10) -> 'pain'
+```
+
+Suite: **184 passed, 2 skipped.** Encoding verified clean across all of `app/`.
+
+### Impact on the project
+
+The pipeline has a working generator again — `paper-v1` deliberately did not. More
+importantly, the swap is now *safe*: a future model change runs through one helper instead
+of 20 scattered literals.
+
+**For the paper:** this is a second concrete example of the fragility argument, and a better
+one than the decommissioning itself. The model was replaced with a supposedly equivalent
+one, and six subsystems would have silently stopped working while still producing
+plausible output. That is exactly the failure mode that makes hosted-model evaluation
+untrustworthy, and it is why the local hash-pinned copy matters.
+
+### Housekeeping
+
+The new Groq key was pasted into the chat transcript, so treat it as exposed and rotate it
+once the paper runs are done. The old key is retained, commented, in `.env`. `.env` remains
+gitignored and was not committed.
+
+**Files touched:** `.env` (not committed), `app/llm_compat.py` (new),
+`eval/download_local_model.py` (new), `app/RAG.py`, `app/intent.py`, `app/intent_gate.py`,
+`app/query_rewrite.py`, `app/stages/{clarification,intake,navigation,results}.py`
+**Verify with:** `.venv\Scripts\python.exe -m pytest eval/ -q` (expect 184 passed)
+
+---
+
 ## 2026-09-17 — Phase 0.2 & 0.5: Corpus provenance closed, determinism switch, run manifests
 
 ### 1. Every document in the corpus is now accounted for
