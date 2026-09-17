@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover — groq is optional at import time
     Groq = None  # type: ignore
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from .llm_compat import gen_max_tokens
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -1854,7 +1855,7 @@ async def query_document(query: QueryRequest):
             groq_resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
-                max_tokens=700,
+                max_tokens=gen_max_tokens(700, GROQ_MODEL),
                 temperature=GEN_TEMPERATURE,
             )
             answer = groq_resp.choices[0].message.content
@@ -1864,7 +1865,7 @@ async def query_document(query: QueryRequest):
             response = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
-                max_tokens=700,
+                max_tokens=gen_max_tokens(700, "command-r-08-2024"),
                 temperature=GEN_TEMPERATURE,
             )
             try:
@@ -1876,7 +1877,7 @@ async def query_document(query: QueryRequest):
         response = co.chat(
             model="command-r-08-2024",
             messages=messages,
-            max_tokens=700,
+            max_tokens=gen_max_tokens(700, "command-r-08-2024"),
             temperature=GEN_TEMPERATURE,
         )
         try:
@@ -2117,7 +2118,7 @@ def generate_procedural_guidance(
             resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
-                max_tokens=320,
+                max_tokens=gen_max_tokens(320, GROQ_MODEL),
                 temperature=eval_temp(0.2),
             )
             text = (resp.choices[0].message.content or "").strip() or None
@@ -2125,7 +2126,7 @@ def generate_procedural_guidance(
             resp = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
-                max_tokens=320,
+                max_tokens=gen_max_tokens(320, GROQ_MODEL),
                 temperature=eval_temp(0.2),
             )
             try:
@@ -2194,7 +2195,7 @@ def derive_followup_search_query(
             resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
-                max_tokens=40,
+                max_tokens=gen_max_tokens(40, GROQ_MODEL),
                 temperature=eval_temp(0.1),
             )
             text = (resp.choices[0].message.content or "").strip()
@@ -2202,7 +2203,7 @@ def derive_followup_search_query(
             resp = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
-                max_tokens=40,
+                max_tokens=gen_max_tokens(40, GROQ_MODEL),
                 temperature=eval_temp(0.1),
             )
             text = (resp.message.content[0].text or "").strip()
@@ -2290,7 +2291,7 @@ def generate_grounded_followup_answer(
             resp = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=messages,
-                max_tokens=500,
+                max_tokens=gen_max_tokens(500, GROQ_MODEL),
                 temperature=GEN_TEMPERATURE,
             )
             text = (resp.choices[0].message.content or "").strip() or None
@@ -2298,7 +2299,7 @@ def generate_grounded_followup_answer(
             resp = co.chat(
                 model="command-r-08-2024",
                 messages=messages,
-                max_tokens=500,
+                max_tokens=gen_max_tokens(500, GROQ_MODEL),
                 temperature=GEN_TEMPERATURE,
             )
             try:
@@ -2824,7 +2825,7 @@ async def query_document_stream(query: QueryRequest):
                 stream = groq_client.chat.completions.create(
                     model=GROQ_MODEL,
                     messages=messages,
-                    max_tokens=700,
+                    max_tokens=gen_max_tokens(700, GROQ_MODEL),
                     stream=True,
                     temperature=GEN_TEMPERATURE,
                 )
@@ -2858,7 +2859,7 @@ async def query_document_stream(query: QueryRequest):
                 cohere_stream = co.chat_stream(
                     model="command-r-08-2024",
                     messages=messages,
-                    max_tokens=700,
+                    max_tokens=gen_max_tokens(700, "command-r-08-2024"),
                     temperature=GEN_TEMPERATURE,
                 )
                 source = "cohere"

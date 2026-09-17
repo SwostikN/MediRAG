@@ -34,6 +34,7 @@ from typing import Any, Optional
 
 import yaml
 from ..determinism import eval_temp
+from ..llm_compat import gen_max_tokens
 
 _TIERS_PATH = Path(__file__).resolve().parent.parent / "nepal_care_tiers.yaml"
 
@@ -236,7 +237,7 @@ def compose_recommendation(
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=max_tokens,
+                max_tokens=gen_max_tokens(max_tokens, groq_model),
                 temperature=eval_temp(0.2),
             )
             raw = resp.choices[0].message.content
@@ -251,7 +252,7 @@ def compose_recommendation(
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=max_tokens,
+                max_tokens=gen_max_tokens(max_tokens, groq_model),
             )
             raw = resp.message.content[0].text
         except Exception as exc:

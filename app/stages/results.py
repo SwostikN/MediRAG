@@ -50,6 +50,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 from ..determinism import eval_temp
+from ..llm_compat import gen_max_tokens
 
 try:
     from ..refusal_filter import filter_response, find_forbidden_phrases
@@ -495,7 +496,7 @@ def _compose_one_marker(
                     {"role": "system", "content": _PER_MARKER_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=max_tokens,
+                max_tokens=gen_max_tokens(max_tokens, groq_model),
                 temperature=eval_temp(0.2),
             )
             raw = resp.choices[0].message.content
@@ -510,7 +511,7 @@ def _compose_one_marker(
                     {"role": "system", "content": _PER_MARKER_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=max_tokens,
+                max_tokens=gen_max_tokens(max_tokens, groq_model),
             )
             raw = resp.message.content[0].text
         except Exception as exc:
