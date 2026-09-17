@@ -52,7 +52,17 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+# Anchored to the repo root on purpose. Unanchored `MANIFEST` matches at ANY depth,
+# and because Windows git runs with core.ignorecase=true it also matched the directory
+# `ingest/manifest/` — silently excluding the corpus source-of-truth manifests from
+# every commit. That is why they were missing after a machine change (see
+# docs/PAPER_WORKLOG.md, 2026-09-17). setuptools only ever writes MANIFEST at the root.
+/MANIFEST
+
+# Corpus provenance — these define which documents make up the corpus and must always
+# be committed. Explicit re-include, so no future ignore rule can swallow them again.
+!ingest/manifest/
+!ingest/manifest/**
 
 # Virtual environments
 .venv

@@ -1,0 +1,77 @@
+{
+  "exported_at": "2026-09-17T06:26:17.707457+00:00",
+  "supabase_host": "hmgghpraczbqqgfueabp.supabase.co",
+  "counts": {
+    "documents": 1009,
+    "chunks": 3816
+  },
+  "integrity": {
+    "orphan_chunk_doc_ids": [],
+    "chunks_missing_embedding": 0,
+    "embedding_dims_sampled": {
+      "768": 200
+    },
+    "chunks_per_doc_mean": 3.78
+  },
+  "files": {
+    "documents.jsonl.gz": {
+      "sha256": "9ca9974592edf80897ee9809c2ffb48c186b59dd9f9cbb639b9b0ed1c3cb7de4",
+      "bytes": 67710,
+      "rows": 1009
+    },
+    "chunks.jsonl.gz": {
+      "sha256": "ebba3234036f6a74efec339ebd2d962038408fcea99a96de37436f3a4f087df6",
+      "bytes": 12662954,
+      "rows": 3816,
+      "excluded_columns": [
+        "tsv (GENERATED ALWAYS — regenerated on restore)"
+      ]
+    }
+  },
+  "documents_breakdown": {
+    "source": {
+      "MedlinePlus": 826,
+      "NHS": 73,
+      "WHO": 45,
+      "EDCD": 28,
+      "Testing.com": 9,
+      "WHO Nepal": 7,
+      "MoHP": 6,
+      "NPHL": 5,
+      "BPKIHS": 3,
+      "CSH": 3,
+      "MoHP Nepal": 2,
+      "Bir Hospital": 1,
+      "DDA": 1
+    },
+    "doc_type": {
+      "patient-ed": 945,
+      "clinical-guideline": 23,
+      "reference": 23,
+      "care_pathway": 18
+    },
+    "authority_tier": {
+      "1": 987,
+      "2": 15,
+      "3": 7
+    },
+    "country_scope": {
+      "[\"global\"]": 873,
+      "[\"uk\", \"global\"]": 71,
+      "[\"NP\"]": 54,
+      "[\"global\", \"searo\"]": 5,
+      "[\"nepal\"]": 3,
+      "[\"uk\", \"global\", \"south-asia\"]": 2,
+      "[\"global\", \"south-asia\"]": 1
+    },
+    "language": {
+      "en": 1009
+    }
+  },
+  "restore_notes": [
+    "Apply supabase/002_rag_schema.sql first, then insert documents, then chunks.",
+    "Do not insert `tsv`; Postgres regenerates it from `content`.",
+    "Embeddings are MedCPT vector(768) — no paid embedding API needed to restore.",
+    "Rebuild indexes after bulk insert (supabase/004_fix_vector_index.sql)."
+  ]
+}
